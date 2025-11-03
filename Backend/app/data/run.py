@@ -9,7 +9,7 @@ from pathlib import Path
 # Ensure proper imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from data.prepare_data import prepare_complete_pipeline
+from dataPrep import prepare_complete_pipeline
 
 if __name__ == "__main__":
     print("""

@@ -3,7 +3,6 @@ Complete data preparation pipeline
 Downloads BindingDB datasets and preprocesses them for model training
 """
 
-import os
 import sys
 import numpy as np
 from pathlib import Path
@@ -12,8 +11,8 @@ from sklearn.model_selection import train_test_split
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from data.dataLoader import BindingDBLoader, explore_dataset
-from data.preprocess import DTIDataset
+from dataLoader import BindingDBLoader, explore_dataset
+from preprocess import DTIDataset
 
 
 def prepare_complete_pipeline(
