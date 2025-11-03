@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.9 (Drug-Target Predictor)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (Drug-Target Predictor)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (DTI)" project-jdk-type="Python SDK" />
 </project>
