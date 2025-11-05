@@ -26,7 +26,8 @@ Use RdKIT to convert SMILES to MACCS keys
 
 
 Next Steps:
-    donwload FASTA file from bindingDB 
-    Test the data load script
+    change the variable names so looks less AI.
+    need to calculate the grey area for binding threshold 
+    potentially look at training on chembl as well
     use Protbert for feature extraction
     use RDKit for SMILES to MACCS keys

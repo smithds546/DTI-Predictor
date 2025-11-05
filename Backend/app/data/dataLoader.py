@@ -5,17 +5,15 @@ This method is robust, reproducible, and memory-efficient.
 """
 
 import pandas as pd
-import numpy as np
 import os
 import re
 from pathlib import Path
-from typing import Tuple, Optional
 import zipfile
 import io
 
 # --- Parameters ---
-BINDER_THRESHOLD_NM = 1000.0     # < 1000 nM = Binder
-NONBINDER_THRESHOLD_NM = 10000.0 # > 10000 nM = Non-Binder
+BINDER_THRESHOLD_NM = 800.0     # < 1000 nM = Binder
+NONBINDER_THRESHOLD_NM = 5000.0 # > 10000 nM = Non-Binder
 CHUNK_SIZE = 100000              # Process 100k rows at a time
 
 class BindingDBLoader:
@@ -46,8 +44,8 @@ class BindingDBLoader:
     def parse_fasta(self, fasta_path: Path) -> dict:
         """
         Parses a FASTA file into a dictionary.
-        Keys: UniProt IDs (e.g., "P00533")
-        Values: Amino acid sequences (e.g., "MTEYKLVVVG...")
+        Keys: target names (e.g., "Thymidine kinase")
+        Values: amino acid sequences
         """
         print(f"Loading protein sequences from {fasta_path}...")
         sequences = {}
@@ -59,44 +57,31 @@ class BindingDBLoader:
                 for line in f:
                     line = line.strip()
                     if line.startswith(">"):
-                        # Extract the descriptive name (last part of the header after the last space or after "length:###")
-                        header = line[1:].strip()
-                        # Remove any known BindingDB prefixes like "mol:protein length:###"
-                        header = re.sub(r"mol:protein length:\d+\s*", "", header)
-                        # Now use the remaining text as the name
-                        protein_name = header.strip()
-                        protein_name = re.sub(r"^p\d+\s*", "", protein_name)  # remove "p1 ", "p2 ", etc.
-                        sequences[protein_name] = ""
-                        current_id = protein_name
-                        current_seq = []
+                        # Save previous sequence
+                        if current_id and current_seq:
+                            sequences[current_id] = "".join(current_seq)
+                            current_seq = []
 
-                        # Updated regex to handle FASTA headers like >BindingDB|P00533|...
-                        match = re.match(r">(\S+)", line)
-                        if match:
-                            current_id = match.group(1)
-                        else:
-                            #current_id = None # Skip headers we don't understand
-                            continue
-                        current_seq = []
+                        # Parse new header
+                        header = line[1:].strip()
+                        header = re.sub(r"mol:protein length:\d+\s*", "", header)
+                        protein_name = re.sub(r"^p\d+\s*", "", header).strip()
+                        current_id = protein_name
                     elif current_id:
-                        # Only append if we have a valid UniProt ID
                         current_seq.append(line)
 
-                if current_id: # Save the last sequence
+                # Save the last sequence
+                if current_id and current_seq:
                     sequences[current_id] = "".join(current_seq)
 
         except FileNotFoundError:
             print(f"Error: FASTA file not found at {fasta_path}")
-            print(f"Please make sure '{fasta_path.name}' is in '{self.raw_dir}'")
             return {}
         except Exception as e:
             print(f"Error parsing FASTA file: {e}")
             return {}
 
-        if not sequences:
-            print("Warning: No sequences loaded. Check FASTA file format.")
-        else:
-            print(f"Successfully loaded {len(sequences)} sequences.")
+        print(f"Successfully loaded {len(sequences)} sequences.")
         return sequences
 
     def clean_affinity_value(self, value_str):
