@@ -12,22 +12,22 @@ import zipfile
 import io
 
 # --- Parameters ---
-BINDER_THRESHOLD_NM = 800.0     # < 1000 nM = Binder
-NONBINDER_THRESHOLD_NM = 5000.0 # > 10000 nM = Non-Binder
+BINDER_THRESHOLD_NM = 800.0
+NONBINDER_THRESHOLD_NM = 5000.0
 CHUNK_SIZE = 100000              # Process 100k rows at a time
 
 class BindingDBLoader:
     """Load and process BindingDB from local downloaded files"""
 
     def __init__(self, data_dir: str = "Backend/app/data"):
-        # We'll read from 'raw' and write to 'processed'
+        # We'll read from 'raw' and write to 'loaded'
         self.raw_dir = Path(data_dir) / "raw"
-        self.output_dir = Path(data_dir) / "processed" # Using your 'processed' folder for output
+        self.output_dir = Path(data_dir) / "loaded" # Using your 'loaded' folder for output
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
     def save_processed_dataset(self, df: pd.DataFrame, filename: str = 'bindingdb_processed.csv'):
-        """Save processed dataset to CSV, appending a timestamp to the filename."""
+        """Save loaded dataset to CSV, appending a timestamp to the filename."""
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
         if filename:
@@ -38,7 +38,7 @@ class BindingDBLoader:
 
         filepath = self.output_dir / filename_with_timestamp
         df.to_csv(filepath, index=False)
-        print(f"\nSaved processed dataset to {filepath}")
+        print(f"\nSaved loaded dataset to {filepath}")
         return filepath
 
     def parse_fasta(self, fasta_path: Path) -> dict:
@@ -182,9 +182,9 @@ class BindingDBLoader:
             return
 
         # 3. Combine Chunks
-        print("Combining processed chunks...")
+        print("Combining loaded chunks...")
         df_final = pd.concat(processed_chunks)
-        print(f"Total processed interactions: {len(df_final)}")
+        print(f"Total loaded interactions: {len(df_final)}")
 
         print("\n--- Debug: FASTA keys preview ---")
         print(list(seq_dict.keys())[:10])
@@ -280,8 +280,8 @@ if __name__ == "__main__":
         loader.build_dataset_from_files(TSV_ZIP_FILENAME, FASTA_FILENAME)
 
         print("\n" + "=" * 60)
-        print("✓ Local dataset processed successfully!")
-        print(f"✓ Find your new, filtered file in: Backend/app/data/processed/")
+        print("✓ Local dataset loaded successfully!")
+        print(f"✓ Find your new, filtered file in: Backend/app/data/loaded/")
         print("=" * 60)
 
 
