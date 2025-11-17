@@ -30,6 +30,7 @@ Next Steps:
     get the numbers and create a table of all figures like that paper did.
     change the variable names so looks less AI.
     is there a logical way to calculate the grey area for binding threshold 
+    use a heat correltion map to produce a heatmap of the different binding affinity sources (Ki, Kd, IC50, EC50)
     For evalaution:
         could show difference between using logged binding affinity and not
         difference between using random negative sampling and not

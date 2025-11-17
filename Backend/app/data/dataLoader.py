@@ -15,7 +15,7 @@ import numpy as np
 # --- Parameters ---
 BINDER_THRESHOLD_P = 7
 NONBINDER_THRESHOLD_P = 5.30
-CHUNK_SIZE = 100000              # Process 100k rows at a time
+CHUNK_SIZE = 200000              # Process 200k rows at a time
 
 class BindingDBLoader:
     """Load and process BindingDB from local downloaded files"""
@@ -148,60 +148,60 @@ class BindingDBLoader:
 
 
 
-                            # --- 2. Unified Affinity Extraction ---
-                            affinity_sources = ['Ki (nM)', 'Kd (nM)', 'IC50 (nM)', 'EC50 (nM)']
-                            existing_affinity_cols = [src for src in affinity_sources if src in chunk.columns]
+                        # --- 2. Unified Affinity Extraction ---
+                        affinity_sources = ['Ki (nM)', 'Kd (nM)', 'IC50 (nM)', 'EC50 (nM)']
+                        existing_affinity_cols = [src for src in affinity_sources if src in chunk.columns]
 
-                            # Drop rows where ALL relevant affinity values are NaN
-                            df_chunk = chunk.dropna(how='all', subset=existing_affinity_cols).copy()
+                        # Drop rows where ALL relevant affinity values are NaN
+                        df_chunk = chunk.dropna(how='all', subset=existing_affinity_cols).copy()
 
-                            # Build unified affinity string
-                            df_chunk['Affinity_Value_nM_Str'] = None
-                            for src in existing_affinity_cols:
-                                df_chunk['Affinity_Value_nM_Str'] = df_chunk['Affinity_Value_nM_Str'].fillna(
-                                    df_chunk[src])
+                        # Build unified affinity string
+                        df_chunk['Affinity_Value_nM_Str'] = None
+                        for src in existing_affinity_cols:
+                            df_chunk['Affinity_Value_nM_Str'] = df_chunk['Affinity_Value_nM_Str'].fillna(
+                                df_chunk[src])
 
-                            df_chunk['Affinity_Str'] = df_chunk['Affinity_Value_nM_Str']
+                        df_chunk['Affinity_Str'] = df_chunk['Affinity_Value_nM_Str']
 
-                            # --- 3. Identify Target Column ---
-                            possible_cols = [
-                                'Target ChEMBL ID derived from UniProt', 'UniProt (Primary ID of Target)',
-                                'Target UniProt ID', 'UniProt ID',
-                                'Target Name Assigned by Curator or DataSource', 'Target Name',
-                            ]
-                            protein_col = next((c for c in possible_cols if c in df_chunk.columns), None)
+                        # --- 3. Identify Target Column ---
+                        possible_cols = [
+                            'Target ChEMBL ID derived from UniProt', 'UniProt (Primary ID of Target)',
+                            'Target UniProt ID', 'UniProt ID',
+                            'Target Name Assigned by Curator or DataSource', 'Target Name',
+                        ]
+                        protein_col = next((c for c in possible_cols if c in df_chunk.columns), None)
 
-                            # Skip if missing critical columns
-                            if not protein_col or 'Ligand SMILES' not in df_chunk.columns:
-                                continue
+                        # Skip if missing critical columns
+                        if not protein_col or 'Ligand SMILES' not in df_chunk.columns:
+                            continue
 
-                                # Select final columns
-                            df_chunk = df_chunk[['Ligand SMILES', protein_col, 'Affinity_Str']]
-                            df_chunk.columns = ['drug_smiles', 'Target_name', 'Affinity_Str']
+                            # Select final columns
+                        df_chunk = df_chunk[['Ligand SMILES', protein_col, 'Affinity_Str']]
+                        df_chunk.columns = ['drug_smiles', 'Target_name', 'Affinity_Str']
 
-                            # --- 4. Clean Values & Labeling ---
-                            df_chunk['affinity_value_nm'] = df_chunk['Affinity_Str'].apply(self.clean_affinity_value)
+                        # --- 4. Clean Values & Labeling ---
+                        df_chunk['affinity_value_nm'] = df_chunk['Affinity_Str'].apply(self.clean_affinity_value)
 
-                            # FIX 1: Drop rows with missing SMILES or missing affinity
-                            df_chunk.dropna(subset=['affinity_value_nm', 'drug_smiles'], inplace=True)
+                        # FIX 1: Drop rows with missing SMILES or missing affinity
+                        df_chunk.dropna(subset=['affinity_value_nm', 'drug_smiles'], inplace=True)
 
-                            # FIX 2: Remove 0 or negative affinity values to prevent "inf" errors
-                            df_chunk = df_chunk[df_chunk['affinity_value_nm'] > 0].copy()
+                        # FIX 2: Remove 0 or negative affinity values to prevent "inf" errors
+                        df_chunk = df_chunk[df_chunk['affinity_value_nm'] > 0].copy()
 
-                            # Convert to pAffinity (-log10)
-                            # Now safe because affinity > 0
-                            df_chunk['p_affinity'] = -np.log10(df_chunk['affinity_value_nm'] * 1e-9)
+                        # Convert to pAffinity (-log10)
+                        # Now safe because affinity > 0
+                        df_chunk['p_affinity'] = -np.log10(df_chunk['affinity_value_nm'] * 1e-9)
 
-                            # Create Binary Labels (-1 = invalid, 0 = non-binder, 1 = binder)
-                            df_chunk['interaction'] = -1
-                            df_chunk.loc[df_chunk['p_affinity'] > BINDER_THRESHOLD_P, 'interaction'] = 1
-                            df_chunk.loc[df_chunk['p_affinity'] < NONBINDER_THRESHOLD_P, 'interaction'] = 0
+                        # Create Binary Labels (-1 = invalid, 0 = non-binder, 1 = binder)
+                        df_chunk['interaction'] = -1
+                        df_chunk.loc[df_chunk['p_affinity'] > BINDER_THRESHOLD_P, 'interaction'] = 1
+                        df_chunk.loc[df_chunk['p_affinity'] < NONBINDER_THRESHOLD_P, 'interaction'] = 0
 
-                            # Keep only valid 0 or 1
-                            df_chunk = df_chunk[df_chunk['interaction'].isin([0, 1])]
+                        # Keep only valid 0 or 1
+                        df_chunk = df_chunk[df_chunk['interaction'].isin([0, 1])]
 
-                            if not df_chunk.empty:
-                                processed_chunks.append(df_chunk)
+                        if not df_chunk.empty:
+                            processed_chunks.append(df_chunk)
 
         except FileNotFoundError:
             print(f"Error: TSV Zip file not found at {tsv_zip_path}")

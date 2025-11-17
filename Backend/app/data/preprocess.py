@@ -24,7 +24,7 @@ def main():
     df = pd.read_csv(input_path)
 
     # --- TEMPORARY: use a small subset to test ---
-    df = df.sample(frac=0.01, random_state=42)  # use 1% of the data randomly
+    df = df.sample(frac=0.02, random_state=42)  # use 2% of the data randomly
     # OR, for a fixed number of rows:
     # df = df.head(500)
 
