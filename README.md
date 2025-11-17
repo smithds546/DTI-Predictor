@@ -26,15 +26,11 @@ Use RdKIT to convert SMILES to MACCS keys
 
 
 Next Steps:
-    find paper that talks about negative sampling -  (Random negative smapling - HGDTI (2022))
-    find paper that talks about grey area - Bai et al. (2021)
-    find paper that talks about binding affinity thresholds - 
-    find paper that logs the binding affinity - 
     Generate a table or graph which shows the comparison between non-binders and binders
     get the numbers and create a table of all figures like that paper did.
     change the variable names so looks less AI.
-    need to calculate the grey area for binding threshold 
-    For evlaution:
+    is there a logical way to calculate the grey area for binding threshold 
+    For evalaution:
         could show difference between using logged binding affinity and not
         difference between using random negative sampling and not
         difference between using grey area and not
