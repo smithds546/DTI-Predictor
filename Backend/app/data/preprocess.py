@@ -11,7 +11,12 @@ import hashlib
 def main():
     print("Starting preprocessing...")
 
-    input_path = "/Users/drs/Projects/DTI/Backend/app/data/loaded/bindingdb_offline_processed_2025-11-10_16-15.csv"
+    loaded_dir = "/Users/drs/Projects/DTI/Backend/app/data/loaded/"
+    csv_files = [os.path.join(loaded_dir, f) for f in os.listdir(loaded_dir) if f.endswith(".csv")]
+    if not csv_files:
+        raise FileNotFoundError(f"No CSV files found in {loaded_dir}")
+    input_path = max(csv_files, key=os.path.getmtime)
+    print(f"Using most recent CSV: {os.path.basename(input_path)}")
     output_dir = "/Users/drs/Projects/DTI/Backend/app/data/preprocessed/"
     os.makedirs(output_dir, exist_ok=True)
 

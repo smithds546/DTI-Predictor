@@ -10,10 +10,11 @@ import re
 from pathlib import Path
 import zipfile
 import io
+import numpy as np
 
 # --- Parameters ---
-BINDER_THRESHOLD_NM = 800.0
-NONBINDER_THRESHOLD_NM = 5000.0
+BINDER_THRESHOLD_P = 7
+NONBINDER_THRESHOLD_P = 5.30
 CHUNK_SIZE = 100000              # Process 100k rows at a time
 
 class BindingDBLoader:
@@ -126,12 +127,40 @@ class BindingDBLoader:
                     for i, chunk in enumerate(pd.read_csv(f_text, sep='\t', on_bad_lines='skip', low_memory=False, chunksize=CHUNK_SIZE)):
                         print(f"  ... processing chunk {i+1} (approx {i*CHUNK_SIZE/1_000_000:.1f}M rows)")
 
-                        # Filter for Ki or Kd
-                        df_chunk = chunk[chunk['Ki (nM)'].notna() | chunk['Kd (nM)'].notna()].copy()
-                        if df_chunk.empty:
-                            continue
+                        species_cols = [
+                            'Target Species',
+                            'Target Organism',
+                            'Target Species Name',
+                            'Organism',
+                            'Target Source Organism',
+                            'Target Source Organism According to Curator or DataSource'  # <-- add this
+                        ]
+                        species_col = next((c for c in species_cols if c in chunk.columns), None)
 
-                        df_chunk['Affinity_Value_nM_Str'] = df_chunk['Ki (nM)'].fillna(df_chunk['Kd (nM)'])
+                        if species_col:
+                            chunk = chunk[chunk[species_col].str.contains("Homo sapiens", case=False, na=False)].copy()
+                        else:
+                            print(f"Warning: No species column found. Available columns: {list(chunk.columns)[:20]}")
+                        # --- Unified affinity extraction ---
+                        # Prefer Ki, fallback to Kd, then IC50, then EC50
+                        affinity_sources = [
+                            'Ki (nM)',
+                            'Kd (nM)',
+                            'IC50 (nM)',
+                            'EC50 (nM)'
+                        ]
+
+                        # Keep rows with ANY affinity present
+                        df_chunk = chunk[[src for src in affinity_sources if src in chunk.columns]].copy()
+                        df_chunk.dropna(how='all', subset=[src for src in affinity_sources if src in df_chunk.columns], inplace=True)
+
+                        # Build unified affinity string
+                        df_chunk['Affinity_Value_nM_Str'] = None
+                        for src in affinity_sources:
+                            if src in df_chunk.columns:
+                                df_chunk['Affinity_Value_nM_Str'] = df_chunk['Affinity_Value_nM_Str'].fillna(df_chunk[src])
+
+                        df_chunk['Affinity_Str'] = df_chunk['Affinity_Value_nM_Str']
 
                         # --- Identify the correct UniProt/Target ID column dynamically ---
                         possible_cols = [
@@ -150,18 +179,20 @@ class BindingDBLoader:
 
                         # Keep only necessary columns
                         df_chunk = df_chunk[['Ligand SMILES', protein_col, 'Affinity_Value_nM_Str']]
-                        df_chunk.columns = ['drug_smiles', 'protein_uniprot', 'Affinity_Str']
-                        df_chunk.dropna(subset=['drug_smiles', 'protein_uniprot', 'Affinity_Str'], inplace=True)
+                        df_chunk.columns = ['drug_smiles', 'Target_name', 'Affinity_Str']
+                        df_chunk.dropna(subset=['drug_smiles', 'Target_name', 'Affinity_Str'], inplace=True)
 
                         # Clean Affinity Values
                         df_chunk['affinity_value_nm'] = df_chunk['Affinity_Str'].apply(self.clean_affinity_value)
                         df_chunk.dropna(subset=['affinity_value_nm'], inplace=True)
+                        df_chunk['p_affinity'] = -np.log10(df_chunk['affinity_value_nm'] * 1e-9)
+
 
                         # Create Binary Labels
                         # -1 = invalid, 0 = non-binder, 1 = binder
                         df_chunk['interaction'] = -1
-                        df_chunk.loc[df_chunk['affinity_value_nm'] < BINDER_THRESHOLD_NM, 'interaction'] = 1
-                        df_chunk.loc[df_chunk['affinity_value_nm'] > NONBINDER_THRESHOLD_NM, 'interaction'] = 0
+                        df_chunk.loc[df_chunk['p_affinity'] > BINDER_THRESHOLD_P, 'interaction'] = 1
+                        df_chunk.loc[df_chunk['p_affinity'] < NONBINDER_THRESHOLD_P, 'interaction'] = 0
 
                         # Keep only the rows that meet our criteria (0 or 1)
                         df_chunk = df_chunk[df_chunk['interaction'].isin([0, 1])]
@@ -190,14 +221,14 @@ class BindingDBLoader:
         print(list(seq_dict.keys())[:10])
 
         print("\n--- Debug: Target names in dataset ---")
-        print(df_final['protein_uniprot'].dropna().unique()[:10])
+        print(df_final['Target_name'].dropna().unique()[:10])
 
         # 4. Map Sequences
         print("Mapping protein sequences...")
 
         # Try mapping by name (or UniProt if present)
-        if 'protein_uniprot' in df_final.columns:
-            df_final['protein_sequence'] = df_final['protein_uniprot'].map(seq_dict)
+        if 'Target_name' in df_final.columns:
+            df_final['protein_sequence'] = df_final['Target_name'].map(seq_dict)
         elif 'Target Name' in df_final.columns:
             df_final['protein_sequence'] = df_final['Target Name'].map(seq_dict)
         else:
@@ -208,7 +239,7 @@ class BindingDBLoader:
         print(f"Interactions with valid sequences: {len(df_final)}")
 
         # 5. Final Cleanup
-        df_final = df_final[['drug_smiles', 'protein_sequence', 'protein_uniprot', 'affinity_value_nm', 'interaction']].drop_duplicates()
+        df_final = df_final[['drug_smiles', 'protein_sequence', 'Target_name', 'p_affinity', 'interaction']].drop_duplicates()
         df_final.reset_index(drop=True, inplace=True)
 
         print("\n--- Dataset Build Complete ---")
@@ -239,12 +270,12 @@ def explore_dataset(df: pd.DataFrame):
         print(f"Unique drugs: {df['ligand_smiles'].nunique()}")
 
     print("\n--- Protein Statistics ---")
-    if 'protein_uniprot' in df.columns:
-        print(f"Unique proteins: {df['protein_uniprot'].nunique()}")
+    if 'Target_name' in df.columns:
+        print(f"Unique proteins: {df['Target_name'].nunique()}")
 
-    print("\n--- Affinity Statistics (nM) ---")
-    if 'affinity_value_nm' in df.columns:
-        print(df['affinity_value_nm'].describe())
+    print("\n--- Affinity Statistics (pAffinity) ---")
+    if 'p_affinity' in df.columns:
+        print(df['p_affinity'].describe())
 
     print("\n--- Missing Values ---")
     print(df.isnull().sum())
