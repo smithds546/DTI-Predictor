@@ -26,13 +26,22 @@ Use RdKIT to convert SMILES to MACCS keys
 
 
 Next Steps:
-    code front end using react framework in frontend folder
-    connect front end to backend using fastAPI 
+    check validity of prediction on frontend
     For evalaution:
         could show difference between using logged binding affinity and not
         difference between using random negative sampling and not
         difference between using grey area and not
     potentially look at training on chembl as well
+
+
+How to run frontend:
+
+gatsby develop
+
+How to run backend:
+
+cd /Users/drs/Projects/DTI/Backend
+uvicorn app.main:app --reload
 
 
 what Junie did:
