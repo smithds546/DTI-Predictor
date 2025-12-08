@@ -1,0 +1,10 @@
+[
+  {
+    "id": "e8010418-6e4c-4554-a8b7-e20797c202d6",
+    "drug": "Cc1nc(CN2CCN(CC2)c2c(Cl)cnc3[nH]c(nc23)-c2cn(C)nc2C)no1",
+    "protein": "Focal adhesion kinase 1",
+    "score": 0.3798935676569099,
+    "binder": false,
+    "timestamp": "2025-12-08T21:47:50.302795"
+  }
+]
