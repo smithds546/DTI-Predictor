@@ -2,11 +2,34 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import zipfile
 
 # === CONFIG ===
 # Point this to your ALREADY PROCESSED file if you have it,
 # or run this after running your dataLoader.
 INPUT_CSV = "/Users/drs/Projects/DTI/Backend/app/data/loaded/bindingdb_offline_processed_2025-11-17_20-05.csv"
+RAW_INPUT_CSV = "/Users/drs/Projects/DTI/Backend/app/data/raw/BindingDB_All_202511_tsv.zip"
+
+
+def load_raw_bindingdb(path):
+    if path.endswith(".zip"):
+        with zipfile.ZipFile(path, "r") as z:
+            tsv_name = [f for f in z.namelist() if f.endswith(".tsv")][0]
+            print("Extracting", tsv_name)
+            return pd.read_csv(
+                z.open(tsv_name),
+                sep="\t",
+                engine="python",
+                on_bad_lines="skip",
+                nrows=50000
+            )
+    else:
+        return pd.read_csv(
+            path,
+            sep="\t",
+            engine="python",
+            on_bad_lines="skip"
+        )
 
 
 def generate_stats():
@@ -64,5 +87,66 @@ def generate_stats():
     print("\nGraph saved as 'affinity_distribution.png'")
 
 
+def to_paffinity(value_nm):
+    try:
+        value_nm = float(value_nm)
+        return -np.log10(value_nm * 1e-9)
+    except:
+        return np.nan
+
+
+def corr_heatmap():
+    try:
+        df = load_raw_bindingdb(RAW_INPUT_CSV)
+    except Exception as e:
+        print("Error reading raw TSV:", e)
+        return
+
+    # === GENERATE CORRELATION HEATMAP FOR AFFINITY TYPES (Ki, Kd, IC50, EC50) ===
+
+    affinity_candidates = {
+        "Ki": ["Ki (nM)", "KI (nM)", "Ki", "Ki_nM"],
+        "Kd": ["Kd (nM)", "KD (nM)", "Kd", "Kd_nM"],
+        "IC50": ["IC50 (nM)", "IC50", "IC50_nM"],
+        "EC50": ["EC50 (nM)", "EC50", "EC50_nM"]
+    }
+
+    col_map = {}
+    for key, candidates in affinity_candidates.items():
+        for c in candidates:
+            if c in df.columns:
+                col_map[key] = c
+                break
+
+    if not col_map:
+        print("\nNo affinity columns found for correlation heatmap.")
+        return
+
+    print("\nGenerating correlation heatmap for affinity types:", col_map)
+
+    # Convert nM → pAffinity
+    sub = pd.DataFrame()
+    for aff_type, col in col_map.items():
+        sub[aff_type] = df[col].apply(to_paffinity)
+
+    corr = sub.corr()
+
+    plt.figure(figsize=(7, 6))
+    sns.heatmap(
+        corr,
+        annot=True,
+        cmap='coolwarm',
+        linewidths=0.5,
+        square=True,
+        vmin=-1,
+        vmax=1
+    )
+    plt.title("Correlation Between Affinity Types (pAffinity Scale)")
+    plt.tight_layout()
+    plt.savefig("affinity_correlation_heatmap.png", dpi=300)
+    print("Heatmap saved as 'affinity_correlation_heatmap.png'")
+
+
 if __name__ == "__main__":
     generate_stats()
+    corr_heatmap()

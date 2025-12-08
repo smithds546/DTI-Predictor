@@ -26,11 +26,8 @@ Use RdKIT to convert SMILES to MACCS keys
 
 
 Next Steps:
-    Generate a table or graph which shows the comparison between non-binders and binders
-    get the numbers and create a table of all figures like that paper did.
-    change the variable names so looks less AI.
-    is there a logical way to calculate the grey area for binding threshold 
-    use a heat correltion map to produce a heatmap of the different binding affinity sources (Ki, Kd, IC50, EC50)
+    code front end using react framework in frontend folder
+    connect front end to backend using fastAPI 
     For evalaution:
         could show difference between using logged binding affinity and not
         difference between using random negative sampling and not
@@ -38,4 +35,60 @@ Next Steps:
     potentially look at training on chembl as well
 
 
+what Junie did:
+
+### What I changed
+- Implemented a FastAPI backend with endpoints to predict binder/non-binder and to manage a history of predictions.
+- Replaced the default Gatsby starter homepage with a React-based DTI form that calls the FastAPI backend, shows the latest result, and lists previous searches.
+
+### Backend (FastAPI)
+- File added/updated: `Backend/app/main.py`
+  - Added endpoints:
+    - `GET /health` — health check
+    - `POST /predict` — takes `drug` and `protein`, returns `{binder, score, timestamp, ...}` and stores in history
+    - `GET /history` — returns the latest 100 predictions (most recent first)
+    - `DELETE /history` — clears stored history
+  - Enabled CORS for Gatsby dev (`http://localhost:8000`).
+  - Implemented lightweight, simple placeholder scoring (`simple_score`) with deterministic features to make the API functional while you wire in the real model.
+  - Implemented persistent JSON-backed history at `Backend/app/data/history.json` (auto-created). 
+
+Note: This backend scaffolding is designed so you can later replace `simple_score(drug, protein)` with a call to your trained model (e.g., load weights at startup and compute the real binder/non-binder probability and threshold at inference).
+
+### Frontend (Gatsby/React)
+- File updated: `Frontend/src/pages/index.js`
+  - Replaced the default starter page with a DTI Checker UI:
+    - Input form for `drug` and `protein`.
+    - On submit, calls `POST /predict`.
+    - Displays prediction (binder/non-binder) and score.
+    - Fetches and displays history from `GET /history`.
+    - Button to clear history via `DELETE /history`.
+  - API base URL is configurable: `GATSBY_API_BASE_URL` (defaults to `http://localhost:8001`).
+
+### How to run (local dev)
+1) Backend (FastAPI)
+- From project root:
+```
+cd Backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8001
+```
+- Check health: http://localhost:8001/health
+2) Frontend (Gatsby)
+- In another terminal:
+```
+cd Frontend
+# optionally: echo 'GATSBY_API_BASE_URL=http://localhost:8001' > .env.development
+npm install
+npm run develop
+```
+- Open UI: http://localhost:8000
+
+### Wiring the real model later
+- Replace the placeholder in `Backend/app/main.py`:
+  - Load your trained model on startup (e.g., in module scope or inside a FastAPI `startup` event), then implement `predict()` to compute a real probability `score` from the model using your drug/protein featurization.
+  - Keep returning `{binder: score >= threshold, score, ...}` to avoid frontend changes.
+
+### Notes
+- The history is limited to the latest 100 entries and persists to JSON. You can swap to SQLite/SQLModel later without changing the frontend.
+- CORS currently allows `http://localhost:8000` (Gatsby dev). Add production origin(s) as needed.
 
