@@ -1,10 +1,26 @@
 [
   {
-    "id": "e8010418-6e4c-4554-a8b7-e20797c202d6",
-    "drug": "Cc1nc(CN2CCN(CC2)c2c(Cl)cnc3[nH]c(nc23)-c2cn(C)nc2C)no1",
-    "protein": "Focal adhesion kinase 1",
-    "score": 0.3798935676569099,
+    "id": "5999e653-8b6f-4e0f-a308-15ecb2e140ed",
+    "drug": "CCC(=O)c1cnc(Nc2ccc(cn2)C(C)(C)N(C)C)cc1Nc1cccc(-c2ncn(C)n2)c1OC",
+    "protein": "Non-receptor tyrosine-protein kinase TYK2",
+    "score": 0.48001065984441826,
     "binder": false,
-    "timestamp": "2025-12-08T21:47:50.302795"
+    "timestamp": "2025-12-13T18:47:38.087203"
+  },
+  {
+    "id": "b079a1af-0741-4bdd-a322-6f88ddd17982",
+    "drug": "CC1(Cc2c(F)cncc2C(N)=N1)c1cc(NC(=O)c2ccc(cn2)C#N)ccc1F",
+    "protein": "Beta-secretase 1",
+    "score": 0.6010878788483698,
+    "binder": true,
+    "timestamp": "2025-12-13T18:48:07.401349"
+  },
+  {
+    "id": "0f63c0a2-ea9d-4210-a154-3e1a0608f4ca",
+    "drug": "OC(=O)c1ccc(\\C=C\\c2n[nH]c3cc(\\C=C4\\C(=O)Nc5ccccc45)ccc23)cc1",
+    "protein": "Serine/threonine-protein kinase PLK4",
+    "score": 0.3751935255315707,
+    "binder": false,
+    "timestamp": "2025-12-13T18:49:59.055361"
   }
 ]

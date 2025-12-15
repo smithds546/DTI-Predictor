@@ -26,7 +26,8 @@ Use RdKIT to convert SMILES to MACCS keys
 
 
 Next Steps:
-    check validity of prediction on frontend
+    change data to ingest drug name as well as the SMILES so its more usable for frontend.
+    add code snippets into paper
     For evalaution:
         could show difference between using logged binding affinity and not
         difference between using random negative sampling and not
