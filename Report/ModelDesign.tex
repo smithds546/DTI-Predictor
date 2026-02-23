@@ -27,7 +27,7 @@ The ground-truth labels $y \in \{0,1\}$ are derived from experimentally measured
 
 Classification was selected over regression to improve robustness against experimental noise and to focus learning on more definitive binding interactions. This formulation aligns with the intended application of the system, where the primary objective is to determine whether a candidate drug is likely to bind a given target rather than to predict an exact affinity value.
 
-The learning objective is therefore to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset, allowing the model to generalise to the unseen drug–target pairs.
+The learning objective is therefore to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset, allowing the model to generalise to the unseen drug-target pairs.
 
 \section{Integration of Input Representations}
 Drug to Target interaction predictions requires the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences. These representations differ in scale, semantic meaning and dimensionality making direct integration inappropriate. 
@@ -64,7 +64,7 @@ As with the drug encoder, the protein encoder operates as a fixed feature extrac
 \subsection{Fusion and Prediction Layer}
 Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model. The Binary MACCS fingerprint and the ProtBERT embedding are concatenated into a single vector representing the drug-target pair.
 
-This fused representation is passed to a lightweight neural network responsible for learning interaction-specific patterns. The final prediction layer applies a sigmoid activation function to produce a continuous interaction score in the range [0, 1], representing the model’s confidence that the given drug–target pair exhibits binding behavior.
+This fused representation is passed to a lightweight neural network responsible for learning interaction-specific patterns. The final prediction layer applies a sigmoid activation function to produce a continuous interaction score in the range [0, 1], representing the model's confidence that the given drug-target pair exhibits binding behavior.
 Binary classification is then performed by applying the binding thresholds defined in Chapter~\ref{chap:data-pipeline}, assigning each pair to either the binding or non-binding class.
 
 \section{Training Procedure}

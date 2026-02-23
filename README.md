@@ -24,10 +24,20 @@ Use ProtBERT for Feature Extraction of protein sequences
 
 Use RdKIT to convert SMILES to MACCS keys
 
+Evaluation of models:
+    1.	different train/test split
+    2.	different loss functions (mse vs bce)
+    3.	different thresholds
+    4.  different hyperparameters
+    5.  different weights and biases
 
 Next Steps:
-    change data to ingest drug name as well as the SMILES so its more usable for frontend.
-    add code snippets into paper
+    start improving and refining model until 21st Feb
+    refine UI layout and features until 28th Feb
+    write about changes until 5th March
+    Evaluation between models until 12th March + writing about the models
+    finish report until 1st April
+
     For evalaution:
         could show difference between using logged binding affinity and not
         difference between using random negative sampling and not
