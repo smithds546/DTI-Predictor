@@ -1,0 +1,200 @@
+\chapter{Introduction}
+\section{Project Brief}
+\subsection{Motivation}
+The pharmaceutical industry faces high costs and long development cycles in drug discovery, partly due to the challenge of identifying whether a novel compound can bind to a specific protein target. Machine learning (ML) provides a promising pathway for automating and accelerating this process by learning patterns from large bioactivity datasets. 
+\subsection{Objective}
+The aim is to develop a predictive machine learning system that will determine the likelihood of binding between a new drug-like molecule and a protein target in the early stages of the process. Hopefully, reducing the long development cycles the pharmaceutical industry faces in drug discovery by reducing the sample size early on.
+\subsection{Computational Approaches in DTI}
+Drug-Target-Interaction was primarily tested during wet lab experiments but the first \textit{in silico}, computational approach, took place in 1982 with molecular docking of 3D structures \citep{Ru2025InSilicoDTI}. A later advancement to this was the breakthrough of using machine learning models, which have become increasingly more popular since the early 2000's, being able to autonomously recognize patterns and relationships from data. Ever since its introduction there have been many attempts to use machine learning but real progress was made in 2018 \citep{Ozturk2018} when advanced deep learning models were created and tested, able to effectively learn representations from drug and protein sequence data.
+\subsection{Process}
+\subsubsection{Data Acquisition}
+To extract and process relevant bioactivity data from BindingDB, a public database containing thousands of chemical compounds and protein target binding data.
+\subsubsection{Feature Engineering}
+Converting Chemical Compounds to molecular footprints using RDKit and encoding protein targets to numerical vectors using ProtBERT. These processes differ because the biological information is encoded in completely different forms, thus requiring domain-specific feature engineering methods.
+\subsubsection{Model Development, Training \& Evaluation}
+The Neural Network will be developed and trained on the dataset to learn the underlying relationships that cause binders and non-binders. The model will be evaluated on validation metrics like AUC-ROC, AUC-PR, Precision@K and the Enrichment Factor. Based on these techniques, the Neural Network will be iteratively refined to reduce the error rate and improve accuracy. 
+\subsubsection{Develop User Interface}
+The Website for this project will be developed using the react framework to speed up the development process and to allow for easy modifications.
+The user interface will be designed to be simple, easy to navigate and only contain necessary information relevant to the workflow. 
+I want to display the result once the result is defined and the reasons why, history of comparisons made and the results, information of the drug and the protein and to give the user the ability to compare multiple chemical compounds against 1 protein to mimic wet lab work.
+\subsubsection{Tech Stack}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}lp{10cm}@{}}
+    \toprule
+    \textbf{Component} & \textbf{Technology / Library} \\
+    \midrule
+    Dataset & BindingDB  \\
+    \addlinespace
+    \midrule
+    Programming Language & Python \\
+    \addlinespace
+    \midrule
+    Data Processing & pandas, NumPy, scikit-learn \\
+    \addlinespace
+    \midrule
+    Drug Molecule Feature Engineering & RDKit (molecular fingerprints, SMILES parsing, descriptor extraction) \\
+    \addlinespace
+    \midrule
+    Protein Feature Engineering & ProtBERT (protein embeddings using transformer-based model) \\
+    \addlinespace
+    \midrule
+    Neural Network Framework & PyTorch (model definition, training, and evaluation) \\
+    \addlinespace
+    \midrule
+    Model Evaluation & Scikit-learn \\
+    \addlinespace
+    \midrule
+    User Interface & React (frontend framework for model interaction and visualization) \\
+    \addlinespace
+    \midrule
+    Backend API & FastAPI (model serving and communication with frontend) \\
+    \addlinespace
+    \midrule
+    Version Control & Git / GitHub \\
+    \addlinespace
+    \bottomrule
+    \end{tabular}
+    \caption{Technologies and tools used in the project.}
+    \label{tab:tech_stack}
+\end{table}
+
+\section{Feature List}
+This is where I will show you all the features I wish to include within my project and what part they play in the project.
+
+\subsection{Required}
+\subsubsection{Compare a single drug molecule to a single protein target}
+This will be the first and most basic functionality of the product as it will allow the user to search the ChEMBL database for a single drug molecule to test against a single protein target. 
+\subsubsection{Compare multiple drug molecules to a single protein target}
+I will achieve this by allowing the user to multi-select drug molecules or selecting a drug based on its standard type and relation to filter it into groups. This will give the user a closer feel for what wet-lab work could achieve.
+\subsubsection{Displaying previous tests}
+Having a section which displays what the user had previously tested is important as it would reserve computational resources for new combinations to compare, preventing the user from re-using the neural network to repeat a binding.
+
+
+\subsection{Nice-to-Have}
+\subsubsection{Produce indirect links into how they bind}
+Once the neural network has run and the result has been displayed to the user I would try and also include a brief explanation into why the network predicted what it predicted.
+\subsubsection{Displaying molecule and Protein information}
+Retrieving this relevant information from the ChEMBL database so the user can see more information about the compound-protein pair they have selected.
+
+
+
+\section{Scope \& Limitations}
+\subsection{Project Scope}
+To ensure a complete project and to counter issues that may spring up i will ensure that each milestone reached will provide a submittable piece of work that can be a good base to work off for the next stage:
+\subsubsection{Predicting drug–target interactions}
+Developing  model capable of making predictions of drug-target interactions by classifying them into binding/non-binding. 
+\subsubsection{Using neural networks for prediction}
+Implementing a training a neural network architecture to learn relationships between molecule and protein features, producing consistent and reliable predictions.
+\subsubsection{Including both chemical compound and protein sequence features}
+Extracting and integrating molecular descriptors or fingerprints for chemical compounds and sequence-based or embedding-based features for protein targets.
+\subsubsection{Implementing a web-based UI for result visualization and comparison}
+Creating a simple, React-based web application to visualize prediction results, allow compound–target comparisons, and provide basic interpretability.
+
+\subsection{Project Limitations}
+Here i will explain what is retracting from the project and preventing it from being as good as it could possibly be.
+\subsubsection{Data limitations}
+Due to the nature of the project i am resitricted to only using publicly available datasets (e.g. BindingDB, ChEMBL) that may have missing or biased data from their producers. Also the data set might not be complete missing vital information which could improve the models success rate.
+\subsubsection{Model limitations} Neural networks might not capture rare interactions or out-of-distribution compounds. Also neural networks don't take the structure of each molecule into account, i could also use a Graph neural network (GNN) however that gives me greater limitations computationally and data wise.
+\subsubsection{Computational constraints} 
+I am only limited to what i have exposure to and the model will be trained on my personal laptop so my computational resources may not be representational of what big pharma companies have access to, producing a considerable gap into what the industry could be exposed to.
+\subsubsection{UI limitations} 
+This is only a simple prototype so i'm not optimizing it for production scale but will make it suitable for a small team to use.
+\subsection{Assumptions}
+For this project i am assuming the only people using it will have sufficient prior knowledge within chemistry to use this product. I am assuming the data within ChEMBL is accurate and up to date.
+
+\section{Workflow}
+In this section i would like to display a visual representation on how i will take this project from start to finish.
+\subsection{System Overview}
+The system predicts potential interactions between chemical compounds and protein targets using a trained neural network. It processes input data, extracts numerical features, performs predictions, and displays the results through a web interface for comparison and interpretation
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{@{}lp{10cm}@{}}
+    \toprule
+    \textbf{Component} & \textbf{Description} \\
+    \midrule
+    Data Collection \& Preprocessing & Collecting compound and protein data from public databases such as BindingDB, and filtering it based on the required parameters. \\
+    \addlinespace
+    \midrule
+    Feature Engineering & Converting molecular structures and protein sequences into numerical feature representations such as fingerprints \& embeddings \\
+    \addlinespace
+    \midrule
+    Model training and Evaluation & Training a neural network on the processed dataset to pickup on relationships and evaluating the performance with metrics such as AUC-ROC and Precision@K \\
+    \addlinespace
+    \midrule
+    User interface & Displays the result, history and allows the user to customize their comparisons. Built with react for responsiveness and ease of use \\
+    \bottomrule
+    \end{tabular}
+    \caption{System components and their descriptions.}
+    \label{tab:system_components}
+\end{table}
+\subsection{Workflow Diagram}
+
+\begin{figure}[H]
+    \hspace{0.8725cm}
+    \begin{tikzpicture}[
+        % Define styles for the nodes
+        main_process/.style={rectangle, minimum width=4cm, minimum height=1cm, text centered, draw=black, fill=blue!30, line width=0.5pt, font=\bfseries},
+        sub_process/.style={rectangle, minimum width=3.5cm, minimum height=0.8cm, text centered, draw=black, fill=green!30, line width=0.5pt},
+        arrow/.style={-Latex, very thick, line width=1pt},
+        feedback/.style={-Latex, thick, dashed, line width=1pt, color=red!80!black} % For the testing loop
+    ]
+
+    % 1. Data Collection Node
+    \node (DC) [main_process, align=center] {Data Collection};
+
+    % 2. Feature Engineering Node (Parent)
+    \node (FE_Parent) [main_process, below=1.5cm of DC] {Feature Engineering};
+
+    % 3. Spiked-off Sub-nodes
+    \node (MF) [sub_process, below=1.25cm of FE_Parent, xshift=-2.75cm] {Molecular Fingerprints \\ (RDKit)};
+    \node (NV) [sub_process, below=1.25cm of FE_Parent, xshift=2.75cm] {Numerical Vectors \\ (ProtBERT)};
+
+    % 4. Model Training & Evaluation Node
+    % Positioning it below the midpoint of the sub-nodes
+    \node (MTE) [main_process, below=3.5cm of FE_Parent] {Model Training \\ \& Evaluation};
+
+    % 5. Web UI Deployment Node
+    \node (WEB) [main_process, below=1.5cm of MTE] {Web UI Deployment};
+
+
+    % --- Draw Arrows ---
+
+    % Step 1 -> Step 2
+    \draw [arrow] (DC) -- (FE_Parent);
+
+    % Step 2 Spiking Off
+    \draw [arrow] (FE_Parent) -- (MF);
+    \draw [arrow] (FE_Parent) -- (NV);
+
+    % Sub-nodes return to Step 3
+    \draw [arrow] (MF) -- (MTE);
+    \draw [arrow] (NV) -- (MTE);
+
+
+
+    % self loop:
+    \draw [feedback] (MTE.south west)
+        -- ++(-2cm, 0)
+        |- (MTE.north west)
+        node[midway, left=0cm, yshift=-0.5cm] {Testing};
+    
+
+
+
+    % Step 3 -> Step 4
+    \draw [arrow] (MTE) -- (WEB);
+
+    \end{tikzpicture}
+    \caption{Top-down project workflow illustrating parallel feature engineering and iterative model refinement.}
+    \label{fig:workflow_diagram_v2}
+\end{figure}
+
+\subsection{Project Timeline}
+Use of a Gantt chart to keep on top of things.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth, trim = 1cm 1cm 483.75cm 1cm, clip]{IC-12-Month-Project-Gantt-Chart.pdf}
+    \caption{Project Gantt chart showing major milestones and development phases.}
+    \label{fig:gantt_chart}
+\end{figure}
