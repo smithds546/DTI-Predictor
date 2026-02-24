@@ -22,5 +22,29 @@
     "score": 0.3751935255315707,
     "binder": false,
     "timestamp": "2025-12-13T18:49:59.055361"
+  },
+  {
+    "id": "69c5d321-dded-4eb6-b8cb-bcddd866778b",
+    "drug": "O=BO[B-](=O)O[B-](=O)OB=O",
+    "protein": "11-beta-hydroxysteroid dehydrogenase 1",
+    "score": 0.5621765008857981,
+    "binder": true,
+    "timestamp": "2025-12-16T18:23:06.283753"
+  },
+  {
+    "id": "f7e5b416-71cd-44e0-9049-db5c1a69f9fb",
+    "drug": "Cc1cc(CNS(=O)(=O)c2ccc(O)c(c2)C(O)=O)sc1C(=O)N[C@@H](CC(O)=O)C(=O)CSCc1ccccc1Cl |r|",
+    "protein": "Galactokinase",
+    "score": 0.40371730070321216,
+    "binder": false,
+    "timestamp": "2025-12-16T18:25:58.289175"
+  },
+  {
+    "id": "e0a2ee40-19b9-4e98-a92a-473f78af260e",
+    "drug": "c1coc(c1)-c1cc2nccnc2[nH]1",
+    "protein": "Serine hydrolase RBBP9",
+    "score": 0.2869998372477183,
+    "binder": false,
+    "timestamp": "2026-02-04T16:39:47.713285"
   }
 ]

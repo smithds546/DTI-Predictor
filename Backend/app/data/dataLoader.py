@@ -96,6 +96,37 @@ class BindingDBLoader:
         except ValueError:
             return None
 
+    def normalize_drug_name(self, name: str):
+        """
+        Normalize BindingDB ligand names for UI/autocomplete use.
+        Strategy:
+        - Handle nulls safely
+        - Split multi-alias names separated by '::'
+        - Prefer the shortest, most human-readable token
+        """
+        if name is None or pd.isna(name):
+            return None
+
+        name = str(name).strip()
+        if not name:
+            return None
+
+        # Split BindingDB multi-name entries
+        parts = [p.strip() for p in name.split("::") if p.strip()]
+
+        if not parts:
+            return None
+
+        # Prefer the shortest non-SMILES-like part
+        parts = sorted(parts, key=len)
+        for p in parts:
+            # crude SMILES detection: lots of symbols
+            if not re.search(r"[=#\[\]\(\)]", p):
+                return p
+
+        # Fallback to shortest part
+        return parts[0]
+
     def build_dataset_from_files(self, tsv_zip_name: str, fasta_name: str):
         """
         Main function to build the DTI dataset from local files.
@@ -171,19 +202,55 @@ class BindingDBLoader:
                         ]
                         protein_col = next((c for c in possible_cols if c in df_chunk.columns), None)
 
+                        # --- 3b. Identify Drug Name Column (best-effort) ---
+                        drug_name_col = "BindingDB Ligand Name" if "BindingDB Ligand Name" in df_chunk.columns else None
+
                         # Skip if missing critical columns
                         if not protein_col or 'Ligand SMILES' not in df_chunk.columns:
                             continue
 
-                            # Select final columns
-                        df_chunk = df_chunk[['Ligand SMILES', protein_col, 'Affinity_Str']]
-                        df_chunk.columns = ['drug_smiles', 'Target_name', 'Affinity_Str']
+                        # Select final columns
+                        keep_cols = ['Ligand SMILES', protein_col, 'Affinity_Str']
+                        if drug_name_col is not None:
+                            keep_cols.insert(1, drug_name_col)
+
+                        df_chunk = df_chunk[keep_cols].copy()
+
+                        # Normalize column names
+                        if drug_name_col is not None:
+                            df_chunk.columns = ['drug_smiles', 'drug_name', 'Target_name', 'Affinity_Str']
+                        else:
+                            df_chunk.columns = ['drug_smiles', 'Target_name', 'Affinity_Str']
+                            df_chunk['drug_name'] = None
 
                         # --- 4. Clean Values & Labeling ---
                         df_chunk['affinity_value_nm'] = df_chunk['Affinity_Str'].apply(self.clean_affinity_value)
 
                         # FIX 1: Drop rows with missing SMILES or missing affinity
                         df_chunk.dropna(subset=['affinity_value_nm', 'drug_smiles'], inplace=True)
+
+                        # Clean up drug name a bit
+                        df_chunk['drug_name'] = (
+                            df_chunk['drug_name']
+                            .astype(str)
+                            .where(df_chunk['drug_name'].notna(), None)
+                            .replace({"nan": None, "None": None})
+                        )
+                        if 'drug_name' in df_chunk.columns:
+                            df_chunk['drug_name'] = df_chunk['drug_name'].astype(object)
+                            df_chunk.loc[df_chunk['drug_name'].notna(), 'drug_name'] = (
+                                df_chunk.loc[df_chunk['drug_name'].notna(), 'drug_name']
+                                .astype(str)
+                                .str.strip()
+                            )
+                        # Fallback: ensure every row has a displayable drug identifier
+                        df_chunk['drug_name'] = df_chunk['drug_name'].fillna(df_chunk['drug_smiles'])
+
+                        # Normalize ligand names for usability (autocomplete/UI)
+                        df_chunk['drug_name'] = df_chunk['drug_name'].apply(self.normalize_drug_name)
+
+                        # Final fallback to SMILES if normalization removed name
+                        df_chunk['drug_name'] = df_chunk['drug_name'].fillna(df_chunk['drug_smiles'])
 
                         # FIX 2: Remove 0 or negative affinity values to prevent "inf" errors
                         df_chunk = df_chunk[df_chunk['affinity_value_nm'] > 0].copy()
@@ -242,7 +309,9 @@ class BindingDBLoader:
         print(f"Interactions with valid sequences: {len(df_final)}")
 
         # 5. Final Cleanup
-        df_final = df_final[['drug_smiles', 'protein_sequence', 'Target_name', 'p_affinity', 'interaction']].drop_duplicates()
+        df_final = df_final[
+            ['drug_name', 'drug_smiles', 'protein_sequence', 'Target_name', 'p_affinity', 'interaction']
+        ].drop_duplicates()
         df_final.reset_index(drop=True, inplace=True)
 
         print("\n--- Dataset Build Complete ---")
@@ -269,8 +338,10 @@ def explore_dataset(df: pd.DataFrame):
         print(f"Negative interactions (0): {(1 - df['interaction']).sum()} ({(1 - df['interaction'].mean()) * 100:.2f}%)")
 
     print("\n--- Drug Statistics ---")
-    if 'ligand_smiles' in df.columns:
-        print(f"Unique drugs: {df['ligand_smiles'].nunique()}")
+    if 'drug_smiles' in df.columns:
+        print(f"Unique drugs: {df['drug_smiles'].nunique()}")
+    if 'drug_name' in df.columns:
+        print(f"Unique drug names (non-null): {df['drug_name'].dropna().nunique()}")
 
     print("\n--- Protein Statistics ---")
     if 'Target_name' in df.columns:

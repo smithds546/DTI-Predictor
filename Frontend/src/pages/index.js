@@ -6,7 +6,8 @@ import * as styles from "../components/index.module.css"
 const API_BASE = process.env.GATSBY_API_BASE_URL || "http://127.0.0.1:8001"
 
 const IndexPage = () => {
-  const [drug, setDrug] = React.useState("")
+  const [drug, setDrug] = React.useState("") // what user sees/types (name)
+  const [drugSmiles, setDrugSmiles] = React.useState("") // what we submit
   const [protein, setProtein] = React.useState("")
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState("")
@@ -44,15 +45,15 @@ const IndexPage = () => {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/autocomplete/drug?q=${encodeURIComponent(value)}`);
-      const backendDataRaw = await res.json();
-      const backendData = Array.isArray(backendDataRaw) ? backendDataRaw : [];
-      setDrugSuggestions(backendData.length > 0 ? backendData : ["No results found"]);
+      const res = await fetch(`${API_BASE}/autocomplete/drug?q=${encodeURIComponent(value)}`)
+      const backendDataRaw = await res.json()
+      const backendData = Array.isArray(backendDataRaw) ? backendDataRaw : []
+      setDrugSuggestions(backendData.length > 0 ? backendData : [{ name: "No results found", smiles: "" }])
     } catch (err) {
-      console.error("Drug autocomplete failed:", err);
-      setDrugSuggestions(["No results found"]);
+      console.error("Drug autocomplete failed:", err)
+      setDrugSuggestions([{ name: "No results found", smiles: "" }])
     }
-  }, 300);
+  }, 300)
 
   const updateProteinSuggestions = useDebounce(async (value) => {
     if (!value) {
@@ -89,7 +90,11 @@ const IndexPage = () => {
     e.preventDefault()
     setError("")
     setResult(null)
-    if (!drug || !protein) {
+
+    const drugToSend = drugSmiles || drug // fallback if user pasted SMILES manually
+
+
+    if (!drugToSend || !protein) {
       setError("Please enter both a drug and a protein.")
       return
     }
@@ -98,7 +103,7 @@ const IndexPage = () => {
       const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ drug, protein }),
+        body: JSON.stringify({ drug: drugToSend, protein }),
       })
       if (!res.ok) {
         const msg = await res.text()
@@ -137,8 +142,10 @@ const IndexPage = () => {
                 type="text"
                 value={drug}
                 onChange={(e) => {
-                  setDrug(e.target.value);
-                  updateDrugSuggestions(e.target.value);
+                  const v = e.target.value
+                  setDrug(v)
+                  setDrugSmiles("") // user is typing again, clear selected smiles
+                  updateDrugSuggestions(v)
                 }}
                 placeholder="e.g., Imatinib"
                 style={{ width: "100%", padding: 8 }}
@@ -157,20 +164,41 @@ const IndexPage = () => {
                     overflowY: "auto"
                   }}
                 >
-                  {drugSuggestions.map((d, idx) => (
-                    <li
-                      key={idx}
-                      style={{ cursor: "pointer", padding: "6px 10px", borderBottom: "1px solid #eee" }}
-                      onClick={() => { if(d !== "No results found") { setDrug(d); setDrugSuggestions([]); } }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#f0f4ff"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "white"}
-                    >
-                      <span dangerouslySetInnerHTML={{ __html: d === "No results found" ? d : highlightMatch(d, drug) }} />
-                    </li>
-                  ))}
+                  {drugSuggestions.map((d, idx) => {
+                    const display = d?.name || d?.smiles || "Unknown"
+                    const isNoResult = display === "No results found"
+
+                    return (
+                      <li
+                        key={idx}
+                        style={{ cursor: "pointer", padding: "6px 10px", borderBottom: "1px solid #eee" }}
+                        onClick={() => {
+                          if (isNoResult) return
+                          setDrug(display)
+                          setDrugSmiles(d.smiles || "")
+                          setDrugSuggestions([])
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f0f4ff")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                        title={d?.smiles ? `SMILES: ${d.smiles}` : ""}
+                      >
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: isNoResult ? display : highlightMatch(display, drug),
+                          }}
+                        />
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
+              {drugSmiles && (
+                <small style={{ color: "#666", display: "block", marginTop: 6 }}>
+                  Using selected SMILES for prediction.
+                </small>
+              )}
             </label>
+
             <label>
               <div>Protein</div>
               <input
@@ -226,12 +254,11 @@ const IndexPage = () => {
         {result && (
           <div style={{ border: "1px solid #ddd", padding: 16, borderRadius: 8, marginBottom: 24 }}>
             <h3>Result</h3>
-            <div><b>Drug:</b> {result.drug}</div>
+            <div><b>Drug (input):</b> {drug}</div>
+            <div><b>Drug (sent):</b> {drugSmiles || result.drug}</div>
             <div><b>Protein:</b> {result.protein}</div>
             <div><b>Score:</b> {typeof result.score === "number" ? result.score.toFixed(4) : result.score}</div>
-            <div>
-              <b>Prediction:</b> {result.binder ? "Binder" : "Non-binder"}
-            </div>
+            <div><b>Prediction:</b> {result.binder ? "Binder" : "Non-binder"}</div>
             <div><b>Time:</b> {new Date(result.timestamp).toLocaleString()}</div>
           </div>
         )}

@@ -4,17 +4,17 @@ from basic import NeuralNetwork
 
 def main():
     # --- Load prepped data ---
-    X_drug_train = np.load("/Users/drs/Projects/DTI/Backend/app/data/prepped/drugs/drug_train.npy")
-    X_prot_train = np.load("/Users/drs/Projects/DTI/Backend/app/data/prepped/proteins/prot_train.npy")
-    y_train = pd.read_csv("/Users/drs/Projects/DTI/Backend/app/data/prepped/bindingdb/bindingdb_train.csv")["interaction"].values.reshape(-1, 1)
+    X_drug_train = np.load("/Backend/app/data/prepped/drugs/drug_train.npy")
+    X_prot_train = np.load("/Backend/app/data/prepped/proteins/prot_train.npy")
+    y_train = pd.read_csv("/Backend/app/data/prepped/bindingdb/bindingdb_train.csv")["interaction"].values.reshape(-1, 1)
 
-    X_drug_val = np.load("/Users/drs/Projects/DTI/Backend/app/data/prepped/drugs/drug_val.npy")
-    X_prot_val = np.load("/Users/drs/Projects/DTI/Backend/app/data/prepped/proteins/prot_val.npy")
-    y_val = pd.read_csv("/Users/drs/Projects/DTI/Backend/app/data/prepped/bindingdb/bindingdb_validation.csv")["interaction"].values.reshape(-1, 1)
+    X_drug_val = np.load("/Backend/app/data/prepped/drugs/drug_val.npy")
+    X_prot_val = np.load("/Backend/app/data/prepped/proteins/prot_val.npy")
+    y_val = pd.read_csv("/Backend/app/data/prepped/bindingdb/bindingdb_validation.csv")["interaction"].values.reshape(-1, 1)
 
-    X_drug_test = np.load("//Users/drs/Projects/DTI/Backend/app/data/prepped/drugs/drug_test.npy")
-    X_prot_test = np.load("/Users/drs/Projects/DTI/Backend/app/data/prepped/proteins/prot_test.npy")
-    y_test = pd.read_csv("/Users/drs/Projects/DTI/Backend/app/data/prepped/bindingdb/bindingdb_test.csv")["interaction"].values.reshape(-1, 1)
+    X_drug_test = np.load("/Backend/app/data/prepped/drugs/drug_test.npy")
+    X_prot_test = np.load("/Backend/app/data/prepped/proteins/prot_test.npy")
+    y_test = pd.read_csv("/Backend/app/data/prepped/bindingdb/bindingdb_test.csv")["interaction"].values.reshape(-1, 1)
 
     # --- Initialize network ---
     INPUT_SIZE_DRUG = X_drug_train.shape[1]
