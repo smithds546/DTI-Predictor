@@ -13,6 +13,9 @@ from sklearn.metrics import (
 
 from basic import NeuralNetwork
 
+# ── Reproducibility ────────────────────────────────────────────────────────
+np.random.seed(42)
+
 # ── consistent colour for the basic model across all dissertation figures ──
 MODEL_COLOUR = "#4C72B0"   # muted blue
 SAVE_DIR     = "figures"   # all figures saved here
@@ -56,7 +59,6 @@ def save_confusion_matrix(y_true, y_pred, save_path):
     ax.set_ylabel("True Label", fontsize=11)
     ax.set_title("Normalised Confusion Matrix — Basic NumPy Model", fontsize=12)
 
-    # Annotate each cell with the proportion value
     thresh = 0.5
     for i in range(2):
         for j in range(2):
@@ -79,7 +81,6 @@ def save_metrics_table(metrics_dict, save_path):
     display_names = ["Accuracy", "AUC-ROC", "PR-AUC", "F1", "Precision", "Recall"]
     splits        = list(metrics_dict.keys())
 
-    # Build cell values
     cell_text = []
     for m in metric_order:
         row = [f"{metrics_dict[split][m]:.4f}" for split in splits]
@@ -98,12 +99,10 @@ def save_metrics_table(metrics_dict, save_path):
     table.set_fontsize(11)
     table.scale(1.3, 1.6)
 
-    # Header row styling
     for j, _ in enumerate(splits):
         table[0, j].set_facecolor("#4C72B0")
         table[0, j].set_text_props(color="white", fontweight="bold")
 
-    # Row label styling
     for i in range(len(metric_order)):
         table[i + 1, -1].set_facecolor("#f0f4f8")
 
@@ -153,29 +152,70 @@ def main():
     HIDDEN_SIZE   = 32
     LEARNING_RATE = 0.5
     EPOCHS        = 1000
+    PATIENCE      = 15    # stop if val_loss doesn't improve for this many epochs
 
     model = NeuralNetwork(
         X_drug_train.shape[1], X_prot_train.shape[1],
         HIDDEN_SIZE, 1, LEARNING_RATE
     )
 
+    # ── Early stopping state ───────────────────────────────────────────────
+    best_val_loss     = np.inf
+    epochs_no_improve = 0
+    best_weights      = None   # snapshot of weights at best val_loss
+
     # ── Training loop ──────────────────────────────────────────────────────
-    # NOTE: loss curve intentionally NOT saved for the basic model —
-    # full-batch MSE training produces a trivially smooth curve that adds
-    # no analytical value. The overfitting story is better told with
-    # the DNN's train/val curves in later sections.
-    print(f"Training for {EPOCHS} epochs...")
+    print(f"Training for up to {EPOCHS} epochs (patience={PATIENCE}, metric=val_loss)...")
+
     for epoch in range(EPOCHS):
+        # Forward + backward + weight update (full-batch)
         model.forward(X_drug_train, X_prot_train)
         dW1, db1, dW2, db2 = model.backward(y_train)
         model.update_weights(dW1, db1, dW2, db2)
 
+        # Compute losses every epoch for early stopping check
+        train_loss = np.mean((model.y_hat - y_train) ** 2)
+        val_pred   = model.predict(X_drug_val, X_prot_val)
+        val_loss   = np.mean((val_pred - y_val) ** 2)
+
         if (epoch + 1) % 100 == 0:
-            train_loss = np.mean((model.y_hat - y_train) ** 2)
-            val_pred   = model.predict(X_drug_val, X_prot_val)
-            val_loss   = np.mean((val_pred - y_val) ** 2)
             print(f"  Epoch {epoch+1:>4}/{EPOCHS}  "
-                  f"train_loss={train_loss:.6f}  val_loss={val_loss:.6f}")
+                  f"train_loss={train_loss:.6f}  val_loss={val_loss:.6f}  "
+                  f"no_improve={epochs_no_improve}/{PATIENCE}")
+
+        # ── Early stopping logic ───────────────────────────────────────────
+        #
+        # If val_loss improves  → save a snapshot of the current weights
+        #                          and reset the patience counter.
+        # If val_loss stagnates → increment the counter. Once it hits
+        #                          PATIENCE, training stops and the best
+        #                          snapshot is restored before evaluation.
+        #
+        # This prevents the model being evaluated in an overfit state
+        # and mirrors the early stopping used in the PyTorch DNN, making
+        # the comparison fair.
+        #
+        if val_loss < best_val_loss:
+            best_val_loss     = val_loss
+            epochs_no_improve = 0
+            best_weights = (
+                model.W1.copy(), model.b1.copy(),
+                model.W2.copy(), model.b2.copy(),
+            )
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= PATIENCE:
+                print(f"\nEarly stopping triggered at epoch {epoch + 1} "
+                      f"(val_loss did not improve for {PATIENCE} epochs).")
+                print(f"Best val_loss: {best_val_loss:.6f}")
+                break
+
+    # ── Restore best weights before evaluation ─────────────────────────────
+    # Ensures we report metrics for the best-generalising checkpoint,
+    # not the final (potentially overfit) epoch state.
+    if best_weights is not None:
+        model.W1, model.b1, model.W2, model.b2 = best_weights
+        print(f"\nRestored best weights (val_loss = {best_val_loss:.6f})")
 
     # ── Predict on all splits ──────────────────────────────────────────────
     train_probs = model.predict(X_drug_train, X_prot_train).ravel()
@@ -204,19 +244,16 @@ def main():
     # ── Generate and save figures ──────────────────────────────────────────
     print("\nGenerating figures...")
 
-    # 1. ROC Curve (test set)
     save_roc_curve(
         y_test_flat, test_probs,
         save_path=f"{SAVE_DIR}/basic_roc_curve.png"
     )
 
-    # 2. Normalised Confusion Matrix (test set)
     save_confusion_matrix(
         y_test_flat, test_preds,
         save_path=f"{SAVE_DIR}/basic_confusion_matrix.png"
     )
 
-    # 3. Metrics Table (all splits)
     save_metrics_table(
         {"Train": train_metrics, "Validation": val_metrics, "Test": test_metrics},
         save_path=f"{SAVE_DIR}/basic_metrics_table.png"
