@@ -30,35 +30,26 @@ Within this section, we will outline the components of our evaluation methodolog
         \item Precision
         \item Recall (Sensitivity)
         \item Accuracy
+        \item Confusion Matrix
     \end{itemize}
 
 Accuracy is a fundamental metric that measures the performance by finding out the ratio between correct predictions and all predictions.
 This alon would be meaningless because in an imbalanced dataset, a model could achieve high accuracy by simply predicting the majority class.
 Precision and recall are crucial in the context of DTI prediction, where false positives (predicting a drug-target interaction that does not exist) can lead to wasted resources in experimental validation, while false negatives (failing to predict a true interaction) can result in missed opportunities for drug discovery.
-
-    % Explain each metric and WHY it is appropriate for DTI:
-    %   - AUROC: threshold-independent ranking quality
-    %   - PR-AUC / AUPRC: important when class imbalance is present
-    %   - F1: balances precision and recall
-    %   - Precision / Recall (Sensitivity): cost of false positives vs
-    %     false negatives in a drug-screening context
-    %   - Accuracy: included for completeness / comparability
-    % (~150 words)
+The F1 score balances precision and recall into a single metric, providing a more holistic view of model performance.
+Area Under Curve (AUC) metrics, including AUROC and PR-AUC, are threshold-independent measures that evaluate the model's ability to rank positive instances higher than negative ones, visualising both precision-recall and true positive rate-false positive rate trade-offs across all possible thresholds.
+Finally the confusion matrix provides a detailed breakdown of true positives, false positives, true negatives, and false negatives, allowing for a granular analysis of model performance.
 
     \subsection{Data Splits and Reproducibility}
     \label{sec: eval_splits}
-    % Describe your fixed 70/20/10 train/val/test split.
-    % Contrast with the 10-fold cross-validation used by DeepCDA / MINDG.
-    % Explicitly state this means literature numbers are approximate
-    % reference points, not direct benchmarks.
-    % (~150 words)
+We are using a fixed 70/20/10 split of the bindingDB data for our training, validation, and test sets.
+However, this is contrasting a 10-fold cross-validation approach used by DeepCDA and MINDG, which means that the reported metrics from those papers are not directly comparable to our results, but rather serve as approximate reference points.
+To address all possible corridors of evaluation we will also adjust the data splits to assess any changes in performance.
 
     \subsection{Decision Threshold}
     \label{sec: eval_threshold}
-    % Justify the use of 0.5 as default threshold.
-    % Note that Section~\ref{sec:data_threshold} investigates sensitivity
-    % to this choice.
-    % (~100 words)
+    Another important aspect of our evaluation is the choice of decision threshold for classifying predictions as positive or negative interactions.
+We have opted for ... and ... with a grey area of ... as mentioned in~\ref{sec: data_threshold}, however to imporve the robustness of our model we will experiment with these figures to fully evaluate the model.
 
 % ============================================================
 \section{Model Evaluation}
