@@ -1,23 +1,286 @@
-\chapter{Model Evaluation}
+% ============================================================
+% EVALUATION SECTION — Drug-Target Interaction Dissertation
+% ============================================================
+% Suggested total word count: 2,500 – 3,500 words
+% Figures are not counted in word totals at most institutions —
+% use them generously.
+% ============================================================
 
-\section{Evaluation Overview}
-\section{Experimental Setup}
-\subsection{Hardware}
-\subsection{Software}
+\chapter{Evaluation}
+\label{sec: evaluation}
 
-\section{Evaluation Metrics}
-\subsection{Classification Metrics}
-\subsection{Receiver Operating Characteristic (ROC-AUC)}
-\subsection{Precision-Recall Analysis}
+Here we will evaluate the performance of our drug-target interaction (DTI) prediction models across multiple iterations of development.
+We will compare our final model against a PyTorch-based deep neural network (DNN) implementation and against reported metrics from the literature, specifically the DeepCDA model evaluated on the BindingDB dataset.
+Our evaluation will be structured around three key axes: model progression through iterative improvements, sensitivity to data and decision thresholds, and computational performance across hardware platforms.
+Through this comprehensive evaluation, we aim to demonstrate the effectiveness of our modeling choices and identify areas for future improvement.
 
-\section{Baseline Comparison}
+% ============================================================
+\section{Evaluation Methodology}
+\label{sec: eval_methodology}
+% (~200 words)
+% Justify your choices BEFORE presenting results.
+Within this section, we will outline the components of our evaluation methodology, including the metrics we will use to assess model performance, the data splits for training and testing, and the rationale behind our choice of decision threshold for classification.
+    \subsection{Metrics}
+    \label{sec: eval_metrics}
+    To evaluate our models, we will find out the following metrics from the training, validation ,and test set predictions:
+    \begin{itemize}
+        \item Area Under the Receiver Operating Characteristic Curve (AUROC)
+        \item Area Under the Precision-Recall Curve (PR-AUC)
+        \item F1 Score
+        \item Precision
+        \item Recall (Sensitivity)
+        \item Accuracy
+    \end{itemize}
 
-\section{Main Results}
+Accuracy is a fundamental metric that measures the performance by finding out the ratio between correct predictions and all predictions.
+This alon would be meaningless because in an imbalanced dataset, a model could achieve high accuracy by simply predicting the majority class.
+Precision and recall are crucial in the context of DTI prediction, where false positives (predicting a drug-target interaction that does not exist) can lead to wasted resources in experimental validation, while false negatives (failing to predict a true interaction) can result in missed opportunities for drug discovery.
 
-\section{Error Analysis}
+    % Explain each metric and WHY it is appropriate for DTI:
+    %   - AUROC: threshold-independent ranking quality
+    %   - PR-AUC / AUPRC: important when class imbalance is present
+    %   - F1: balances precision and recall
+    %   - Precision / Recall (Sensitivity): cost of false positives vs
+    %     false negatives in a drug-screening context
+    %   - Accuracy: included for completeness / comparability
+    % (~150 words)
 
-\section{Generalization and Limitations}
+    \subsection{Data Splits and Reproducibility}
+    \label{sec: eval_splits}
+    % Describe your fixed 70/20/10 train/val/test split.
+    % Contrast with the 10-fold cross-validation used by DeepCDA / MINDG.
+    % Explicitly state this means literature numbers are approximate
+    % reference points, not direct benchmarks.
+    % (~150 words)
 
-\section{Comparison with Existing Work}
+    \subsection{Decision Threshold}
+    \label{sec: eval_threshold}
+    % Justify the use of 0.5 as default threshold.
+    % Note that Section~\ref{sec:data_threshold} investigates sensitivity
+    % to this choice.
+    % (~100 words)
 
-\section{Summary}
+% ============================================================
+\section{Model Evaluation}
+\label{sec:model_eval}
+% This is the core of the evaluation section.
+% (~1,400 – 1,800 words across all sub-sections)
+
+    % --------------------------------------------------------
+
+    \subsection{Experimental Setup}
+    \label{sec: eval_setup}
+    % Briefly describe training procedure
+    % (e.g. number of epochs, early stopping criteria, hardware used)
+
+
+    \subsection{Baseline: Basic NumPy Model}
+    \label{sec: eval_basic}
+    % (~200 words + figures)
+    %
+    % Content:
+    %   - Report test metrics in a table (accuracy, AUROC, F1, precision, recall)
+    %   - Confusion matrix heatmap (Figure)
+    %   - ROC curve (add to the running overlay figure)
+    %   - Discuss limitations: MSE loss, sigmoid activations, single hidden
+    %     layer, no regularisation, full-batch SGD
+    %   - State what the model DOES establish as a lower bound
+    %
+    % Suggested figures:
+    %   \figure — Confusion matrix (basic model)
+    %   \figure — ROC curve (basic model only, to be extended)
+
+    \subsection{Iteration 1: Loss Function and Weight Initialisation}
+    \label{sec: eval_iter1}
+    % (~250 words + figures)
+    %
+    % Change made: MSE → Binary Cross-Entropy loss + He/Xavier weight init
+    %
+    % Content:
+    %   - Explain WHY BCE is more appropriate for binary classification
+    %     (probabilistic interpretation, gradient behaviour near 0/1)
+    %   - Explain WHY weight initialisation matters (symmetry breaking,
+    %     vanishing gradient at start of training)
+    %   - Report metrics table (same format as baseline)
+    %   - Show training loss curve (train vs val) — compare to baseline
+    %   - Discuss what improved and why, with reference to theory
+    %   - Note: only ONE change made — attribute improvement precisely
+    %
+    % Suggested figures:
+    %   \figure — Training loss curve: Baseline vs Iteration 1
+    %   \figure — Updated ROC overlay (baseline + It1)
+
+    \subsection{Iteration 2: Architecture Depth and Activation Functions}
+    \label{sec: eval_iter2}
+    % (~250 words + figures)
+    %
+    % Change made: Add second hidden layer, increase hidden size,
+    %              sigmoid → ReLU activations
+    %
+    % Content:
+    %   - Explain vanishing gradient problem with sigmoid in deep networks
+    %   - Explain how ReLU addresses this (sparse activation, constant gradient)
+    %   - Discuss representational capacity gained from added depth
+    %   - Report metrics table
+    %   - Show whether overfitting increases (train vs val gap)
+    %   - Compare confusion matrices between It1 and It2
+    %
+    % Suggested figures:
+    %   \figure — Confusion matrix comparison: It1 vs It2
+    %   \figure — Updated ROC overlay (baseline + It1 + It2)
+
+    \subsection{Iteration 3: Regularisation and Mini-Batch Training}
+    \label{sec: eval_iter3}
+    % (~250 words + figures)
+    %
+    % Change made: Add Dropout + Batch Normalisation + mini-batch SGD
+    %
+    % Content:
+    %   - Explain dropout: randomly zeroing activations prevents co-adaptation
+    %   - Explain batch normalisation: stabilises training, implicit regularisation
+    %   - Explain mini-batch: better gradient estimates, faster convergence
+    %   - Show that train/val gap reduces (overfitting addressed)
+    %   - Report metrics table
+    %   - Threshold sensitivity plot (precision, recall, F1 vs threshold)
+    %     — motivate use of 0.5 or argue for an alternative
+    %
+    % Suggested figures:
+    %   \figure — Threshold sensitivity plot
+    %   \figure — Training loss curves showing reduced overfitting vs It2
+
+    % --------------------------------------------------------
+    \subsection{Full Model Progression Summary}
+    \label{sec: eval_progression}
+    % (~200 words + figures)
+    %
+    % Content:
+    %   - Single table: all models side by side across all metrics
+    %   - Grouped bar chart: all models × all metrics
+    %   - Overlay ROC curve: all iterations on one plot
+    %   - Discuss the trend — where did the biggest gains come from?
+    %   - Identify which change had the most impact and why
+    %
+    % Suggested figures:
+    %   \figure — Grouped bar chart (all iterations, all metrics)
+    %   \figure — ROC curve overlay (all iterations)
+    %   \figure — AUC progression line graph (iteration number vs AUROC)
+
+    % --------------------------------------------------------
+    \subsection{Hyperparameter Sensitivity Analysis}
+    \label{sec: eval_hyperparams}
+    % (~200 words + figures)
+    %
+    % Apply to at least the final iterated model and the PyTorch DNN.
+    % Suggested hyperparameters to vary:
+    %   - Learning rate
+    %   - Hidden layer size / dropout rate
+    %   - Batch size (PyTorch DNN only)
+    %
+    % Content:
+    %   - Small grid or line plot for each hyperparameter vs AUROC
+    %   - Discuss sensitivity: is the model robust or brittle to these choices?
+    %   - Report the final chosen values and justify them
+    %
+    % Suggested figures:
+    %   \figure — Hyperparameter sensitivity plots (line graphs)
+
+% ============================================================
+\section{Comparison Against PyTorch DNN}
+\label{sec: eval_pytorch}
+% (~300 words + figures)
+%
+% Content:
+%   - Introduce the PyTorch DNN as a "modern best practices" reference:
+%     dual-branch encoders, BatchNorm, ReLU, Adam, BCE, early stopping
+%   - Present side-by-side metrics table: Final iterated model vs DNN
+%   - Discuss performance gap (or lack thereof) — what does the DNN do
+%     that your iterated model does not, and does it matter?
+%   - Compare model complexity: parameter counts, training time
+%   - Discuss the tradeoff: interpretability / simplicity vs performance
+%
+% Suggested figures:
+%   \figure — Radar / spider chart: Final model vs PyTorch DNN
+%   \figure — Training time vs AUROC scatter (all models)
+
+% ============================================================
+\section{Comparison Against Literature Baseline (DeepCDA)}
+\label{sec: eval_deepcda}
+% (~300 words)
+%
+% Content:
+%   - Briefly describe DeepCDA architecture (cite paper)
+%   - Present their reported BindingDB metrics from the MINDG comparison table
+%   - EXPLICITLY acknowledge methodological differences:
+%       * Their evaluation: 10-fold cross-validation
+%       * Your evaluation: fixed train/val/test split
+%       * State this means comparison is indicative, not definitive
+%   - Compare your best model's metrics against DeepCDA's reported values
+%   - Discuss where your model is competitive and where it falls short
+%   - Reference MINDG as state-of-the-art upper bound (no direct comparison)
+%
+% Suggested figures:
+%   \figure — Radar chart: Your best model vs DeepCDA vs MINDG (reported values)
+
+% ============================================================
+\section{Data Sensitivity Analysis}
+\label{sec: eval_data}
+% (~300 words + figures)
+
+    \subsubsection{Effect of Training Set Size}
+    \label{sec: eval_sample_size}
+    % (~150 words + figure)
+    %
+    % Experiment: Train final model on subsets of training data
+    %             (e.g. 10%, 25%, 50%, 75%, 100%) and record test AUROC
+    %
+    % Content:
+    %   - Learning curve plot (training size vs AUROC)
+    %   - Discuss: does performance plateau? Would more data help?
+    %   - Implications for real-world DTI data collection
+    %
+    % Suggested figures:
+    %   \figure — Learning curve (sample size vs AUROC)
+
+    \subsection{Effect of Decision Threshold}
+    \label{sec: data_threshold}
+    % (~150 words + figure)
+    %
+    % Experiment: Vary decision threshold from 0.1 to 0.9 on final model
+    %
+    % Content:
+    %   - Plot precision, recall, and F1 vs threshold
+    %   - Identify the threshold that maximises F1
+    %   - Discuss domain context: in drug screening, is recall or
+    %     precision more important? (missing a drug vs wasting lab resources)
+    %   - State whether 0.5 is the optimal choice for this problem
+    %
+    % Suggested figures:
+    %   \figure — Precision / Recall / F1 vs decision threshold
+
+% ============================================================
+\section{Computational Performance}
+\label{sec: eval_compute}
+% (~200 words + table)
+%
+% Content:
+%   - Table: model × {parameter count, training time, inference time}
+%   - Compare laptop vs lab computer training times for final model
+%   - Discuss whether results are reproducible across hardware
+%   - Frame argument: a simpler model that trains in minutes on a laptop
+%     vs a complex model requiring GPU hours — relevant for resource-limited
+%     research settings
+%
+% Suggested figures:
+%   \figure — Bar chart: training time per model
+
+% ============================================================
+\section{Evaluation Summary}
+\label{sec: eval_summary}
+% (~150 words)
+%
+% A brief closing paragraph that:
+%   - Restates which model performed best and by what margin
+%   - Identifies the single most impactful improvement across iterations
+%   - Acknowledges limitations of the evaluation (split differences,
+%     single dataset, no external validation set)
+%   - Leads naturally into the Conclusion section
