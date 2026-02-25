@@ -38,7 +38,7 @@ This alon would be meaningless because in an imbalanced dataset, a model could a
 Precision and recall are crucial in the context of DTI prediction, where false positives (predicting a drug-target interaction that does not exist) can lead to wasted resources in experimental validation, while false negatives (failing to predict a true interaction) can result in missed opportunities for drug discovery.
 The F1 score balances precision and recall into a single metric, providing a more holistic view of model performance.
 Area Under Curve (AUC) metrics, including AUROC and PR-AUC, are threshold-independent measures that evaluate the model's ability to rank positive instances higher than negative ones, visualising both precision-recall and true positive rate-false positive rate trade-offs across all possible thresholds.
-Finally the confusion matrix provides a detailed breakdown of true positives, false positives, true negatives, and false negatives, allowing for a granular analysis of model performance. \citep{geeksforgeeks}
+Finally the confusion matrix provides a detailed breakdown of true positives, false positives, true negatives, and false negatives, allowing for a granular analysis of model performance. \citep{geeksforgeeks_metrics_2025}.
 
     \subsection{Data Splits and Reproducibility}
     \label{sec: eval_splits}
@@ -49,7 +49,7 @@ To address all possible corridors of evaluation we will also adjust the data spl
     \subsection{Decision Threshold}
     \label{sec: eval_threshold}
     Another important aspect of our evaluation is the choice of decision threshold for classifying predictions as positive or negative interactions.
-We have opted for ... and ... with a grey area of ... as mentioned in~\ref{sec: data_threshold}, however to imporve the robustness of our model we will experiment with these figures to fully evaluate the model.
+We have opted for ... and ... with a grey area of ... as mentioned in~\ref{sec: data_threshold} however, to imporve the robustness of our model we will experiment with these figures to fully evaluate the model.
 
 % ============================================================
 \section{Model Evaluation}
@@ -61,7 +61,7 @@ Here we will begin the evaluation of our models, opening with a basic NumPy impl
 
     \subsection{Experimental Setup}
     \label{sec: eval_setup}
-Before we venture further it's good to determine our setup, we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
+Before we venture further it's good to determine our setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
 We will train each model with maximum of 1000 epochs, but will implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
     % Briefly describe training procedure
     % (e.g. number of epochs, early stopping criteria, hardware used)
