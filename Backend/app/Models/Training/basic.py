@@ -65,7 +65,7 @@ class NeuralNetwork:
         self.output_size = output_size
         self.learning_rate = learning_rate
 
-        # Small random initialisation
+        # Initialize weights with small random values to break symmetry
         self.W1 = np.random.randn(self.input_size, hidden_size) * 0.01
         self.b1 = np.zeros((1, hidden_size))
         self.W2 = np.random.randn(hidden_size, output_size) * 0.01

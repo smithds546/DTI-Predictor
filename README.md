@@ -32,18 +32,16 @@ Evaluation of models:
     5.  different weights and biases
 
 Next Steps:
-    Make 1st model BCE to start
-    Write about it and collect correct data again
-    experiment and add section about hyperparameter tuning on the data
+    -> experiment and add section about hyperparameter tuning on the data
     
     Decide 1st iteration changes and make them
-    Collect data and write about changes made
+    Collect data and -> write about changes made
     
     Decide 2nd iteration changes and make them
-    Collect data and write about changes made
+    Collect data and -> write about changes made
     
     Decide 3rd iteration changes and make them
-    Collect data and write about changes made
+    Collect data and -> write about changes made
 
 
 

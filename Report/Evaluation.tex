@@ -17,7 +17,7 @@ Through this comprehensive evaluation, we aim to demonstrate the effectiveness o
 \label{sec: eval_methodology}
 % (~200 words)
 % Justify your choices BEFORE presenting results.
-Within this section, we will outline the components of our evaluation methodology, including the metrics we will use to assess model performance, the data splits for training and testing, and the rationale behind our choice of decision threshold for classification.
+Within this section, we will outline the components of our evaluation methodology, including the metrics we will use to assess model performance, the data splits for training and testing, and the rationale behind our choice of a decision threshold for classification.
     \subsection{Metrics}
     \label{sec: eval_metrics}
     To evaluate our models, we will find out the following metrics from the training, validation ,and test set predictions:
@@ -69,7 +69,7 @@ We will train each model with maximum of 1000 epochs, but will implement early s
     \label{sec: eval_basic}
     % (~200 words + figures)
     To establish a baseline for our DTI prediction task, we implemented a simple feedforward neural network using only NumPy.
-    This model consists of a single hidden layer with sigmoid activations, which is also present on the output layer, and it is trained using mean squared error (MSE) loss.
+    This model consists of a single hidden layer with sigmoid activations, which is also present on the output layer, and it is trained using Binary Cross-Entropy (BCE) loss.
     We trained the model with these settings:
   \begin{table}[H]
   \centering
@@ -87,7 +87,7 @@ We will train each model with maximum of 1000 epochs, but will implement early s
   \quad Dropout              & \textemdash \\
   \midrule
   \textit{Training} \\
-  \quad Loss function        & MSE \\
+  \quad Loss function        & BCE \\
   \quad Optimiser            & \textemdash \\
   \quad Learning rate        & 0.5 \\
   \quad Weight decay         & \textemdash \\
@@ -115,10 +115,47 @@ A strong recall is important for drug disovery, as missing a true drug-target in
 The AUROC of $\sim$0.73 suggests that the model has a reasonable ability to distinguish between binders and non-binders, although there is certainly room for improvement.
 The Precision score of $\sim$0.71 indicates that when the model predicts a positive interaction, it is correct ~71\% of the time, which is decent but could lead to some false positives that would require experimental validation.
 
+    \subsubsection{Hyperparamter tuning}
+To further evaluate the baseline model, we conducted a hyperparameter tuning experiment by varying the learning rate and hidden layer size.
+We found that with a learning rate of (OPTIMAL LEARNING RATE) and a hidden layer size of OPTIMAL HIDDEN LAYER SIZE, the model achieved the best performance on the validation set, which is why we selected these values for our baseline model.
+These results are shown in the following figure comparing each combination of hyperparameters:
+
+xx - > add figure here
+
     \subsection{Iteration 1: Training Procedure advancements}
     \label{sec: eval_iter1}
 After seeing how our very basic model performed, we have decided to make progressive changes to the training procedure to improve performance.
-To start with we will
+        \subsubsection{Minibatch Gradient Descent}
+To start with we will add minibatch gradient descent because it can provide more stable and efficient updates compared to full batch training, especially on larger datasets.
+After making the change we saw a change to the metrics shown below:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/figures/iter1_metrics_table.png}
+    \caption{Iteration 1 model performance across key metrics.}
+    \label{fig:iter1_metrics_table}
+\end{figure}
+The addition of mini-batch gradient descent improved recall substantially at the cost of a small drop in precision, reflecting the noisier gradient updates - a known trade-off that the subsequent iterations will aim to address.
+And a different loss curve compared to the baseline, this change is because the model is now updating its weights more frequently, which can lead to faster convergence and a smoother loss curve compared to the baseline's full batch training.
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/basic/figures/basic_loss_curve.png}
+        \caption*{Baseline (Full-batch GD)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/figures/iter1_loss_curve.png}
+        \caption*{Iteration 1 (Mini-batch GD)}
+    \end{minipage}
+    \caption{Training loss curves comparing the baseline to Iteration 1.}
+    \label{fig:loss_curve_comparison}
+\end{figure}
+During the training of the baseline model, we can observe a significant instability spike.
+This is a characteristic of full-batch gradient descent with an aggressive learning rate.
+Mini-batch gradient descent eliminates this instability by providing more frequent updates, which allows the model to adjust its weights more smoothly and avoid large jumps in the loss landscape.
+This results in a more stable training process, as evidenced by the smoother loss curve in Iteration 1 compared to the baseline.
 
     % (~250 words + figures)
     %
@@ -138,7 +175,7 @@ To start with we will
     %   \figure — Training loss curve: Baseline vs Iteration 1
     %   \figure — Updated ROC overlay (baseline + It1)
 
-    \subsection{Iteration 2: Architecture Depth and Activation Functions}
+    \subsection{Iteration 2: Architecture Advancements}
     \label{sec: eval_iter2}
     % (~250 words + figures)
     %
@@ -157,7 +194,7 @@ To start with we will
     %   \figure — Confusion matrix comparison: It1 vs It2
     %   \figure — Updated ROC overlay (baseline + It1 + It2)
 
-    \subsection{Iteration 3: Regularisation and Mini-Batch Training}
+    \subsection{Iteration 3: New framework}
     \label{sec: eval_iter3}
     % (~250 words + figures)
     %
