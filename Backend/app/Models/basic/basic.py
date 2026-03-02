@@ -22,18 +22,23 @@ def sigmoid_derivative(x):
 
 # --- Loss Function and its Derivative ---
 
-def mean_squared_error(y_true, y_pred):
+def binary_cross_entropy(y_true, y_pred):
     """
-    Mean Squared Error loss: L = (1/N) * sum((y_true - y_pred)^2)
+    Binary Cross-Entropy loss: L = -(1/N) * sum(y*log(p) + (1-y)*log(1-p))
+    Predictions are clipped to avoid log(0).
     """
-    return np.mean(np.power(y_true - y_pred, 2))
+    y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)
+    return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
 
 
-def mean_squared_error_derivative(y_true, y_pred):
+def binary_cross_entropy_derivative(y_true, y_pred):
     """
-    Derivative of MSE loss with respect to y_pred: dL/dy_pred = 2 * (y_pred - y_true) / N
+    Derivative of BCE with respect to y_pred: dL/dy_pred = -(y/p - (1-y)/(1-p)) / N
+    Note: when composed with sigmoid output, this simplifies to (y_pred - y_true)
+    in the backward pass (the sigmoid derivative cancels out).
     """
-    return 2 * (y_pred - y_true) / y_true.size
+    y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)
+    return -(y_true / y_pred - (1 - y_true) / (1 - y_pred)) / y_true.size
 
 
 class NeuralNetwork:
@@ -113,9 +118,12 @@ class NeuralNetwork:
 
         # --- 1. Calculate Gradients for Output Layer (W2, b2) ---
 
-        # Error at the output layer
-        # We use (y_hat - y) * sigmoid_derivative(z2)
-        delta_output = (self.y_hat - y) * sigmoid_derivative(self.z2)
+        # Error at the output layer.
+        # BCE loss composed with sigmoid output simplifies elegantly:
+        # dBCE/dz2 = dBCE/dy_hat * dy_hat/dz2
+        #           = [(y_hat - y) / (y_hat*(1-y_hat))] * [y_hat*(1-y_hat)]
+        #           = y_hat - y   (sigmoid derivative cancels out)
+        delta_output = self.y_hat - y
 
         # Gradient for W2: dE/dW2 = A1.T * delta_output
         dW2 = np.dot(self.a1.T, delta_output)
@@ -167,7 +175,7 @@ class NeuralNetwork:
             y_hat = self.forward(X_drug_train, X_protein_train)
 
             # 2. Calculate Loss (for monitoring)
-            loss = mean_squared_error(y_train, y_hat)
+            loss = binary_cross_entropy(y_train, y_hat)
 
             # 3. Backward Pass (Calculate Gradients)
             # We no longer pass X, as the concatenated X is stored in self.X_concat

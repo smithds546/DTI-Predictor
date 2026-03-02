@@ -11,7 +11,7 @@ from sklearn.metrics import (
     average_precision_score,
 )
 
-from basic import NeuralNetwork
+from basic import NeuralNetwork, binary_cross_entropy
 
 # ── Reproducibility ────────────────────────────────────────────────────────
 np.random.seed(42)
@@ -174,9 +174,9 @@ def main():
         model.update_weights(dW1, db1, dW2, db2)
 
         # Compute losses every epoch for early stopping check
-        train_loss = np.mean((model.y_hat - y_train) ** 2)
+        train_loss = binary_cross_entropy(y_train, model.y_hat)
         val_pred   = model.predict(X_drug_val, X_prot_val)
-        val_loss   = np.mean((val_pred - y_val) ** 2)
+        val_loss   = binary_cross_entropy(y_val, val_pred)
 
         if (epoch + 1) % 100 == 0:
             print(f"  Epoch {epoch+1:>4}/{EPOCHS}  "
@@ -246,17 +246,17 @@ def main():
 
     save_roc_curve(
         y_test_flat, test_probs,
-        save_path=f"{SAVE_DIR}/basic_roc_curve.png"
+        save_path=f"{SAVE_DIR}/basic_BCE_roc_curve.png"
     )
 
     save_confusion_matrix(
         y_test_flat, test_preds,
-        save_path=f"{SAVE_DIR}/basic_confusion_matrix.png"
+        save_path=f"{SAVE_DIR}/basic_BCE_confusion_matrix.png"
     )
 
     save_metrics_table(
         {"Train": train_metrics, "Validation": val_metrics, "Test": test_metrics},
-        save_path=f"{SAVE_DIR}/basic_metrics_table.png"
+        save_path=f"{SAVE_DIR}/basic_BCE_metrics_table.png"
     )
 
     print(f"\nAll figures saved to ./{SAVE_DIR}/")

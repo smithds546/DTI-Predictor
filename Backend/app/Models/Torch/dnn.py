@@ -9,7 +9,7 @@ followed by a joint MLP interaction predictor.
   Protein (1024-dim ProtBERT) ► prot_encoder ──► 128-dim
                                                          ►  predictor ──► logit
 
-Design choices (vs. basic.py baseline):
+Design choices (vs. ReLu.py baseline):
   - Separate encoders let each modality learn its own representation.
   - Batch normalisation stabilises training and acts as implicit regularisation.
   - ReLU replaces sigmoid in hidden layers (avoids vanishing gradients in depth).

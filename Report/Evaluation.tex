@@ -1,6 +1,4 @@
-% ============================================================
-% EVALUATION SECTION — Drug-Target Interaction Dissertation
-% ============================================================
+% ====================================/Users/drs/Projects/DTI/Backend/app/Models/basic/figures/basic_BCE_metrics_table=======================================
 % Suggested total word count: 2,500 – 3,500 words
 % Figures are not counted in word totals at most institutions —
 % use them generously.
@@ -48,14 +46,14 @@ To address all possible corridors of evaluation we will also adjust the data spl
 
     \subsection{Decision Threshold}
     \label{sec: eval_threshold}
-    Another important aspect of our evaluation is the choice of decision threshold for classifying predictions as positive or negative interactions.
-We have opted for ... and ... with a grey area of ... as mentioned in~\ref{sec: data_threshold} however, to imporve the robustness of our model we will experiment with these figures to fully evaluate the model.
+Another important aspect of our evaluation is the choice of decision threshold for classifying predictions as positive or negative interactions.
+We have opted for pAffinity value \> 7.0 determining binder and pAffinity value \< 5.3 determining non-binder with a grey area of 1.70 pAffinity units as mentioned in~\ref{sec: data_threshold}.
+However to improve the robustness of our model, we will experiment with these figures to fully evaluate the model.
 
 % ============================================================
 \section{Model Evaluation}
 \label{sec:model_eval}
 Here we will begin the evaluation of our models, opening with a basic NumPy implementation and iteratively improving it through changes to the loss function, architecture, and training procedure.
-% (~1,400 – 1,800 words across all sub-sections)
 
     % --------------------------------------------------------
 
@@ -70,21 +68,58 @@ We will train each model with maximum of 1000 epochs, but will implement early s
     \subsection{Baseline: Basic NumPy Model}
     \label{sec: eval_basic}
     % (~200 words + figures)
-    %
-    % Content:
-    %   - Report test metrics in a table (accuracy, AUROC, F1, precision, recall)
-    %   - Confusion matrix heatmap (Figure)
-    %   - ROC curve (add to the running overlay figure)
-    %   - Discuss limitations: MSE loss, sigmoid activations, single hidden
-    %     layer, no regularisation, full-batch SGD
-    %   - State what the model DOES establish as a lower bound
-    %
-    % Suggested figures:
-    %   \figure — Confusion matrix (basic model)
-    %   \figure — ROC curve (basic model only, to be extended)
+    To establish a baseline for our DTI prediction task, we implemented a simple feedforward neural network using only NumPy.
+    This model consists of a single hidden layer with sigmoid activations, which is also present on the output layer, and it is trained using mean squared error (MSE) loss.
+    We trained the model with these settings:
+  \begin{table}[H]
+  \centering
+  \caption{Hyperparameter selection in the NumPy baseline.
+           Dashes (\textemdash) indicate features absent from the baseline model.}
+  \label{tab:hyperparams}
+  \begin{tabular}{lc}
+  \toprule
+  \textbf{Parameter} & \textbf{Basic (NumPy)} \\
+  \midrule
+  \textit{Architecture} \\
+  \quad Hidden size          & 32 \\
+  \quad Activation           & Sigmoid \\
+  \quad Batch normalisation  & \textemdash \\
+  \quad Dropout              & \textemdash \\
+  \midrule
+  \textit{Training} \\
+  \quad Loss function        & MSE \\
+  \quad Optimiser            & \textemdash \\
+  \quad Learning rate        & 0.5 \\
+  \quad Weight decay         & \textemdash \\
+  \quad Batch size           & Full batch \\
+  \quad Max epochs           & \textemdash \\
+  \midrule
+  \textit{Regularisation} \\
+  \quad Early stopping       & \textemdash \\
+  \quad LR scheduler         & \textemdash \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
 
-    \subsection{Iteration 1: Loss Function and Weight Initialisation}
+After training this baseline model, we evaluated its performance against the validation and test sets.
+The results of key metrics are summarised in the following graph:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/basic/figures/basic_BCE_metrics_table.png}
+    \caption{Baseline model performance across key metrics.}
+    \label{fig:basic_metrics_table}
+\end{figure}
+The data in this table shows strong consistency across splits, which is a sign of minimal overfitting and deals well with unseen data.
+A recall of $\sim$0.83 indicates that this model is good at catching positive cases, which is important when predicting a false negative is costly.
+A strong recall is important for drug disovery, as missing a true drug-target interaction could mean overlooking a potential binding candidate.
+The AUROC of $\sim$0.73 suggests that the model has a reasonable ability to distinguish between binders and non-binders, although there is certainly room for improvement.
+The Precision score of $\sim$0.71 indicates that when the model predicts a positive interaction, it is correct ~71\% of the time, which is decent but could lead to some false positives that would require experimental validation.
+
+    \subsection{Iteration 1: Training Procedure advancements}
     \label{sec: eval_iter1}
+After seeing how our very basic model performed, we have decided to make progressive changes to the training procedure to improve performance.
+To start with we will
+
     % (~250 words + figures)
     %
     % Change made: MSE → Binary Cross-Entropy loss + He/Xavier weight init

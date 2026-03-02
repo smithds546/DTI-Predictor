@@ -32,11 +32,20 @@ Evaluation of models:
     5.  different weights and biases
 
 Next Steps:
-    start improving and refining model until 21st Feb
-    refine UI layout and features until 28th Feb
-    write about changes until 5th March
-    Evaluation between models until 12th March + writing about the models
-    finish report until 1st April
+    Make 1st model BCE to start
+    Write about it and collect correct data again
+    experiment and add section about hyperparameter tuning on the data
+    
+    Decide 1st iteration changes and make them
+    Collect data and write about changes made
+    
+    Decide 2nd iteration changes and make them
+    Collect data and write about changes made
+    
+    Decide 3rd iteration changes and make them
+    Collect data and write about changes made
+
+
 
     For evalaution:
         could show difference between using logged binding affinity and not

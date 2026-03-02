@@ -244,7 +244,7 @@ def main():
     print_metrics("Test",       test_metrics)
 
     # ------------------------------------------------------------------
-    # 5. Comparison summary (to copy next to basic.py results)
+    # 5. Comparison summary (to copy next to ReLu.py results)
     # ------------------------------------------------------------------
     print("\n" + "=" * 60)
     print("COMPARISON SUMMARY")
