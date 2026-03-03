@@ -10,8 +10,9 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 
+from sklearn.metrics import roc_curve, roc_auc_score
 from basic import NeuralNetwork, binary_cross_entropy
-from utils  import compute_metrics, load_metrics, save_loss_curve, save_metrics_table
+from utils  import compute_metrics, load_metrics, save_loss_curve, save_loss_curve_overlay, save_metrics_table
 
 np.random.seed(42)
 
@@ -90,19 +91,35 @@ def main():
             print(f"    {k:<12}: {v:.4f}")
 
     # ── Figures ───────────────────────────────────────────────────────────
-    # Save test metrics for iter3 to diff against
     import json
     with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
 
+    # Compute and save ROC data for iter3 overlay
+    test_probs = model.predict(X_drug_test, X_prot_test).ravel()
+    y_true     = y_test.ravel().astype(int)
+    fpr, tpr, _ = roc_curve(y_true, test_probs)
+    auc          = roc_auc_score(y_true, test_probs)
+    with open(f"{SAVE_DIR}/{PREFIX}_roc_data.json", "w") as f:
+        json.dump({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": auc}, f)
+
     print("\nGenerating figures...")
     baseline = load_metrics(f"{SAVE_DIR}/iter1_test_metrics.json", label="iter1.py")
 
-    save_loss_curve(
-        train_losses, val_losses,
-        title=f"Loss Curve — {LABEL}",
-        save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
-    )
+    prev = load_metrics(f"{SAVE_DIR}/iter1_losses.json", label="iter1.py")
+    if prev:
+        save_loss_curve_overlay(
+            prev["train"], prev["val"], train_losses, val_losses,
+            prev_label="Iter 1", curr_label="Iter 2",
+            title=f"Loss Curve — Iter 1 vs {LABEL}",
+            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
+        )
+    else:
+        save_loss_curve(
+            train_losses, val_losses,
+            title=f"Loss Curve — {LABEL}",
+            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
+        )
     save_metrics_table(
         {"Train": train_metrics, "Validation": val_metrics, "Test": test_metrics},
         title=f"Performance Metrics — {LABEL}",

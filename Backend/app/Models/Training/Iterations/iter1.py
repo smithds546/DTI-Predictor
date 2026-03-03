@@ -90,10 +90,12 @@ def main():
             print(f"    {k:<12}: {v:.4f}")
 
     # ── Figures ───────────────────────────────────────────────────────────
-    # Save test metrics for iter2 to diff against
     import json
     with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
+    # Save loss history for iter2 overlay
+    with open(f"{SAVE_DIR}/{PREFIX}_losses.json", "w") as f:
+        json.dump({"train": train_losses, "val": val_losses}, f)
 
     print("\nGenerating figures...")
     basic_path = os.path.join(os.path.dirname(__file__),

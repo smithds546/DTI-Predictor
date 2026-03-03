@@ -10,8 +10,9 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 
+from sklearn.metrics import roc_curve, roc_auc_score
 from basic import NeuralNetwork, binary_cross_entropy
-from utils  import compute_metrics, load_metrics, save_loss_curve, save_metrics_table
+from utils  import compute_metrics, load_metrics, save_loss_curve, save_roc_curve_overlay, save_metrics_table
 
 np.random.seed(42)
 
@@ -94,6 +95,16 @@ def main():
     import json
     with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
+    # Save loss history for iter4 overlay
+    with open(f"{SAVE_DIR}/{PREFIX}_losses.json", "w") as f:
+        json.dump({"train": train_losses, "val": val_losses}, f)
+
+    # Compute ROC data for this iteration
+    import json
+    test_probs  = model.predict(X_drug_test, X_prot_test).ravel()
+    y_true      = y_test.ravel().astype(int)
+    fpr, tpr, _ = roc_curve(y_true, test_probs)
+    auc          = roc_auc_score(y_true, test_probs)
 
     print("\nGenerating figures...")
     baseline = load_metrics(f"{SAVE_DIR}/iter2_test_metrics.json", label="iter2.py")
@@ -103,6 +114,17 @@ def main():
         title=f"Loss Curve — {LABEL}",
         save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
     )
+
+    prev_roc = load_metrics(f"{SAVE_DIR}/iter2_roc_data.json", label="iter2.py")
+    if prev_roc:
+        save_roc_curve_overlay(
+            prev_roc["fpr"], prev_roc["tpr"], prev_roc["auc"],
+            fpr.tolist(), tpr.tolist(), auc,
+            prev_label="Iter 2", curr_label="Iter 3",
+            title=f"ROC Curve — Iter 2 vs {LABEL}",
+            save_path=f"{SAVE_DIR}/{PREFIX}_roc_curve.png",
+        )
+
     save_metrics_table(
         {"Train": train_metrics, "Validation": val_metrics, "Test": test_metrics},
         title=f"Performance Metrics — {LABEL}",

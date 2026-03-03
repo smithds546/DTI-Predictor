@@ -115,12 +115,28 @@ A strong recall is important for drug disovery, as missing a true drug-target in
 The AUROC of $\sim$0.73 suggests that the model has a reasonable ability to distinguish between binders and non-binders, although there is certainly room for improvement.
 The Precision score of $\sim$0.71 indicates that when the model predicts a positive interaction, it is correct ~71\% of the time, which is decent but could lead to some false positives that would require experimental validation.
 
-    \subsubsection{Hyperparamter tuning}
+    \subsubsection{Hyperparameter tuning}
 To further evaluate the baseline model, we conducted a hyperparameter tuning experiment by varying the learning rate and hidden layer size.
-We found that with a learning rate of (OPTIMAL LEARNING RATE) and a hidden layer size of OPTIMAL HIDDEN LAYER SIZE, the model achieved the best performance on the validation set, which is why we selected these values for our baseline model.
-These results are shown in the following figure comparing each combination of hyperparameters:
-
-xx - > add figure here
+After doing a sweep of learning rate and hidden size comparing these values together, we retreived these graphs comparing the difference in each parameter:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/basic/figures/sweep_lr_loss_curve.png}
+        \caption*{Learning Rate Sweep}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/basic/figures/sweep_hidden_metrics.png}
+        \caption*{Hidden Layer Size Sweep}
+    \end{minipage}
+    \caption{Hyperparameter tuning results for the baseline model.}
+    \label{fig:hyperparam_sweep}
+\end{figure}
+From the learning rate sweep we learned that 0.1 achieves the same result as 0.5 but with a smoother loss curve, which is a sign of more stable training.
+From the hidden layer size sweep we learned that accuracy and F1 score are stable across all hidden sizes and AUC-ROC only improves marginally.
+This suggests the basic model has reached a boundary in performance imposed by its single layer-architecture, and that further improvements will likely require architectural changes rather than just tuning hyperparameters.
 
     \subsection{Iteration 1: Training Procedure advancements}
     \label{sec: eval_iter1}
@@ -157,23 +173,85 @@ This is a characteristic of full-batch gradient descent with an aggressive learn
 Mini-batch gradient descent eliminates this instability by providing more frequent updates, which allows the model to adjust its weights more smoothly and avoid large jumps in the loss landscape.
 This results in a more stable training process, as evidenced by the smoother loss curve in Iteration 1 compared to the baseline.
 
-    % (~250 words + figures)
-    %
-    % Change made: MSE → Binary Cross-Entropy loss + He/Xavier weight init
-    %
-    % Content:
-    %   - Explain WHY BCE is more appropriate for binary classification
-    %     (probabilistic interpretation, gradient behaviour near 0/1)
-    %   - Explain WHY weight initialisation matters (symmetry breaking,
-    %     vanishing gradient at start of training)
-    %   - Report metrics table (same format as baseline)
-    %   - Show training loss curve (train vs val) — compare to baseline
-    %   - Discuss what improved and why, with reference to theory
-    %   - Note: only ONE change made — attribute improvement precisely
-    %
-    % Suggested figures:
-    %   \figure — Training loss curve: Baseline vs Iteration 1
-    %   \figure — Updated ROC overlay (baseline + It1)
+    \subsubsection{He initialisation}
+To accompany minibatch gradient descent we will also add He initialisation to break the symmetry and prevent vanishing gradients at the start of training \citep{CITE WHOEVER SAID THIS}.
+He initialisation works by setting the initial weights of the network using this equation:
+\begin{equation}
+    W \sim \mathcal{N}\left(0, \sqrt{\frac{2}{n_{\text{in}}}}\right)
+\end{equation}
+where $n_{\text{in}}$ is the number of input units in the layer.
+This method is particularly effective for layers with ReLU activations, as it helps maintain the variance of the activations throughout the network, which can lead to faster convergence and improved performance.
+He initialisation was designed for ReLU activations specifically; applying it alongside sigmoid hidden units is a deliberate intermediate step, as ReLU hidden activations are introduced in the following iteration.
+Nonetheless, the variance-preserving property of He initialisation still offers an improvement over naive small weight initialisation ($\times 0.01$) regardless of activation function.
+These small improvements can be seen within these metrics and comaprison of loss curves:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter2_metrics_table.png}
+        \caption
+        {Iteration 2 model performance across key metrics.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter2_loss_curve.png}
+        \caption{Training loss curves comparing Iteration 1 to Iteration 2.}
+    \end{minipage}
+    \caption{Iteration 2 improvements.}
+    \label{fig:iter2_improvements}
+\end{figure}
+The improvements from Iteration 1 to Iteration 2 are modest but consistent across all metrics.
+
+    \subsubsection{ReLu activations}
+To further improve the training stability and representational capacity of our model, we will replace the sigmoid activations in the hidden layer with ReLU (Rectified Linear Unit) activations.
+ReLU is defined as:
+\begin{equation}
+    \text{ReLU}(x) = \max(0, x)
+\end{equation}
+ReLU addresses the vanishing gradient problem associated with sigmoid activations, as it allows for a constant gradient for positive inputs, which helps maintain the flow of gradients during backpropagation, especially in deeper networks \citep{CITE WHOEVER SAID THIS}.
+This change was impactful and can be seen in the metrics and loss curves:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter3_metrics_table.png}
+        \caption{Iteration 3 model performance across key metrics.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter3_roc_curve.png}
+        \caption{AUC-ROC curves comparing Iteration 2 to Iteration 3.}
+    \end{minipage}
+    \caption{Iteration 3 improvements.}
+    \label{fig:iter3_improvements}
+\end{figure}
+The switch to ReLU activations in Iteration 3 led to a noticeable improvement in all performance metrics, particularly in AUROC and F1 score, which suggests that the model is now better able to capture complex patterns in the data and distinguish between binders and non-binders more effectively.
+
+\subsubsection{Early Stopping}
+Our final iteratuion to the training procedure is to add early stopping based on validation loss, which can help prevent overfitting and reduce training time by halting training once the model's performance on the validation set starts to degrade.
+After adding early stopping, we observed the following changes in performance:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter4_metrics_table.png}
+        \caption{Iteration 4 model performance across key metrics.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter4_loss_curve.png}
+        \caption{Training loss curves showing early stopping in Iteration 4.}
+    \end{minipage}
+    \caption{Iteration 4 improvements with early stopping.}
+    \label{fig:iter4_improvements}
+\end{figure}
+As seen in\ref{fig:iter4_improvements}, early stopping led to premature halting of training, mising out on some of the later epochs where the model could have achieved better performance.
+This is a common issue with early stopping, as it relies on the validation loss to determine when to stop training, and if the validation loss is noisy or has a local minimum, it can cause the training to stop too early before the model has fully converged.
+For these reasons we will not be using early stopping in our final model.
+Instead, we will be using iteration 3 as the basis for future advancements to architecture.
 
     \subsection{Iteration 2: Architecture Advancements}
     \label{sec: eval_iter2}
