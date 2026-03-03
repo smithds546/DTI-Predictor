@@ -1,31 +1,36 @@
 """
-Iteration 4 — Early stopping
-Adds to iter3: early stopping on val BCE loss (patience=15).
-Restores best-val-loss weights before evaluation.
-Loss curve marks the stopping epoch with a vertical dashed line.
+Architecture Iteration 3 — L2 Regularisation (lambda=0.001)
+
+Adds L2 weight regularisation to the two-hidden-layer dropout network from arch2.
+He init, ReLU, mini-batch GD, dropout=0.2. Everything else unchanged.
 """
 
 import os
+import json
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 
-from basic import NeuralNetwork, binary_cross_entropy
-from utils  import compute_metrics, load_metrics, save_loss_curve, save_loss_curve_overlay, save_metrics_table
+from sklearn.metrics import roc_curve, roc_auc_score
+from nn    import NeuralNetwork, binary_cross_entropy
+from utils import (compute_metrics, load_metrics,
+                   save_loss_curve, save_loss_curve_overlay,
+                   save_roc_curve_overlay, save_metrics_table)
 
 np.random.seed(42)
 
-LABEL     = "Iter 4 — Early Stopping"
-PREFIX    = "iter4"
-SAVE_DIR  = "figures"
+LABEL        = "Arch 3 — L2 Regularisation (λ=0.01)"
+PREFIX       = "arch3"
+SAVE_DIR     = "figures"
 
 DATA_ROOT     = "/Users/drs/Projects/DTI/Backend/app/data/prepped"
-HIDDEN_SIZE   = 32
+HIDDEN_SIZES  = [64, 32]
 LEARNING_RATE = 0.01
 EPOCHS        = 1000
 BATCH_SIZE    = 256
-PATIENCE      = 15
+DROPOUT_RATE  = 0.4
+L2_LAMBDA     = 0.01
 
 
 def main():
@@ -52,58 +57,32 @@ def main():
     # ── Model ─────────────────────────────────────────────────────────────
     model = NeuralNetwork(
         X_drug_train.shape[1], X_prot_train.shape[1],
-        HIDDEN_SIZE, 1, LEARNING_RATE,
-        init_method='he', hidden_activation='relu',
+        HIDDEN_SIZES, 1, LEARNING_RATE,
+        dropout_rate=DROPOUT_RATE,
+        l2_lambda=L2_LAMBDA,
     )
-
-    best_val_loss     = np.inf
-    epochs_no_improve = 0
-    best_weights      = None
-    stop_epoch        = None
 
     train_losses, val_losses = [], []
 
-    print(f"[{LABEL}] Training up to {EPOCHS} epochs "
-          f"(batch_size={BATCH_SIZE}, patience={PATIENCE})...")
+    print(f"[{LABEL}] Training for {EPOCHS} epochs "
+          f"(batch_size={BATCH_SIZE}, dropout={DROPOUT_RATE}, l2={L2_LAMBDA})...")
 
     for epoch in range(EPOCHS):
         indices = np.random.permutation(n_train)
         for start in range(0, n_train, BATCH_SIZE):
             idx = indices[start : start + BATCH_SIZE]
             model.forward(X_drug_train[idx], X_prot_train[idx])
-            dW1, db1, dW2, db2 = model.backward(y_train[idx])
-            model.update_weights(dW1, db1, dW2, db2)
+            dWs, dbs = model.backward(y_train[idx])
+            model.update_weights(dWs, dbs)
 
         train_pred = model.predict(X_drug_train, X_prot_train)
         val_pred   = model.predict(X_drug_val,   X_prot_val)
-        train_loss = binary_cross_entropy(y_train, train_pred)
-        val_loss   = binary_cross_entropy(y_val,   val_pred)
-        train_losses.append(train_loss)
-        val_losses.append(val_loss)
+        train_losses.append(binary_cross_entropy(y_train, train_pred))
+        val_losses.append(binary_cross_entropy(y_val, val_pred))
 
         if (epoch + 1) % 100 == 0:
             print(f"  Epoch {epoch+1:>4}/{EPOCHS}  "
-                  f"train={train_loss:.6f}  val={val_loss:.6f}  "
-                  f"no_improve={epochs_no_improve}/{PATIENCE}")
-
-        if val_loss < best_val_loss:
-            best_val_loss     = val_loss
-            epochs_no_improve = 0
-            best_weights = (
-                model.W1.copy(), model.b1.copy(),
-                model.W2.copy(), model.b2.copy(),
-            )
-        else:
-            epochs_no_improve += 1
-            if epochs_no_improve >= PATIENCE:
-                stop_epoch = epoch + 1
-                print(f"\nEarly stopping at epoch {stop_epoch} "
-                      f"(no improvement for {PATIENCE} epochs).")
-                break
-
-    if best_weights is not None:
-        model.W1, model.b1, model.W2, model.b2 = best_weights
-        print(f"Restored best weights (val_loss = {best_val_loss:.6f})")
+                  f"train={train_losses[-1]:.6f}  val={val_losses[-1]:.6f}")
 
     # ── Evaluate ──────────────────────────────────────────────────────────
     train_metrics = compute_metrics(y_train.ravel().astype(int),
@@ -119,36 +98,50 @@ def main():
         for k, v in m.items():
             print(f"    {k:<12}: {v:.4f}")
 
-    # ── Figures ───────────────────────────────────────────────────────────
-    import json
+    # ── Persist ───────────────────────────────────────────────────────────
     with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
 
-    print("\nGenerating figures...")
-    baseline = load_metrics(f"{SAVE_DIR}/iter3_test_metrics.json", label="iter3.py")
+    test_probs  = model.predict(X_drug_test, X_prot_test).ravel()
+    y_true      = y_test.ravel().astype(int)
+    fpr, tpr, _ = roc_curve(y_true, test_probs)
+    auc         = roc_auc_score(y_true, test_probs)
 
-    prev = load_metrics(f"{SAVE_DIR}/iter3_losses.json", label="iter3.py")
+    # ── Figures ───────────────────────────────────────────────────────────
+    print("\nGenerating figures...")
+    baseline = load_metrics(f"{SAVE_DIR}/arch2_test_metrics.json", label="arch2.py")
+
+    prev = load_metrics(f"{SAVE_DIR}/arch2_losses.json", label="arch2.py")
     if prev:
         save_loss_curve_overlay(
             prev["train"], prev["val"], train_losses, val_losses,
-            prev_label="Iter 3", curr_label="Iter 4",
-            title=f"Loss Curve — Iter 3 vs {LABEL}",
-            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
-            stop_epoch=stop_epoch,
+            prev_label="Arch 2", curr_label="Arch 3",
+            title=f"Loss Curve — Arch 2 vs {LABEL}",
+            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve(0.4).png",
         )
     else:
         save_loss_curve(
             train_losses, val_losses,
             title=f"Loss Curve — {LABEL}",
-            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
-            stop_epoch=stop_epoch,
+            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve(0.4).png",
         )
+
+    prev_roc = load_metrics(f"{SAVE_DIR}/arch2_roc_data.json", label="arch2.py")
+    if prev_roc:
+        save_roc_curve_overlay(
+            prev_roc["fpr"], prev_roc["tpr"], prev_roc["auc"],
+            fpr.tolist(), tpr.tolist(), auc,
+            prev_label="Arch 2", curr_label="Arch 3",
+            title=f"ROC Curve — Arch 2 vs {LABEL}",
+            save_path=f"{SAVE_DIR}/{PREFIX}_roc_curve(0.4).png",
+        )
+
     save_metrics_table(
         {"Train": train_metrics, "Validation": val_metrics, "Test": test_metrics},
         title=f"Performance Metrics — {LABEL}",
-        save_path=f"{SAVE_DIR}/{PREFIX}_metrics_table.png",
+        save_path=f"{SAVE_DIR}/{PREFIX}_metrics_table(0.4).png",
         baseline=baseline,
-        baseline_label="Iter 3",
+        baseline_label="Arch 2",
     )
     print(f"\nAll figures saved to ./{SAVE_DIR}/")
 

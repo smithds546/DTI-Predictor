@@ -174,7 +174,7 @@ Mini-batch gradient descent eliminates this instability by providing more freque
 This results in a more stable training process, as evidenced by the smoother loss curve in Iteration 1 compared to the baseline.
 
     \subsubsection{He initialisation}
-To accompany minibatch gradient descent we will also add He initialisation to break the symmetry and prevent vanishing gradients at the start of training \citep{CITE WHOEVER SAID THIS}.
+To accompany minibatch gradient descent we will also add He initialisation to break the symmetry and prevent vanishing gradients at the start of training \citep{he2015delving}.
 He initialisation works by setting the initial weights of the network using this equation:
 \begin{equation}
     W \sim \mathcal{N}\left(0, \sqrt{\frac{2}{n_{\text{in}}}}\right)
@@ -209,7 +209,7 @@ ReLU is defined as:
 \begin{equation}
     \text{ReLU}(x) = \max(0, x)
 \end{equation}
-ReLU addresses the vanishing gradient problem associated with sigmoid activations, as it allows for a constant gradient for positive inputs, which helps maintain the flow of gradients during backpropagation, especially in deeper networks \citep{CITE WHOEVER SAID THIS}.
+ReLU addresses the vanishing gradient problem associated with sigmoid activations, as it allows for a constant gradient for positive inputs, which helps maintain the flow of gradients during backpropagation, especially in deeper networks \citep{nair2010rectified}.
 This change was impactful and can be seen in the metrics and loss curves:
 \begin{figure}[H]
     \centering
@@ -255,25 +255,107 @@ Instead, we will be using iteration 3 as the basis for future advancements to ar
 
     \subsection{Iteration 2: Architecture Advancements}
     \label{sec: eval_iter2}
-    % (~250 words + figures)
-    %
-    % Change made: Add second hidden layer, increase hidden size,
-    %              sigmoid → ReLU activations
-    %
-    % Content:
-    %   - Explain vanishing gradient problem with sigmoid in deep networks
-    %   - Explain how ReLU addresses this (sparse activation, constant gradient)
-    %   - Discuss representational capacity gained from added depth
-    %   - Report metrics table
-    %   - Show whether overfitting increases (train vs val gap)
-    %   - Compare confusion matrices between It1 and It2
-    %
-    % Suggested figures:
-    %   \figure — Confusion matrix comparison: It1 vs It2
-    %   \figure — Updated ROC overlay (baseline + It1 + It2)
+Next, we will make some architectural changes to our model to further improve its performance.
+\subsubsection{More Layers}
+To increase the representational capacity of our model, we will add an additional hidden layer to deepen the network.
+This allows the model to learn more complex patterns in the data, which should lead to improved performance.
+After adding a second hidden layer, we observed the following changes in performance:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch1_metrics_table.png}
+        \caption{Architectural Iteration 1}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch1_loss_curve.png}
+        \caption{Loss curves comparing architecture Iteration 1 to training iteration 3.}
+    \end{minipage}
+    \caption{Improvements from adding a second hidden layer.}
+    \label{fig:arch1_improvements}
+\end{figure}
+The addition of a second hidden layer strangely led to a drop in performance across all metrics, which suggests that the model may be overfitting to the training data or that the additional layer is not being effectively trained with the current settings.
+This highlights the importance of careful architectural design and the need for regularisation techniques to prevent overfitting when increasing model complexity.
+Regularisation techniques such as dropout and batch normalisation will be explored in the next iteration to address these issues.
+
+\subsubsection{Dropout Added}
+To combat the overfitting created by a second hidde layer, we will add dropout regularisation, which randomly zeroes out a fraction of the activations during training to prevent co-adaptation of neurons and encourage the model to learn more robust features \citep{srivastava2014dropout}.
+After adding a dropout of 0.2, we observed the following changes in performance:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch2_metrics_table.png}
+        \caption{Architectural Iteration 2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch2_loss_curve.png}
+        \caption{Loss curves comparing architecture Iteration 2 to architecture Iteration 1.}
+    \end{minipage}
+    \caption{Improvements from adding dropout regularisation.}
+    \label{fig:arch2_improvements}
+\end{figure}
+As you can see above, the addition of dropout led to a small improvemnt in precision while sacrificing some recall, which is a common trade-off when adding regularisation.
+This suggests that dropout is helping to reduce overfitting by encouraging the model to learn more general features, but it may also be causing the model to miss some true positive interactions, which is reflected in the drop in recall.
+
+\subsubsection{L2 Regularisation}
+Because dropout alone hasn't fully addressed the overfitting issue, we will also add L2 regularisation (weight decay), which penalises large weights directly by adding a term to the loss function \citep{goodfellow2016deep}:
+\begin{equation}
+    \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{BCE}} +
+    \frac{\lambda}{2} \sum_{w} w^2
+\end{equation}
+Where $\lambda$ is the regularisation strength and $w$ are the model weights.
+After adding L2 regularisation of 0.01 alongside a dropout of 0.2, we observed the following changes in performance:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_metrics_table.png}
+        \caption{Architectural Iteration 3}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_loss_curve.png}
+        \caption{Loss curves comparing architecture Iteration 3 to architecture Iteration 2.}
+    \end{minipage}
+    \caption{Improvements from adding L2 regularisation.}
+    \label{fig:arch3_improvements}
+\end{figure}
+From~\ref{fig:arch3_improvements}, we can see that the addition of L2 regularisation led to a further improvement in precision, while recall dropped significantly.
+This is visualised in the loss curve where the training loss is higher but the learning is more stable, which is a sign that the model is now learning more general features and is less likely to overfit to the training data.
+
+To improve this model further we increased the dropout to 0.4 because the recall is very low, and we want to make sure we are catching as many true positives as possible.
+We recorded this:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_metrics_table(0.4).png}
+        \caption{Architectural Iteration 4}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_loss_curve(0.4).png}
+        \caption{Loss curves comparing architecture Iteration 4 to architecture Iteration 3.}
+    \end{minipage}
+    \caption{Improvements from increasing dropout to 0.4.}
+    \label{fig:arch4_improvements}
+\end{figure}
+From~\ref{fig:arch4_improvements}, we can see that increasing the dropout to 0.4 led to a rebound of recall, which is a sign that the model is now able to capture more true positive interactions.
+However, this came at the cost of a significant drop in precision, which suggests that the model is now making more false positive predictions.
+This highlights the delicate balance between precision and recall when tuning regularisation parameters.
+
 
     \subsection{Iteration 3: New framework}
     \label{sec: eval_iter3}
+The architectural changes to the model have slightly improved performance but still haven't fully addressed the overfitting issue, so we will make more substantial changes to the training procedure and architecture in this iteration to further improve performance.
+
     % (~250 words + figures)
     %
     % Change made: Add Dropout + Batch Normalisation + mini-batch SGD

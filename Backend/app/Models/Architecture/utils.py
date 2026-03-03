@@ -75,27 +75,31 @@ def save_roc_curve_overlay(prev_fpr, prev_tpr, prev_auc,
     print(f"  Saved: {save_path}")
 
 
+BLUE = "#4C72B0"   # paired with COLOUR (orange) for two-iteration overlays
+
+
 def save_loss_curve_overlay(prev_train, prev_val, curr_train, curr_val,
                             prev_label, curr_label, title, save_path,
                             stop_epoch=None):
     """
     Overlays two iterations' loss curves on one graph.
-    Previous iteration is plotted in muted grey; current in full colour.
+    Each iteration gets its own colour (blue / orange); solid = train, dashed = val.
+    Final BCE values are appended to legend labels for quick comparison.
     """
     epochs_prev = range(1, len(prev_train) + 1)
     epochs_curr = range(1, len(curr_train) + 1)
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(9, 5))
 
-    ax.plot(epochs_prev, prev_train, color="#aaaaaa", lw=1.5,
-            label=f"{prev_label} Train")
-    ax.plot(epochs_prev, prev_val,   color="#888888", lw=1.5,
-            linestyle="--", label=f"{prev_label} Val")
+    ax.plot(epochs_prev, prev_train, color=BLUE,   lw=2,
+            label=f"{prev_label} Train  (final {prev_train[-1]:.4f})")
+    ax.plot(epochs_prev, prev_val,   color=BLUE,   lw=2, linestyle="--",
+            label=f"{prev_label} Val    (final {prev_val[-1]:.4f})")
 
-    ax.plot(epochs_curr, curr_train, color=COLOUR,    lw=2,
-            label=f"{curr_label} Train")
-    ax.plot(epochs_curr, curr_val,   color="#333333", lw=2,
-            linestyle="--", label=f"{curr_label} Val")
+    ax.plot(epochs_curr, curr_train, color=COLOUR, lw=2,
+            label=f"{curr_label} Train  (final {curr_train[-1]:.4f})")
+    ax.plot(epochs_curr, curr_val,   color=COLOUR, lw=2, linestyle="--",
+            label=f"{curr_label} Val    (final {curr_val[-1]:.4f})")
 
     if stop_epoch is not None:
         ax.axvline(x=stop_epoch, color="crimson", lw=1.5,
@@ -103,9 +107,10 @@ def save_loss_curve_overlay(prev_train, prev_val, curr_train, curr_val,
 
     ax.set_xlabel("Epoch", fontsize=12)
     ax.set_ylabel("BCE Loss", fontsize=12)
-    ax.set_title(title, fontsize=13)
-    ax.legend(fontsize=10, loc="upper right")
-    ax.grid(True, alpha=0.3)
+    ax.set_title(title, fontsize=13, fontweight="bold")
+    ax.set_xlim(1, max(len(prev_train), len(curr_train)))
+    ax.legend(fontsize=10, loc="upper right", framealpha=0.9)
+    ax.grid(True, alpha=0.35)
     fig.tight_layout()
     fig.savefig(save_path, dpi=150)
     plt.close(fig)
@@ -117,13 +122,15 @@ def save_loss_curve(train_losses, val_losses, title, save_path, stop_epoch=None)
     Plots BCE train/val loss over epochs.
     If stop_epoch is provided (int, 1-indexed), draws a vertical dashed line
     at that epoch to mark where early stopping triggered.
+    Final BCE values are appended to legend labels for quick reading.
     """
     epochs = range(1, len(train_losses) + 1)
 
-    fig, ax = plt.subplots(figsize=(7, 4))
-    ax.plot(epochs, train_losses, color=COLOUR,    lw=2, label="Train BCE")
-    ax.plot(epochs, val_losses,   color="#555555", lw=2,
-            linestyle="--", label="Val BCE")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(epochs, train_losses, color=COLOUR, lw=2,
+            label=f"Train BCE  (final {train_losses[-1]:.4f})")
+    ax.plot(epochs, val_losses,   color=BLUE,   lw=2, linestyle="--",
+            label=f"Val BCE    (final {val_losses[-1]:.4f})")
 
     if stop_epoch is not None:
         ax.axvline(x=stop_epoch, color="crimson", lw=1.5,
@@ -131,9 +138,10 @@ def save_loss_curve(train_losses, val_losses, title, save_path, stop_epoch=None)
 
     ax.set_xlabel("Epoch", fontsize=12)
     ax.set_ylabel("BCE Loss", fontsize=12)
-    ax.set_title(title, fontsize=13)
-    ax.legend(fontsize=11)
-    ax.grid(True, alpha=0.3)
+    ax.set_title(title, fontsize=13, fontweight="bold")
+    ax.set_xlim(1, len(train_losses))
+    ax.legend(fontsize=11, framealpha=0.9)
+    ax.grid(True, alpha=0.35)
     fig.tight_layout()
     fig.savefig(save_path, dpi=150)
     plt.close(fig)

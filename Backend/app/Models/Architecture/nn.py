@@ -40,16 +40,18 @@ class NeuralNetwork:
         hidden_sizes       (list[int]): neuron counts per hidden layer, e.g. [64, 32]
         output_size        (int):       number of output neurons (1 for binary)
         learning_rate      (float):     SGD step size
-        dropout_rate       (float):     inverted dropout keep probability (0.0 = off)
+        dropout_rate       (float):     inverted dropout probability (0.0 = off)
+        l2_lambda          (float):     L2 regularisation coefficient (0.0 = off)
     """
 
     def __init__(self, input_size_drug, input_size_protein,
                  hidden_sizes, output_size, learning_rate=0.01,
-                 dropout_rate=0.0):
+                 dropout_rate=0.0, l2_lambda=0.0):
 
         self.input_size   = input_size_drug + input_size_protein
         self.lr           = learning_rate
         self.dropout_rate = dropout_rate
+        self.l2_lambda    = l2_lambda
         self.training     = True   # toggled to False during predict()
 
         layer_sizes = [self.input_size] + list(hidden_sizes) + [output_size]
@@ -122,6 +124,11 @@ class NeuralNetwork:
             delta   = grad * relu_derivative(self.zs[i])  # through ReLU
             dWs[i]  = np.dot(self.activations[i].T, delta) / n_samples
             dbs[i]  = np.sum(delta, axis=0, keepdims=True)  / n_samples
+
+        # L2 regularisation: add lambda * W to weight gradients (not biases)
+        if self.l2_lambda > 0.0:
+            for i in range(n_layers):
+                dWs[i] += self.l2_lambda * self.weights[i]
 
         return dWs, dbs
 

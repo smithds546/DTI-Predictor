@@ -1,7 +1,7 @@
 """
-Architecture Iteration 2 — Dropout (p=0.3)
+Architecture Iteration 2 — Dropout (p=0.2)
 
-Adds inverted dropout (rate=0.3) after each hidden layer to the two-hidden-layer
+Adds inverted dropout (rate=0.2) after each hidden layer to the two-hidden-layer
 network from arch1. He init, ReLU, mini-batch GD. Everything else unchanged.
 """
 
@@ -20,7 +20,7 @@ from utils import (compute_metrics, load_metrics,
 
 np.random.seed(42)
 
-LABEL        = "Arch 2 — Dropout (p=0.3)"
+LABEL        = "Arch 2 — Dropout (p=0.2)"
 PREFIX       = "arch2"
 SAVE_DIR     = "figures"
 
@@ -29,7 +29,7 @@ HIDDEN_SIZES  = [64, 32]
 LEARNING_RATE = 0.01
 EPOCHS        = 1000
 BATCH_SIZE    = 256
-DROPOUT_RATE  = 0.3
+DROPOUT_RATE  = 0.2
 
 
 def main():
@@ -96,14 +96,18 @@ def main():
         for k, v in m.items():
             print(f"    {k:<12}: {v:.4f}")
 
-    # ── Persist ───────────────────────────────────────────────────────────
+    # ── Persist (needed by arch3 for diff + loss/ROC overlay) ────────────
     with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
+    with open(f"{SAVE_DIR}/{PREFIX}_losses.json", "w") as f:
+        json.dump({"train": train_losses, "val": val_losses}, f)
 
     test_probs  = model.predict(X_drug_test, X_prot_test).ravel()
     y_true      = y_test.ravel().astype(int)
     fpr, tpr, _ = roc_curve(y_true, test_probs)
     auc         = roc_auc_score(y_true, test_probs)
+    with open(f"{SAVE_DIR}/{PREFIX}_roc_data.json", "w") as f:
+        json.dump({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": auc}, f)
 
     # ── Figures ───────────────────────────────────────────────────────────
     print("\nGenerating figures...")
