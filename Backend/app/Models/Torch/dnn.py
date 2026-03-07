@@ -1,6 +1,9 @@
 """
 Deep Neural Network for Drug-Target Interaction (DTI) prediction.
 
+Builds upon the NumPy architecture series (arch1–arch3) by porting the best
+design choices into PyTorch and adding structural improvements.
+
 Architecture: dual-branch encoder (separate drug / protein sub-networks)
 followed by a joint MLP interaction predictor.
 
@@ -9,14 +12,19 @@ followed by a joint MLP interaction predictor.
   Protein (1024-dim ProtBERT) ► prot_encoder ──► 128-dim
                                                          ►  predictor ──► logit
 
-Design choices (vs. ReLu.py baseline):
-  - Separate encoders let each modality learn its own representation.
-  - Batch normalisation stabilises training and acts as implicit regularisation.
-  - ReLU replaces sigmoid in hidden layers (avoids vanishing gradients in depth).
-  - Dropout provides explicit regularisation.
-  - BCEWithLogitsLoss is numerically safer and better-calibrated than MSE for
-    binary classification.
-  - Adam with weight-decay replaces manual SGD.
+Inherited from architecture iterations:
+  - ReLU activations  (arch1: avoids vanishing gradients)
+  - Dropout = 0.4     (arch3 best: inverted dropout rate)
+  - L2 regularisation via weight_decay in the optimiser  (arch3: λ=0.01)
+  - He initialisation handled automatically by PyTorch Linear layers
+
+New in this model:
+  - Dual-branch encoders: separate drug / protein sub-networks let each
+    modality learn its own representation before fusion
+  - BatchNorm after every linear layer: stabilises training and acts as
+    implicit regularisation beyond what dropout alone provides
+  - BCEWithLogitsLoss: numerically safer than hand-rolled BCE; accepts logits
+    directly and supports pos_weight for class imbalance
 """
 
 import torch
@@ -121,7 +129,7 @@ class DTI_DNN(nn.Module):
         prot_hiddens: tuple = (512, 256),
         encoder_out: int = 128,
         predictor_drop: float = 0.4,
-        encoder_drop: float = 0.3,
+        encoder_drop: float = 0.4,   # arch3 best dropout rate
     ):
         super().__init__()
         self.drug_encoder = DrugEncoder(drug_input_dim, drug_hidden, encoder_out, encoder_drop)

@@ -101,11 +101,15 @@ def main():
     # ── Persist ───────────────────────────────────────────────────────────
     with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
+    with open(f"{SAVE_DIR}/{PREFIX}_losses.json", "w") as f:
+        json.dump({"train": train_losses, "val": val_losses}, f)
 
     test_probs  = model.predict(X_drug_test, X_prot_test).ravel()
     y_true      = y_test.ravel().astype(int)
     fpr, tpr, _ = roc_curve(y_true, test_probs)
     auc         = roc_auc_score(y_true, test_probs)
+    with open(f"{SAVE_DIR}/{PREFIX}_roc_data.json", "w") as f:
+        json.dump({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": auc}, f)
 
     # ── Figures ───────────────────────────────────────────────────────────
     print("\nGenerating figures...")

@@ -1,29 +1,29 @@
 """
-Torch DNN — SGD + Momentum baseline.
+Torch DNN — Iteration 1: Adam + Cosine LR Decay.
 
-Builds directly on Arch 3 (the best NumPy architecture: dropout=0.4,
-L2 λ=0.01, hidden=[64,32]).  The dual-branch PyTorch encoder replaces
-Arch 3's flat-concatenation input, while keeping the same optimiser
-family (mini-batch SGD) so results sit naturally in the arch series.
+Builds on the SGD baseline (run_dnn.py) by replacing SGD+momentum with the
+Adam optimiser and adding CosineAnnealingLR.  Everything else — model
+architecture, data, dropout, loss function — is identical to the SGD run.
 
-Key design choices inherited from the architecture iterations:
-  - Same data files and splits as all preceding models
-  - Dropout = 0.4          (arch3 best)
-  - Weight decay = 0.01    (arch3 best L2 λ)
-  - SGD with momentum=0.9  (continuation of the arch series)
-  - Early stopping on val AUC, patience=15  (from Iter 4)
+Key changes vs. SGD baseline (run_dnn.py):
+  - Adam (lr=1e-3, β1=0.9, β2=0.999, weight_decay=1e-4)
+  - CosineAnnealingLR (T_max=100 epochs, eta_min=1e-5)
+  - EPOCHS=100  (Adam converges much faster than SGD)
+  - BATCH_SIZE=512  (larger batches benefit Adam's variance reduction)
 
-New in this model (vs. Arch 3):
-  - Dual-branch encoder: separate drug / protein sub-networks
-  - BatchNorm after every linear layer
-  - BCEWithLogitsLoss with pos_weight class balancing
+Everything inherited from SGD baseline:
+  - Dual-branch DTI_DNN architecture
+  - Dropout=0.4, BCEWithLogitsLoss + pos_weight
+  - Same data splits (drug_train/val/test, prot_train/val/test, bindingdb CSV)
+  - Early stopping on val AUC, patience=15
 
 Outputs: figures/{PREFIX}_test_metrics.json, _losses.json, _roc_data.json,
          _loss_curve.png, _roc_curve.png, _metrics_table.png
-         (comparing against Arch 3 as the baseline)
+         (comparing against the SGD baseline)
 
 Usage:
-    python run_dnn.py
+    python run_dnn_adam.py
+    (run run_dnn.py first so the SGD baseline figures exist for comparison)
 """
 
 import os
@@ -46,23 +46,20 @@ from utils import (compute_metrics, load_metrics,
 from dnn import DTI_DNN
 
 # ─── Labels & Paths ───────────────────────────────────────────────────────────
-LABEL    = "Torch DNN — SGD + Momentum"
-PREFIX   = "dnn_sgd"
+LABEL    = "Torch DNN — Adam + Cosine LR"
+PREFIX   = "dnn_adam"
 SAVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
-ARCH_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "..", "Architecture", "figures")
 CHECKPOINT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           f"{PREFIX}_best.pt")
 
 DATA_ROOT = "/Users/drs/Projects/DTI/Backend/app/data/prepped"
 
 # ─── Hyperparameters ──────────────────────────────────────────────────────────
-BATCH_SIZE   = 256
-EPOCHS       = 1000
-LR           = 0.01
-MOMENTUM     = 0.9
-WEIGHT_DECAY = 0.01    # L2 regularisation — matches Arch 3 λ=0.01
-PATIENCE     = 75      # early stopping on val AUC (from Iter 4)
+BATCH_SIZE   = 512
+EPOCHS       = 100
+LR           = 1e-3
+WEIGHT_DECAY = 1e-4
+PATIENCE     = 15      # early stopping on val AUC
 THRESHOLD    = 0.5
 
 
@@ -160,7 +157,7 @@ def main():
     model = DTI_DNN(
         drug_input_dim=X_drug_train.shape[1],
         prot_input_dim=X_prot_train.shape[1],
-        encoder_drop=0.4,       # Arch 3 best dropout
+        encoder_drop=0.4,       # Arch 3 best dropout (same as SGD baseline)
     ).to(device)
 
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -171,14 +168,16 @@ def main():
     pos_weight = torch.tensor([n_neg / n_pos], dtype=torch.float32).to(device)
     criterion  = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
-    optimizer = torch.optim.SGD(
-        model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY
+    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=EPOCHS, eta_min=1e-5
     )
 
     # ── Training loop ─────────────────────────────────────────────────────
     print(f"\n[{LABEL}] Training up to {EPOCHS} epochs "
-          f"(batch={BATCH_SIZE}, lr={LR}, momentum={MOMENTUM}, "
-          f"wd={WEIGHT_DECAY}, patience={PATIENCE})...")
+          f"(batch={BATCH_SIZE}, lr={LR}, wd={WEIGHT_DECAY}, patience={PATIENCE})...")
 
     train_losses, val_losses = [], []
     best_val_auc      = 0.0
@@ -191,10 +190,13 @@ def main():
         val_auc = roc_auc_score(val_labels, val_probs)
         train_losses.append(train_loss)
         val_losses.append(val_loss)
+        scheduler.step()
 
-        if epoch % 100 == 0 or epoch == 1:
-            print(f"  Epoch {epoch:>4}/{EPOCHS}  "
-                  f"train={train_loss:.6f}  val={val_loss:.6f}  val_auc={val_auc:.4f}")
+        lr_now = optimizer.param_groups[0]["lr"]
+        if epoch % 10 == 0 or epoch == 1:
+            print(f"  Epoch {epoch:>3}/{EPOCHS}  "
+                  f"train={train_loss:.6f}  val={val_loss:.6f}  "
+                  f"val_auc={val_auc:.4f}  lr={lr_now:.2e}")
 
         if val_auc > best_val_auc:
             best_val_auc      = val_auc
@@ -239,16 +241,14 @@ def main():
 
     # ── Figures ───────────────────────────────────────────────────────────
     print("\nGenerating figures...")
-    baseline = load_metrics(f"{ARCH_FIG}/arch3_test_metrics.json", label="arch3.py")
+    baseline = load_metrics(f"{SAVE_DIR}/dnn_sgd_test_metrics.json", label="run_dnn.py")
 
-    # Loss curve — overlay with arch3 if it saved its losses (it doesn't by
-    # default, so we gracefully fall back to a standalone curve)
-    prev_losses = load_metrics(f"{ARCH_FIG}/arch3_losses.json", label="arch3.py")
+    prev_losses = load_metrics(f"{SAVE_DIR}/dnn_sgd_losses.json", label="run_dnn.py")
     if prev_losses:
         save_loss_curve_overlay(
             prev_losses["train"], prev_losses["val"], train_losses, val_losses,
-            prev_label="Arch 3", curr_label="Torch SGD",
-            title=f"Loss Curve — Arch 3 vs {LABEL}",
+            prev_label="Torch SGD", curr_label="Torch Adam",
+            title=f"Loss Curve — Torch SGD vs {LABEL}",
             save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
             stop_epoch=stop_epoch,
         )
@@ -260,13 +260,13 @@ def main():
             stop_epoch=stop_epoch,
         )
 
-    prev_roc = load_metrics(f"{ARCH_FIG}/arch3_roc_data.json", label="arch3.py")
+    prev_roc = load_metrics(f"{SAVE_DIR}/dnn_sgd_roc_data.json", label="run_dnn.py")
     if prev_roc:
         save_roc_curve_overlay(
             prev_roc["fpr"], prev_roc["tpr"], prev_roc["auc"],
             fpr.tolist(), tpr.tolist(), auc,
-            prev_label="Arch 3", curr_label="Torch SGD",
-            title=f"ROC Curve — Arch 3 vs {LABEL}",
+            prev_label="Torch SGD", curr_label="Torch Adam",
+            title=f"ROC Curve — Torch SGD vs {LABEL}",
             save_path=f"{SAVE_DIR}/{PREFIX}_roc_curve.png",
         )
 
@@ -275,7 +275,7 @@ def main():
         title=f"Performance Metrics — {LABEL}",
         save_path=f"{SAVE_DIR}/{PREFIX}_metrics_table.png",
         baseline=baseline,
-        baseline_label="Arch 3",
+        baseline_label="Torch SGD",
     )
     print(f"\nAll figures saved to {SAVE_DIR}/")
 

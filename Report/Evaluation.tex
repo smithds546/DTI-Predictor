@@ -47,7 +47,7 @@ To address all possible corridors of evaluation we will also adjust the data spl
     \subsection{Decision Threshold}
     \label{sec: eval_threshold}
 Another important aspect of our evaluation is the choice of decision threshold for classifying predictions as positive or negative interactions.
-We have opted for pAffinity value \> 7.0 determining binder and pAffinity value \< 5.3 determining non-binder with a grey area of 1.70 pAffinity units as mentioned in~\ref{sec: data_threshold}.
+We have opted for pAffinity value $> 7.0$ determining binder and pAffinity value $< 5.3$ determining non-binder with a grey area of 1.70 pAffinity units as mentioned in~\ref{sec: data_threshold}.
 However to improve the robustness of our model, we will experiment with these figures to fully evaluate the model.
 
 % ============================================================
@@ -354,7 +354,58 @@ This highlights the delicate balance between precision and recall when tuning re
 
     \subsection{Iteration 3: New framework}
     \label{sec: eval_iter3}
-The architectural changes to the model have slightly improved performance but still haven't fully addressed the overfitting issue, so we will make more substantial changes to the training procedure and architecture in this iteration to further improve performance.
+The architectural changes to the model have slightly improved performance but still haven't fully addressed the overfitting issue, so we will make more significant changes to the training procedure and architecture in this iteration to further improve performance.
+\subsubsection{Pytorch Implementation}
+We implement the model in pytorch with the same architecture and training procedure used in architectural iteration 3, to maintain comparability whilst also leveraging the benefits of modern deep learning frameworks such as automatic differentiation, efficient GPU computation, and built-in regularisation techniques \citep{paszke2019pytorch}.
+The initial implementation builds upon architectural iteration 3 (reference back to section arch3~\ref{sec: eval_iter3}) whilst also utilising a dual-branch PyTorch encoder to process drug and target features separately before concatenating them for the final prediction.
+This had significant improvements as seen in the following metrics table and AUC-ROC curve:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_sgd_metrics_table.png}
+        \caption{PyTorch DNN model performance across key metrics.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_sgd_roc_curve.png}
+        \caption{AUC-ROC curve for the PyTorch DNN model.}
+    \end{minipage}
+    \caption{Performance of the PyTorch DNN model.}
+    \label{fig:pytorch_improvements}
+\end{figure}
+
+Seeing such improvement in the ROC curve and metrics table indicates that the PyTorch implementation is able to learn more complex patterns in the data and generalise better to unseen examples, which is likely due to the combination of architectural improvements and the benefits of using a modern deep learning framework.
+However, this is at expense of Recall, which suggests that the model is now making more false negative predictions, which is a concern in the context of DTI prediction where missing a true interaction could have significant implications for drug discovery.
+We will address this issue within the next iteration by including the Adam optimiser.
+
+    \subsubsection{Adam Optimiser}
+Adam is an adaptive learning rate optimiser that maintains per-parameter learning rates using a combination of momentum and RMSProp, which can lead to faster convergence and improved performance compared to traditional stochastic gradient descent (SGD)\citep{kingma2015adam}.
+Parameters are updated via:
+\begin{equation}
+    \theta_{t+1} = \theta_t - \frac{\alpha}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t
+\end{equation}
+Where $\hat{m}_t$ and $\hat{v}_t$ are bias-corrected estimates of the first and second moments of the gradients, $\alpha$ is the learning rate, and $\epsilon$ is a small constant to prevent division by zero.
+Following the default hyperparameters recommended by \citep{kingma2015adam}, this work uses $\alpha = 0.001$, $\beta_1 = 0.9$, and $\beta_2 = 0.999$.
+The improvements from using Adam can be seen in the following metrics table and loss curve:
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_metrics_table.png}
+        \caption{PyTorch DNN with Adam optimiser performance across key metrics.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_loss_curve.png}
+        \caption{Training loss curve for the PyTorch DNN with Adam optimiser.}
+    \end{minipage}
+    \caption{Performance improvements from using the Adam optimiser.}
+    \label{fig:adam_improvements}
+\end{figure}
+The use of the Adam optimiser led to a significant improvement in recall without sacrificing too much, which is a sign that the model is now able to capture more true positive interactions, which is crucial for DTI prediction.
 
     % (~250 words + figures)
     %
