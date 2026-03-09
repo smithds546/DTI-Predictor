@@ -22,7 +22,7 @@ Within this section, we will outline the components of our evaluation methodolog
     \label{sec: eval_metrics}
     To evaluate our models, we will find out the following metrics from the training, validation ,and test set predictions:
     \begin{itemize}
-        \item Area Under the Receiver Operating Characteristic Curve (AUROC)
+        \item Area Under the Receiver Operating Characteristic Curve (AUC-ROC)
         \item Area Under the Precision-Recall Curve (PR-AUC)
         \item F1 Score
         \item Precision
@@ -35,7 +35,7 @@ Accuracy is a fundamental metric that measures the performance by finding out th
 This alon would be meaningless because in an imbalanced dataset, a model could achieve high accuracy by simply predicting the majority class.
 Precision and recall are crucial in the context of DTI prediction, where false positives (predicting a drug-target interaction that does not exist) can lead to wasted resources in experimental validation, while false negatives (failing to predict a true interaction) can result in missed opportunities for drug discovery.
 The F1 score balances precision and recall into a single metric, providing a more holistic view of model performance.
-Area Under Curve (AUC) metrics, including AUROC and PR-AUC, are threshold-independent measures that evaluate the model's ability to rank positive instances higher than negative ones, visualising both precision-recall and true positive rate-false positive rate trade-offs across all possible thresholds.
+Area Under Curve (AUC) metrics, including AUC-ROC and PR-AUC, are threshold-independent measures that evaluate the model's ability to rank positive instances higher than negative ones, visualising both precision-recall and true positive rate-false positive rate trade-offs across all possible thresholds.
 Finally the confusion matrix provides a detailed breakdown of true positives, false positives, true negatives, and false negatives, allowing for a granular analysis of model performance. \citep{geeksforgeeks_metrics_2025}.
 
     \subsection{Data Splits and Reproducibility}
@@ -112,7 +112,7 @@ The results of key metrics are summarised in the following graph:
 The data in this table shows strong consistency across splits, which is a sign of minimal overfitting and deals well with unseen data.
 A recall of $\sim$0.83 indicates that this model is good at catching positive cases, which is important when predicting a false negative is costly.
 A strong recall is important for drug disovery, as missing a true drug-target interaction could mean overlooking a potential binding candidate.
-The AUROC of $\sim$0.73 suggests that the model has a reasonable ability to distinguish between binders and non-binders, although there is certainly room for improvement.
+The AUC-ROC of $\sim$0.73 suggests that the model has a reasonable ability to distinguish between binders and non-binders, although there is certainly room for improvement.
 The Precision score of $\sim$0.71 indicates that when the model predicts a positive interaction, it is correct ~71\% of the time, which is decent but could lead to some false positives that would require experimental validation.
 
     \subsubsection{Hyperparameter tuning}
@@ -227,7 +227,7 @@ This change was impactful and can be seen in the metrics and loss curves:
     \caption{Iteration 3 improvements.}
     \label{fig:iter3_improvements}
 \end{figure}
-The switch to ReLU activations in Iteration 3 led to a noticeable improvement in all performance metrics, particularly in AUROC and F1 score, which suggests that the model is now better able to capture complex patterns in the data and distinguish between binders and non-binders more effectively.
+The switch to ReLU activations in Iteration 3 led to a noticeable improvement in all performance metrics, particularly in AUC-ROC and F1 score, which suggests that the model is now better able to capture complex patterns in the data and distinguish between binders and non-binders more effectively.
 
 \subsubsection{Early Stopping}
 Our final iteratuion to the training procedure is to add early stopping based on validation loss, which can help prevent overfitting and reduce training time by halting training once the model's performance on the validation set starts to degrade.
@@ -387,7 +387,7 @@ Parameters are updated via:
     \theta_{t+1} = \theta_t - \frac{\alpha}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t
 \end{equation}
 Where $\hat{m}_t$ and $\hat{v}_t$ are bias-corrected estimates of the first and second moments of the gradients, $\alpha$ is the learning rate, and $\epsilon$ is a small constant to prevent division by zero.
-Following the default hyperparameters recommended by \citep{kingma2015adam}, this work uses $\alpha = 0.001$, $\beta_1 = 0.9$, and $\beta_2 = 0.999$.
+Following the default hyperparameters recommended by \citep{kingma2015adam}, this work uses $\alpha = 0.001$, $\beta_1 = 0.9$, and $\beta_2 = 0.999$, with an L2 regularisation penalty of $\lambda = 1 \times 10^{-4}$ applied via weight decay.
 The improvements from using Adam can be seen in the following metrics table and loss curve:
 \begin{figure}[H]
     \centering
@@ -407,115 +407,85 @@ The improvements from using Adam can be seen in the following metrics table and 
 \end{figure}
 The use of the Adam optimiser led to a significant improvement in recall without sacrificing too much, which is a sign that the model is now able to capture more true positive interactions, which is crucial for DTI prediction.
 
-    % (~250 words + figures)
-    %
-    % Change made: Add Dropout + Batch Normalisation + mini-batch SGD
-    %
-    % Content:
-    %   - Explain dropout: randomly zeroing activations prevents co-adaptation
-    %   - Explain batch normalisation: stabilises training, implicit regularisation
-    %   - Explain mini-batch: better gradient estimates, faster convergence
-    %   - Show that train/val gap reduces (overfitting addressed)
-    %   - Report metrics table
-    %   - Threshold sensitivity plot (precision, recall, F1 vs threshold)
-    %     — motivate use of 0.5 or argue for an alternative
-    %
-    % Suggested figures:
-    %   \figure — Threshold sensitivity plot
-    %   \figure — Training loss curves showing reduced overfitting vs It2
-
-    % --------------------------------------------------------
-    \subsection{Full Model Progression Summary}
-    \label{sec: eval_progression}
-    % (~200 words + figures)
-    %
-    % Content:
-    %   - Single table: all models side by side across all metrics
-    %   - Grouped bar chart: all models × all metrics
-    %   - Overlay ROC curve: all iterations on one plot
-    %   - Discuss the trend — where did the biggest gains come from?
-    %   - Identify which change had the most impact and why
-    %
-    % Suggested figures:
-    %   \figure — Grouped bar chart (all iterations, all metrics)
-    %   \figure — ROC curve overlay (all iterations)
-    %   \figure — AUC progression line graph (iteration number vs AUROC)
-
-    % --------------------------------------------------------
-    \subsection{Hyperparameter Sensitivity Analysis}
-    \label{sec: eval_hyperparams}
-    % (~200 words + figures)
-    %
-    % Apply to at least the final iterated model and the PyTorch DNN.
-    % Suggested hyperparameters to vary:
-    %   - Learning rate
-    %   - Hidden layer size / dropout rate
-    %   - Batch size (PyTorch DNN only)
-    %
-    % Content:
-    %   - Small grid or line plot for each hyperparameter vs AUROC
-    %   - Discuss sensitivity: is the model robust or brittle to these choices?
-    %   - Report the final chosen values and justify them
-    %
-    % Suggested figures:
-    %   \figure — Hyperparameter sensitivity plots (line graphs)
-
-% ============================================================
-\section{Comparison Against PyTorch DNN}
-\label{sec: eval_pytorch}
-% (~300 words + figures)
-%
-% Content:
-%   - Introduce the PyTorch DNN as a "modern best practices" reference:
-%     dual-branch encoders, BatchNorm, ReLU, Adam, BCE, early stopping
-%   - Present side-by-side metrics table: Final iterated model vs DNN
-%   - Discuss performance gap (or lack thereof) — what does the DNN do
-%     that your iterated model does not, and does it matter?
-%   - Compare model complexity: parameter counts, training time
-%   - Discuss the tradeoff: interpretability / simplicity vs performance
-%
-% Suggested figures:
-%   \figure — Radar / spider chart: Final model vs PyTorch DNN
-%   \figure — Training time vs AUROC scatter (all models)
-
-% ============================================================
 \section{Comparison Against Literature Baseline (DeepCDA)}
 \label{sec: eval_deepcda}
-% (~300 words)
-%
-% Content:
-%   - Briefly describe DeepCDA architecture (cite paper)
-%   - Present their reported BindingDB metrics from the MINDG comparison table
-%   - EXPLICITLY acknowledge methodological differences:
-%       * Their evaluation: 10-fold cross-validation
-%       * Your evaluation: fixed train/val/test split
-%       * State this means comparison is indicative, not definitive
-%   - Compare your best model's metrics against DeepCDA's reported values
-%   - Discuss where your model is competitive and where it falls short
-%   - Reference MINDG as state-of-the-art upper bound (no direct comparison)
-%
-% Suggested figures:
-%   \figure — Radar chart: Your best model vs DeepCDA vs MINDG (reported values)
+To give our results context and demonstrate the effectiveness of our modeling choices, we will be comparing it to the DeepCDA model \citep{Abbasi2020}, which is an established deep learning DTI prediction model that was evaluated on the BindingDB dataset.
+Reported metrics are drawn from the comparative study of \citep{Yang2024}.
+\subsection{DeepCDA Architecture}
+DeepCDA uses a dual-branch architecture where one branch processes protein sequences using an LSTM (Long Short-Term Memory) network, while the other branch processes drug SMILES strings using a CNN (Convolutional Neural Network).
+The outputs of these two branches are then concatenated and passed through a fully connected (FC) classification layer to predict the binding interaction \citep{Abbasi2020}.
+This architecture allows DeepCDA to capture both sequential dependencies in protein sequences and local patterns in drug SMILES, which are important for accurately predicting drug-target interactions.
 
-% ============================================================
+This makes for a fair comparison with our model because both are binary classification models trained on BindingDB data, and both use deep learning architectures to process drug and target features separately before combining them for the final prediction.
+Neither model is a direct implementation of the other, but they share enough similarities in their overall approach and training data to allow for a meaningful comparison of their performance metrics.
+
+\subsection{Performance Comparison}
+Here we will compare the performance of our final model against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
+
+\subsubsection{Methodological Differences}
+Before comparing our model's performance against DeepCDA, it's important to acknowledge the methodological differences between the two evaluations.
+DeepCDA was evaluated using a 10-fold cross-validation approach, which involves partitioning the dataset into 10 subsets, training the model on 9 subsets and testing on the remaining subset, and repeating this process 10 times to obtain an average performance metric.
+However, our model was evaluated using a fixed train/validation/test split, which means that the performance metrics we report are based on a single partitioning of the data.
+This difference in evaluation methodology means that the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data, while our metrics are based on a single run and may be more sensitive to the specific train/test split used.
+Therefore, while we can compare the reported metrics, we should do so with caution and acknowledge that the differences in evaluation methodology may impact the comparability of the results.
+
+\subsubsection{Results}
+Table~\ref{tab:deepcda_comparison} presents a comparison of this work against DeepCDA \citep{Abbasi2020}.
+Reported DeepCDA metrics are taken from \citep{Yang2024}.
+\begin{table}[h]
+\centering
+\caption{Performance comparison against literature baseline on BindingDB.
+DeepCDA results are reported from \citet{Yang2024}, evaluated using
+10-fold cross-validation. This work uses a fixed train/validation/test
+split, so comparison is indicative rather than definitive.}
+\label{tab:deepcda_comparison}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Method} & \textbf{AUC-ROC} & \textbf{PR-AUC} & \textbf{F1}
+& \textbf{Precision} & \textbf{Accuracy} \\
+\midrule
+DeepCDA \citep{Abbasi2020}    & 0.894 & 0.901 & 0.811 & 0.760 & 0.831 \\
+\midrule
+This work (best model)         & 0.8686 & 0.8978 & 0.8326 & 0.8217 & 0.7959 \\
+\bottomrule
+\end{tabular}
+\end{table}
+The differences seen in the table above could be put towards the difference in data representations, we use industry standard ProtBERT and MACCS fingerprints, whereas DeepCDA uses a custom encoding of the sequences and SMILES.
+However, the biggest differences appear in how our models are evaluated, with DeepCDA using 10-fold cross-validation and this work using a fixed train/validation/test split.
+
+
 \section{Data Sensitivity Analysis}
 \label{sec: eval_data}
-% (~300 words + figures)
-
-    \subsubsection{Effect of Training Set Size}
+To get the best understanding of the models' performance, we will conduct a data sensitivity analysis to evaluate how changes in the training data size and decision threshold affect the model's performance.
+    \subsection{Learning Curve Analysis}
     \label{sec: eval_sample_size}
-    % (~150 words + figure)
-    %
-    % Experiment: Train final model on subsets of training data
-    %             (e.g. 10%, 25%, 50%, 75%, 100%) and record test AUROC
-    %
-    % Content:
-    %   - Learning curve plot (training size vs AUROC)
-    %   - Discuss: does performance plateau? Would more data help?
-    %   - Implications for real-world DTI data collection
-    %
-    % Suggested figures:
-    %   \figure — Learning curve (sample size vs AUROC)
+We will start by evaluating how the size of the training data impacts the model's performance, which is crucial for understanding the data efficiency of our model and its potential for improvement with more data.
+Due to the computational restraints and the inability to process more data, we are originally restricted to only ~0.6\% of the original BindingDB dataset.
+To see whether using more data would have improved our model, we will conduct a learning curve analysis, which involves training the model on progressively larger subsets of the training data and evaluating its performance on the test set at each step.
+These were the results of the learning curve analysis:
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/learning_curve_auc.png}
+    \caption{Learning curve showing the relationship between training data size and AUC-ROC performance.}
+    \label{fig:learning_curve}
+\end{figure}
+The results demonstrate a clear positive correlation between training data size and model performance but ultimately shows signs of diminishing returns as training data increases.
+At 25\% of the training data, the model achieves an AUC-ROC of 0.7982.
+Performance increased substantially when the training set was doubled to 50\%, reaching an AUC-ROC of 0.8387, a gain of 0.0405.
+The increase from 50\% to 75\% saw a smaller improvement but still meaningful, with the AUC-ROC increasing by 0.0135.
+The jump from 75\% to 100\% also resulted in a small marginal increase of 0.0175, suggesting that the model is approaching a performance plateau with the current architecture and training procedure.
+This implies that the primary bottleneck has shifted from data availability to model capacity or inherent task complexity.
+
+\subsection{Power-Law Projection}
+To try and quantify the expected performance from additional data collection, a power-law learning curve was fitted to the plotted data points.
+The Power-Law model is a well-established method within machine learning for characterising the relationship between the training set size and generalisation performance \citep{Cortes1994}.
+The model is defined as:
+\begin{equation}
+    \text{AUC}(n) = a - \frac{b}{n^\alpha}
+\end{equation}
+Where $n$ is the training set size, $a$ is the asymptotic AUC as $n$ approaches infinity, $b$ is a scaling constant that determines the initial offset, and $\alpha$ is the decay exponent deciding the rate at which performance improves with additional data.
+$a$ was constrained to lie between the current maximum AUC(0.8697) and 1, while $b$ and $\alpha$ were constrained to be positive with $\alpha$ bounded between (0,2).
+
 
     \subsection{Effect of Decision Threshold}
     \label{sec: data_threshold}

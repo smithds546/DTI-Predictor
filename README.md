@@ -32,16 +32,9 @@ Evaluation of models:
     5.  different weights and biases
 
 Next Steps:
-    add l2 regularisation and talk about it
-    adjust evaluation graphs and write
-
-
-
-    For evalaution:
-        could show difference between using logged binding affinity and not
-        difference between using random negative sampling and not
-        difference between using grey area and not
-    potentially look at training on chembl as well
+    - evaluation against deepcda
+    - use of threshold in pytorch model
+    - put data table in data chapter - statistics of the data, distribution of binders/non-binders, etc.
 
 
 How to run frontend:
