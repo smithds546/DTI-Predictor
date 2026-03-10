@@ -489,44 +489,37 @@ $a$ was constrained to lie between the current maximum AUC(0.8697) and 1, while 
 
     \subsection{Effect of Decision Threshold}
     \label{sec: data_threshold}
-    % (~150 words + figure)
-    %
-    % Experiment: Vary decision threshold from 0.1 to 0.9 on final model
-    %
-    % Content:
-    %   - Plot precision, recall, and F1 vs threshold
-    %   - Identify the threshold that maximises F1
-    %   - Discuss domain context: in drug screening, is recall or
-    %     precision more important? (missing a drug vs wasting lab resources)
-    %   - State whether 0.5 is the optimal choice for this problem
-    %
-    % Suggested figures:
-    %   \figure — Precision / Recall / F1 vs decision threshold
+When evaluating the performance of a model, it's important to consider the thresholds used to determine the classification of predictions.
+Here we will look at how the models metrics alter given different classification thresholds of 0.1, 0.3, 0.5, 0.7, and 0.9.
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep.png}
+        \caption{Threshold Sweep Graph}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep_table.png}
+        \caption{Threshold Sweep Metric Table}
+    \end{minipage}
+    \caption{Analysis of Threshold Levels on Model Performance.}
+    \label{fig:threshold_sweep}
+\end{figure}
 
-% ============================================================
-\section{Computational Performance}
-\label{sec: eval_compute}
-% (~200 words + table)
-%
-% Content:
-%   - Table: model × {parameter count, training time, inference time}
-%   - Compare laptop vs lab computer training times for final model
-%   - Discuss whether results are reproducible across hardware
-%   - Frame argument: a simpler model that trains in minutes on a laptop
-%     vs a complex model requiring GPU hours — relevant for resource-limited
-%     research settings
-%
-% Suggested figures:
-%   \figure — Bar chart: training time per model
+After concluding the threshold sweep we can identify an expected inverse relationship between Precision and Recall across all tested thresholds.
+At a low threshold of 0.1 the model recorded a high recall of 0.945 but at the cost of lower precision at 0.750, suggesting that the model is classifying many instances as positive, which increases the likelihood of false positives.
+As the threshold increases , precision improves to 0.897 and recall drops down to 0.621 at threshold 0.9, indicating that the model is now more conservative in its positive classifications, which reduces false positives but also increases false negatives.
+The F1 score, which is the harmonic mean of precision and recall, peaks at a threshold of 0.3 suggesting that this is the optimal operating point for the model.
+Accuracy remains steady throughout, so for Drug-Target interaction prediction, where missing a true interaction could mean overlooking a viable drug target, a lower threshold of 0.3 will be preferable.
 
 % ============================================================
 \section{Evaluation Summary}
 \label{sec: eval_summary}
-% (~150 words)
-%
-% A brief closing paragraph that:
-%   - Restates which model performed best and by what margin
-%   - Identifies the single most impactful improvement across iterations
-%   - Acknowledges limitations of the evaluation (split differences,
-%     single dataset, no external validation set)
-%   - Leads naturally into the Conclusion section
+After our full evaluation we have determined the optimal model to be the Pytorch implementation with Adam optimiser, using a threshold of 0.3 for classification.
+This model gave us the best overall performance with an F1 score of 0.841 and an AUC-ROC of 0.8670, which is a significant improvement over the baseline model and is competitive with the literature baseline of DeepCDA.
+The most impactful improvement across iterations was the switch to the PyTorch framework, which provided a significant boost in performance.
+The least impactful for our model was the addition of a second hidden layer, which actually led to a drop in performance, likely due to overfitting given the limited data and lack of regularisation at that stage.
+The main limitation with our evaluation is the differing methodologies used to evaluate our model and the literature baseline, with DeepCDA using 10-fold cross-validation and our model using a fixed train/validation/test split.
+This means that the metrics we report for our model are based on a single run and may be more sensitive to the specific train/test split used, while the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data.

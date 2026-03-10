@@ -41,7 +41,8 @@ from sklearn.metrics import roc_curve, roc_auc_score
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Architecture"))
 from utils import (compute_metrics, load_metrics,
                    save_loss_curve, save_loss_curve_overlay,
-                   save_roc_curve_overlay, save_metrics_table)
+                   save_roc_curve_overlay, save_metrics_table,
+                   save_threshold_plot)
 
 from dnn import DTI_DNN
 
@@ -60,7 +61,8 @@ EPOCHS       = 100
 LR           = 1e-3
 WEIGHT_DECAY = 1e-4
 PATIENCE     = 15      # early stopping on val AUC
-THRESHOLD    = 0.5
+THRESHOLD            = 0.5
+THRESHOLD_SWEEP      = [0.1, 0.3, 0.5, 0.7, 0.9]
 
 
 # ─── Data loading ─────────────────────────────────────────────────────────────
@@ -218,9 +220,9 @@ def main():
     _, val_probs,   val_labels   = evaluate(model, val_loader,   criterion, device)
     _, test_probs,  test_labels  = evaluate(model, test_loader,  criterion, device)
 
-    train_metrics = compute_metrics(train_labels.astype(int), train_probs)
-    val_metrics   = compute_metrics(val_labels.astype(int),   val_probs)
-    test_metrics  = compute_metrics(test_labels.astype(int),  test_probs)
+    train_metrics = compute_metrics(train_labels.astype(int), train_probs, THRESHOLD)
+    val_metrics   = compute_metrics(val_labels.astype(int),   val_probs,   THRESHOLD)
+    test_metrics  = compute_metrics(test_labels.astype(int),  test_probs,  THRESHOLD)
 
     print(f"\n{'='*50}\nFINAL RESULTS — {LABEL}\n{'='*50}")
     for split, m in [("Train", train_metrics), ("Val", val_metrics), ("Test", test_metrics)]:
@@ -277,6 +279,13 @@ def main():
         baseline=baseline,
         baseline_label="Torch SGD",
     )
+    save_threshold_plot(
+        test_labels.astype(int), test_probs,
+        thresholds=THRESHOLD_SWEEP,
+        title=f"Metric vs Threshold — {LABEL}",
+        save_path=f"{SAVE_DIR}/{PREFIX}_threshold_sweep.png",
+    )
+
     print(f"\nAll figures saved to {SAVE_DIR}/")
 
 

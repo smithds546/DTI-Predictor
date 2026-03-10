@@ -148,6 +148,79 @@ def save_loss_curve(train_losses, val_losses, title, save_path, stop_epoch=None)
     print(f"  Saved: {save_path}")
 
 
+def save_threshold_plot(y_true, y_prob, thresholds, title, save_path):
+    """
+    Saves two separate figures:
+      - <save_path>              : Metric-vs-threshold line graph
+      - <prefix>_table<ext>     : Metrics summary table
+    AUC-ROC and PR-AUC are excluded as they are threshold-independent.
+    """
+    keys    = ["accuracy", "f1", "precision", "recall"]
+    display = {"accuracy": "Accuracy", "f1": "F1", "precision": "Precision", "recall": "Recall"}
+    colours = {"accuracy": "#4C72B0", "f1": COLOUR, "precision": "#55A868", "recall": "#C44E52"}
+
+    metrics_at_thresh = {m: [] for m in keys}
+    for t in thresholds:
+        m = compute_metrics(y_true, y_prob, threshold=t)
+        for key in keys:
+            metrics_at_thresh[key].append(m[key])
+
+    # ── Line graph ────────────────────────────────────────────────────────────
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for key in keys:
+        ax.plot(thresholds, metrics_at_thresh[key], marker="o", lw=2,
+                color=colours[key], label=display[key])
+
+    ax.set_xlabel("Classification Threshold", fontsize=12)
+    ax.set_ylabel("Score", fontsize=12)
+    ax.set_title(title, fontsize=13, fontweight="bold")
+    ax.set_xticks(thresholds)
+    ax.set_ylim(0, 1.05)
+    ax.legend(fontsize=11, loc="lower left", framealpha=0.9)
+    ax.grid(True, alpha=0.35)
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved: {save_path}")
+
+    # ── Metrics table ─────────────────────────────────────────────────────────
+    base, ext  = os.path.splitext(save_path)
+    table_path = f"{base}_table{ext}"
+
+    col_labels = [str(t) for t in thresholds]
+    cell_text  = [
+        [f"{metrics_at_thresh[k][i]:.3f}" for i in range(len(thresholds))]
+        for k in keys
+    ]
+
+    fig, ax = plt.subplots(figsize=(8, 2.8))
+    ax.axis("off")
+    table = ax.table(
+        cellText=cell_text,
+        rowLabels=[display[k] for k in keys],
+        colLabels=col_labels,
+        cellLoc="center",
+        loc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(11)
+    table.scale(1.3, 1.8)
+
+    for j in range(len(thresholds)):
+        table[0, j].set_facecolor(COLOUR)
+        table[0, j].set_text_props(color="white", fontweight="bold")
+
+    for i, key in enumerate(keys):
+        table[i + 1, -1].set_facecolor(colours[key])
+        table[i + 1, -1].set_text_props(color="white", fontweight="bold")
+
+    ax.set_title("Metrics by Threshold", fontsize=12, fontweight="bold", pad=10)
+    fig.tight_layout()
+    fig.savefig(table_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {table_path}")
+
+
 def save_metrics_table(metrics_dict, title, save_path, baseline=None, baseline_label="Basic"):
     """
     Saves a metrics summary table as a PNG.

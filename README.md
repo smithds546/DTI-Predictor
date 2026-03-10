@@ -32,8 +32,9 @@ Evaluation of models:
     5.  different weights and biases
 
 Next Steps:
-    - evaluation against deepcda
-    - use of threshold in pytorch model
+    - figure out how to change the model design and implementation section
+    - Do i need discussion, do i need to show front end(images)?
+    - change the frontend model usage to pytorch model 
     - put data table in data chapter - statistics of the data, distribution of binders/non-binders, etc.
 
 
