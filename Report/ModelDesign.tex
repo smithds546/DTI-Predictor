@@ -4,17 +4,21 @@
 The objective of this work is to address the DTI prediction problem as a binary classification task.
 
 \subsection{Model Inputs and Outputs}
-The inputs and outputs were explained in detail in my data chapter (reference back) but I will briefly go over the inputs and outputs. The inputs going into the model are Protein embeddings and Drug embeddings with strong semantic meaning. The output is either a yes or no classification determined by thresholds mentioned (reference mention).
+The inputs and outputs were explained in detail in my data chapter~\ref{chap:data-pipeline} but I will briefly go over the inputs and outputs.
+The inputs going into the model are Protein embeddings and Drug embeddings with strong semantic meaning.
+The output is either a yes or no classification determined by thresholds mentioned ~\ref{chap:data-pipeline}.
 
 \subsection{Learning Paradigm}
-The learning paradigm, how the model learns from the data, is supervised binary classification using gradient-based optimization. The model learns to distinguish between binding and non-binding drug-target pairs based on labeled training data. (OPEN TO CHANGE BASED ON HOW I RE-CODE THE MODEL). 
+The learning paradigm, how the model learns from the data, is supervised binary classification using PyTorch-based gradient optimization using Adam \citep{kingma2015adam}.
+The model learns to distinguish between binding and non-binding drug-target pairs based on labeled training data.
 
 \section{Problem Formulation}
-The prediction task is formulated as a supervised binary classification problem, where the objective is to conclude whether a given drug and protein pair produce a binding interaction. The data instances of drug molecules and target proteins are represented as fixed length numerical vectors where $\mathbf{d} \in \mathbb{R}^{m}$ denotes the representation of a drug molecule and $\mathbf{p} \in \mathbb{R}^{n}$ denotes the representation of a target protein.
+The prediction task is formulated as a supervised binary classification problem, where the objective is to conclude whether a given drug and protein pair produce a binding interaction.
+The data instances of drug molecules and target proteins are represented as fixed length numerical vectors where $\mathbf{d} \in \mathbb{R}^{m}$ denotes the representation of a drug molecule and $\mathbf{p} \in \mathbb{R}^{n}$ denotes the representation of a target protein.
 
 The goal of the model is to learn a function $f: \mathbb{R}^{m} \times \mathbb{R}^{n} \rightarrow [0,1],$ which maps a drug--protein pair $(\mathbf{d}, \mathbf{p})$ to a continuous interaction score $\hat{y}$ representing the predicted probability of binding:
 $\hat{y} = f(\mathbf{d}, \mathbf{p}).$
-To obtain a binary interaction label, the predicted score $\hat{y}$ is compared to the predefined decision threshold $\tau$:
+To obtain a binary interaction label, the predicted score $\hat{y}$ is compared to the predefined decision threshold $\tau$, which is a tunable parameter; the value of $\tau$ = 0.3 is justified through data sensitivity analysis in Chapter~\ref{ch:-evaluation}:
 \[
 \hat{y}_{\text{class}} =
 \begin{cases}
@@ -22,86 +26,149 @@ To obtain a binary interaction label, the predicted score $\hat{y}$ is compared 
 0, & \text{otherwise}.
 \end{cases}
 \]
-The ground-truth labels $y \in \{0,1\}$ are derived from experimentally measured binding affinity values and binarized using affinity thresholds described in Chapter~\ref{chap:data-pipeline}. Pairs exceeding the binding threshold are labeled as interacting, while pairs below the non-binding threshold are labeled as non-interacting.
+The ground-truth labels $y \in \{0,1\}$ are derived from experimentally measured binding affinity values and binarised using affinity thresholds described in Chapter~\ref{chap:data-pipeline}.
+Pairs exceeding the binding threshold are labeled as interacting, while pairs below the non-binding threshold are labeled as non-interacting.
 
 
-Classification was selected over regression to improve robustness against experimental noise and to focus learning on more definitive binding interactions. This formulation aligns with the intended application of the system, where the primary objective is to determine whether a candidate drug is likely to bind a given target rather than to predict an exact affinity value.
+Classification was selected over regression to improve robustness against experimental noise and to focus learning on more definitive binding interactions.
+This formulation aligns with the intended application of the system, where the primary objective is to determine whether a candidate drug is likely to bind a given target rather than to predict an exact affinity value.
 
-The learning objective is therefore to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset, allowing the model to generalise to the unseen drug-target pairs.
+The learning objective is, therefore, to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset, allowing the model to generalise to the unseen drug-target pairs.
 
 \section{Integration of Input Representations}
-Drug to Target interaction predictions requires the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences. These representations differ in scale, semantic meaning and dimensionality making direct integration inappropriate. 
+Drug to Target interaction predictions requires the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences.
+These representations differ in scale, semantic meaning, and dimensionality, making direct integration inappropriate.
 
-To address this, the model uses a dual-input design, where drugs and proteins are processed independently through dedicated encoding pathways before being combined at a later stage once they become compatible. Allowing independent processing preserved the features and semantic meaning for each drug and protein, and joint learning is enabled once combined together.
+To address this, the model uses a dual-input design, where drugs and proteins are processed independently through dedicated encoding pathways before being combined at a later stage once they become compatible.
+Allowing independent processing preserved the features and semantic meaning for each drug and protein, and joint learning is enabled once combined together.
 \subsection{Drug Representation}
 Drug molecules are represented using MACCS fingerprints, which encode the presence or absence of predefined chemical substructures as a fixed length binary vector of 167 dimensions.
 
-The fixed dimensionality makes it well suited for neural networks as it allows the model to learn patterns between specific substructures and binding behavior. This also makes it computationally efficient and reproducible across multiple experiments.
+The fixed dimensionality makes it well suited for neural networks as it allows the model to learn patterns between specific substructures and binding behavior.
+This also makes it computationally efficient and reproducible across multiple experiments.
 \subsection{Protein Representation}
-Target proteins are represented using contextual embeddings created by the pretrained ProtBERT transformer model. Unlike traditional sequence-based embeddings, transformer-based embeddings capture bidirectional and context-dependent semantic meanings within amino acid sequences, reflecting underlying biochemical and structural properties.
+Target proteins are represented using contextual embeddings created by the pretrained ProtBERT transformer model.
+Unlike traditional sequence-based embeddings, transformer-based embeddings capture bidirectional and context-dependent semantic meanings within amino acid sequences, reflecting underlying biochemical and structural properties.
 
-Each protein sequence is mapped to a fixed-length vector through mean pooling to produce a representation suitable for neural network processing. Mean pooling provides a simple method for aggregating variable-length protein sequences while preserving global contextual information learned by the transformer. This approach enables the model to leverage rich semantic information learned from large protein databases, improving generalization to unseen targets.
+Each protein sequence is mapped to a fixed-length vector through mean pooling to produce a representation suitable for neural network processing.
+Mean pooling provides a simple method for aggregating variable-length protein sequences while preserving global contextual information learned by the transformer.
+This approach enables the model to leverage rich semantic information learned from large protein databases, improving generalization to unseen targets.
 
 \section{Model Architecture}
-Due to the heterogeneous nature of Duel Inputs, the architecture is slightly modified from traditional neural networks. Separate encoding pathways are used to process each input to a usable, unified representation for interaction prediction.
+Due to the heterogeneous nature of Duel Inputs, the architecture is slightly modified from traditional neural networks.
+Separate encoding pathways are used to process each input to a usable, unified representation for interaction prediction.
 
-Both encoders operate as fixed feature extractors and are not updated during model training. Learning is therefore concentrated in the prediction stage, reducing model complexity and improving training stability.
+Both encoders operate as fixed feature extractors and are not updated during model training.
+Learning is therefore concentrated in the prediction stage, reducing model complexity and improving training stability.
 
 This modular design enables future extensions, such as introducing trainable encoder layers or alternative fusion strategies, without requiring changes to the underlying data pipeline.
 \subsection{Drug Encoder}
-The drug encoder is responsible for transforming molecular SMILES string into a numerical representation using MACCS (Molecular ACCess System) keys. The SMILES representation is parsed into an RDKit object, where MACCS fingerprint generation is applied producing a 167-bit binary vector.
+The drug encoder is responsible for transforming molecular SMILES string into a numerical representation using MACCS (Molecular ACCess System) keys.
+The SMILES representation is parsed into an RDKit object, where MACCS fingerprint generation is applied producing a 167-bit binary vector.
 
-This representation captures essential structural properties of small molecules while maintaining a compact and consistent dimensionality. In cases where a SMILES string cannot be successfully parsed, a zero vector is returned to preserve input dimensional consistency and prevent pipeline failure.
+This representation captures essential structural properties of small molecules while maintaining a compact and consistent dimensionality.
+In cases where a SMILES string cannot be successfully parsed, a zero vector is returned to preserve input dimensional consistency and prevent pipeline failure.
 
 \subsection{Protein Encoder}
-Protein sequences are encoded using contextual embeddings derived from a pretrained ProtBERT transformer model. Each amino acid sequence is tokenised and passed through the frozen ProtBERT model to obtain hidden states.
+Protein sequences are encoded using contextual embeddings derived from a pretrained ProtBERT transformer model.
+Each amino acid sequence is tokenised and passed through the frozen ProtBERT model to obtain hidden states.
 
-To obtain a single fixed-length representation per protein, mean pooling is applied across the sequence dimension of the final hidden layer. This produces a 1024-dimensional continuous embedding that summarises the biochemical and contextual properties of the entire protein sequence.
+To obtain a single fixed-length representation per protein, mean pooling is applied across the sequence dimension of the final hidden layer.
+This produces a 1024-dimensional continuous embedding that summarises the biochemical and contextual properties of the entire protein sequence.
 
-This is computationally expensive, so each result is cached locally using hash-based lookup for reduced overhead when a sequence has already been computed. This is very effective during dataset re-processing as some sequences are loaded directly from the disk.
+This is computationally expensive, so each result is cached locally using hash-based lookup for reduced overhead when a sequence has already been computed.
+This is very effective during dataset re-processing as some sequences are loaded directly from the disk.
 
 As with the drug encoder, the protein encoder operates as a fixed feature extractor and does not participate in gradient-based learning during model training.
-\subsection{Fusion and Prediction Layer}
-Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model. The Binary MACCS fingerprint and the ProtBERT embedding are concatenated into a single vector representing the drug-target pair.
 
-This fused representation is passed to a lightweight neural network responsible for learning interaction-specific patterns. The final prediction layer applies a sigmoid activation function to produce a continuous interaction score in the range [0, 1], representing the model's confidence that the given drug-target pair exhibits binding behavior.
-Binary classification is then performed by applying the binding thresholds defined in Chapter~\ref{chap:data-pipeline}, assigning each pair to either the binding or non-binding class.
+\subsection{Prediction Network}
+\label{subsec:-prediction_network}
+The prediction network contains two hidden layers using ReLU activations for learning non-linear interactions between the drug and protein representations.
+The network also makes use of dropout and L2 regularisation to prevent overfitting, which is a common issue in models with limited training data and high-dimensional inputs.
+The network uses the sigmoid function only on the output layer to produce a continuous interaction score between 0 and 1.
+Here is a tale describing the architecture of the prediction network:
+  \begin{table}[H]
+  \centering
+  \caption{Model Architecture and Training Hyperparameters}
+  \label{tab:network_structure}
+  \begin{tabular}{lc}
+  \toprule
+  \textbf{Parameter} & \textbf{Optimal Model} \\
+  \midrule
+  \textit{Architecture} \\
+  \quad Hidden size          & 32 \\
+  \quad Activation           & ReLU + Sigmoid (Output layer) \\
+  \quad Batch normalisation  & No \\
+  \quad Dropout              & 0.2 \\
+  \midrule
+  \textit{Training} \\
+  \quad Loss function        & BCE \\
+  \quad Optimiser            & Adam \\
+  \quad Learning rate        & 1x10*-3 \\
+  \quad Weight decay         & 1x10*-4 \\
+  \quad Batch size           & 512 \\
+  \quad Max epochs           & 1000 \\
+  \midrule
+  \textit{Regularisation} \\
+  \quad Early stopping       & No \\
+  \quad LR scheduler         & \textemdash \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+The design choices reflected here were informed through iterative experimentation, the full progression is documented in Chapter~\ref{ch:-evaluation}.
+\subsection{Fusion and Prediction Layer}
+Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model.
+The Binary MACCS fingerprint and the ProtBERT embedding are concatenated into a single vector representing the drug-target pair.
+
+This combined vector is then passed through the prediction network described above, and produces a binary classification based on the optimal threshold determined through experimentation.
 
 \section{Training Procedure}
 This section describes how the model parameters are optimised during training, a process that is important to how the model learns meaningful patterns and builds internal representations on the data it's exposed to.
 \subsection{Loss Function}
-The model is trained using the Mean Squared Error (MSE) loss function, defined as:
+The model is trained using the Binary Cross Entropy (BCE) loss function, defined as:
 \[
-\mathcal{L}(y, \hat{y}) = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2,
+    E = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i) \right],
 \]
-where $y_i \in \{0,1\}$ denotes the ground-truth interaction label for a given drug--target pair, $\hat{y}_i \in [0,1]$ represents the predicted output of the model after the sigmoid activation, and $N$ is the number of training samples.
+where $N$ is the number of training samples, $y_i$ is the true binary label for the $i$-th sample, and $\hat{y}_i$ is the predicted probability of the positive class (binding interaction) for the $i$-th sample.
+This loss function is more appropriate for binary classification because it penalises confident wrong predictions more heavily that MSE, and it pairs better with sigmoid output.
 
-MIGHT CHANGE WITH BCE INSTEAD OF MSE
 \subsection{Optimization Strategy}
-Model parameters are optimized using batch gradient decsent with backpropogation. When a training epoch occurs, a forward pass predicts an interaction score $\hat{y}$, and is followed by backward pass that calculates the gradients of the loss, considering weights and bias parameter.
+Model parameters were initially optimised using batch gradient descent with backpropagation, but after experimentation and it was reimplemented in PyTorch, we are using the adam optimiser with mini-batch gradient descent and He initialisation for weight initialisation.
+Adam is an adaptive learning rate optimiser that maintains per-parameter learning rates using a combination of momentum and RMSProp, which can lead to faster convergence and improved performance compared to traditional stochastic gradient descent (SGD)\citep{kingma2015adam}.
+Parameters are updated via:
+\begin{equation}
+    \theta_{t+1} = \theta_t - \frac{\alpha}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t
+\end{equation}
+Where $\hat{m}_t$ and $\hat{v}_t$ are bias-corrected estimates of the first and second moments of the gradients, $\alpha$ is the learning rate, and $\epsilon$ is a small constant to prevent division by zero.
+Mini-batch gradient descent is used to balance the computational efficiency of batch gradient descent with the noise reduction benefits of stochastic gradient descent, allowing for more stable convergence and better generalisation.
+He initialisation is used to set the initial weights of the network, which helps to mitigate issues of vanishing or exploding gradients in deep networks, particularly when using ReLU activations \citep{he2015delving}.
 
-During the backward pass, the gradients are computed using the chain rule, which is when the error from the output layer is propagated back through the hidden layer. At each layer, to enable non-linear learning, the sigmoid activation function and its derivative are used. Once gradients are calculated, parameters are updated according to the gradient descent update rule:
-\[
-W^{(l)} \leftarrow W^{(l)} - \eta \frac{\partial E}{\partial W^{(l)}}, \qquad
-b^{(l)} \leftarrow b^{(l)} - \eta \frac{\partial E}{\partial b^{(l)}},
-\]
-where $W^{(l)}$ and $b^{(l)}$ denote the weights and biases of layer $l$, $E$ is the loss function, and $\eta$ is the learning rate. This update rule is applied iteratively across all training epochs until convergence occurs.
-
-To update the weights and biases correctly, the gradients are normalized by the batch size and training is performed over multiple epochs to allow for convergence towards minimum loss.
 \subsection{Hyperparameter Selection}
-To determine the training behavior of the model, we have control over the initial learning rate, the hidden layer size and the number of epochs we want the model to complete. The initial values we chose were based on recommendations from literature. The Hidden layer size of 32 prevents overfitting and keeps computations manageable and literature consistently shows \citep{heaton2017neural}, that 16-64 neurons are effective for models on structured data. A high initial learning rate of 0.5 was selected to accelerate convergence in a network with limited depth and is recommended in deep learning literature \citep{goodfellow2016deep}. An epoch parameter of 20,000 is used to ensure convergence following recommendations from \citep{bishop2006prml}.
+As you can see in the table in the section~ref{subsec:-prediction_network} we are using mostly defaults set by Adam optimiser.
+The learning rate was set to 0.001, which is a common default for Adam and provides a good balance between convergence speed and stability.
+The weight decay parameter was set to 0.0004, which helps to prevent overfitting by adding a penalty on large weights, encouraging the model to learn simpler patterns that generalise better to unseen data.
+The batch size of 512 was chosen to provide a good balance between computational efficiency \citep{FIND CITATION}
 
+\subsection{Regularisation}
+The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.2, which means that during training, 20\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons.
+L2 regularisation is applied through the weight decay parameter in the Adam optimiser, which adds a penalty proportional to the square of the magnitude of the weights, encouraging smaller weights and thus simpler models that are less likely to overfit.
 
 \section{Model Output Interpretation}
-The model produces a single continuous value $\hat{y} \in (0,1)$ for each drug-target pair, this is obtained through the sigmoid activation function in the output layer. This figure is the models prediction of either binding (1) or non-binding (0). 
+The model produces a single continuous value $\hat{y} \in (0,1)$ for each drug-target pair, this is obtained through the sigmoid activation function in the output layer.
+This figure is the models prediction of either binding (1) or non-binding (0).
 
-To get a discrete prediction from the output score of mean squared error, the score is compared against some predefined thresholds. 
+To get a discrete prediction from the output score of mean squared error, the score is compared against some predefined thresholds to optimise the performance of the model.
+We settled on a threshold of 0.3 after experimentation as it produced the highest F1 score on the test set, which means its the optimal balance between precision and recall.
 
-The final prediction should be interpreted as a probability instead of a definitive prediction. Therefore, this model is intended for the early-stage screening of drug-target pairs, instead of replacing experimental validation.
+The final prediction should be interpreted as a probability instead of a definitive prediction.
+Therefore, this model is intended for the early-stage screening of drug-target pairs instead of replacing experimental validation.
 
 \section{Implementation Details}
-The model was implemented in Python using NumPy for the numerical computations which made the process much more streamlined. All the forward and backward propagation steps were implemented manually for full transparency over the learning process.
+The model was Originally implemented in Python using NumPy for the numerical computations.
+All the forward and backward propagation steps were implemented manually for full transparency over the learning process, and better insight into how changes affect the model's performance.
+However, after conducting experiments and evaluating each improvement, the optimal implementation utilised PyTorch's framework.
+The dual branch encoder design was a PyTorch-specific implementation because of the ease of use and flexibility it provides for building complex architectures and handling heterogeneous data.
 
-Rather than relying on high-level deep learning frameworks, the neural network was implemented from first principles. This allowed fine-grained control over weight updates, gradient, and loss computation, allowing me to grasp a clear understanding of the learning process for the model.
 
 

@@ -32,7 +32,7 @@ Evaluation of models:
     5.  different weights and biases
 
 Next Steps:
-    - figure out how to change the model design and implementation section
+    - fix model design chapter, section by section.(Have i used mini batch normalisation?)
     - Do i need discussion, do i need to show front end(images)?
     - change the frontend model usage to pytorch model 
     - put data table in data chapter - statistics of the data, distribution of binders/non-binders, etc.
