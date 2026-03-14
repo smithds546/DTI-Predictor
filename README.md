@@ -32,15 +32,16 @@ Evaluation of models:
     5.  different weights and biases
 
 Next Steps:
-    - fix model design chapter, section by section.(Have i used mini batch normalisation?)
     - Do i need discussion, do i need to show front end(images)?
-    - change the frontend model usage to pytorch model 
     - put data table in data chapter - statistics of the data, distribution of binders/non-binders, etc.
+    - Check what i said i would accomplish with this project (the scope)
+    - add drug structure instead of smiles to results
+    - write about front end
 
 
 How to run frontend:
 
-gatsby develop
+gatsby develop or gatsby build
 
 How to run backend:
 

@@ -381,8 +381,7 @@ However, this is at expense of Recall, which suggests that the model is now maki
 We will address this issue within the next iteration by including the Adam optimiser.
 
     \subsubsection{Adam Optimiser}
-As explained in model design te adam optimiser is an adaptive learning rate optimisation algorithm.
-Following the default hyperparameters recommended by \citep{kingma2015adam}, this work uses $\alpha = 0.001$, $\beta_1 = 0.9$, and $\beta_2 = 0.999$, with an L2 regularisation penalty of $\lambda = 1 \times 10^{-4}$ applied via weight decay.
+As explained in Section~\ref{subsec:optimization_strategy}, the adam optimiser was adopted as the final optimisation strategy.
 The improvements from using Adam can be seen in the following metrics table and loss curve:
 \begin{figure}[H]
     \centering

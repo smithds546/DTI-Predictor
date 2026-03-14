@@ -76,3 +76,11 @@ def autocomplete_proteins(query: str):
         return []
     q = query.lower()
     return [t for t in TARGET_LIST if q in t.lower()][:10]
+
+
+def get_random_drug_sample(n: int = 20):
+    """Return n random unique drugs (name + smiles) for quick screening."""
+    sample = DRUG_ROWS.dropna(subset=["drug_name"]).drop_duplicates(subset=["drug_smiles"]).sample(
+        n=min(n, len(DRUG_ROWS)), random_state=None
+    )
+    return [{"name": row["drug_name"], "smiles": row["drug_smiles"]} for _, row in sample.iterrows()]
