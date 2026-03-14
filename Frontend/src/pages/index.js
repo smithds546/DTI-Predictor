@@ -37,6 +37,13 @@ const IndexPage = () => {
   const [hoverSmiles, setHoverSmiles] = React.useState(null)
   const [hoverPos, setHoverPos] = React.useState({ x: 0, y: 0 })
 
+  // --- screen history modal ---
+  const [expandedScreenId, setExpandedScreenId] = React.useState(null)
+  const [modalSortCol, setModalSortCol] = React.useState("rank")
+  const [modalSortAsc, setModalSortAsc] = React.useState(true)
+  const [modalHoverSmiles, setModalHoverSmiles] = React.useState(null)
+  const [modalHoverPos, setModalHoverPos] = React.useState({ x: 0, y: 0 })
+
   // --- compound library filters ---
   const [filterLipinski, setFilterLipinski] = React.useState(false)
   const [filterMwPreset, setFilterMwPreset] = React.useState("all")
@@ -323,6 +330,7 @@ const IndexPage = () => {
       }
       const data = await res.json()
       setScreenResults(data)
+      fetchHistory()
     } catch (e) {
       setScreenError(e.message || "Something went wrong")
     } finally {
@@ -336,69 +344,9 @@ const IndexPage = () => {
       setSortAsc(!sortAsc)
     } else {
       setSortCol(col)
-      setSortAsc(col === "rank" || col === "drug_name") // asc for rank/name, desc for scores
+      setSortAsc(col === "rank" || col === "drug_name")
     }
   }
-
-  const getSortedHits = () => {
-    if (!screenResults) return []
-    const hits = [...screenResults.hits]
-    hits.sort((a, b) => {
-      let av = a[sortCol], bv = b[sortCol]
-      // Handle nulls
-      if (av == null && bv == null) return 0
-      if (av == null) return 1
-      if (bv == null) return -1
-      // String comparison for names
-      if (typeof av === "string") return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av)
-      // Boolean - binder first
-      if (typeof av === "boolean") { av = av ? 0 : 1; bv = bv ? 0 : 1 }
-      return sortAsc ? av - bv : bv - av
-    })
-    return hits
-  }
-
-  const sortIndicator = (col) => {
-    if (sortCol !== col) return " \u2195"
-    return sortAsc ? " \u2191" : " \u2193"
-  }
-
-  const downloadCsv = () => {
-    if (!screenResults) return
-    const rows = getSortedHits()
-    const header = "Rank,Compound,SMILES,MW,LogP,Rings,Score,Prediction"
-    const csvRows = rows.map((h, i) => {
-      const name = (h.drug_name || "").replace(/"/g, '""')
-      const smiles = h.drug.replace(/"/g, '""')
-      return [
-        i + 1,
-        `"${name}"`,
-        `"${smiles}"`,
-        h.mw != null ? h.mw.toFixed(1) : "",
-        h.logp != null ? h.logp.toFixed(2) : "",
-        h.rings != null ? h.rings : "",
-        h.score.toFixed(4),
-        h.binder ? "Binder" : "Non-binder",
-      ].join(",")
-    })
-    const csv = [header, ...csvRows].join("\n")
-    const blob = new Blob([csv], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `screening_${screenResults.protein.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const thStyle = (col) => ({
-    padding: "8px 10px",
-    borderBottom: "2px solid #ddd",
-    cursor: "pointer",
-    userSelect: "none",
-    whiteSpace: "nowrap",
-    background: sortCol === col ? "#e8edf5" : "#f5f5f5",
-  })
 
   // --- shared styles ---
   const tabStyle = (active) => ({
@@ -411,6 +359,147 @@ const IndexPage = () => {
     borderRadius: "6px 6px 0 0",
     marginRight: 4,
   })
+
+  // --- reusable sort/download helpers ---
+  const sortHits = (hits, col, asc) => {
+    const sorted = [...hits]
+    sorted.sort((a, b) => {
+      let av = a[col], bv = b[col]
+      if (av == null && bv == null) return 0
+      if (av == null) return 1
+      if (bv == null) return -1
+      if (typeof av === "string") return asc ? av.localeCompare(bv) : bv.localeCompare(av)
+      if (typeof av === "boolean") { av = av ? 0 : 1; bv = bv ? 0 : 1 }
+      return asc ? av - bv : bv - av
+    })
+    return sorted
+  }
+
+  const makeCsv = (hits, protein) => {
+    const header = "Rank,Compound,SMILES,MW,LogP,Rings,Score,Prediction"
+    const csvRows = hits.map((h, i) => {
+      const name = (h.drug_name || "").replace(/"/g, '""')
+      const smiles = h.drug.replace(/"/g, '""')
+      return [
+        i + 1, `"${name}"`, `"${smiles}"`,
+        h.mw != null ? h.mw.toFixed(1) : "",
+        h.logp != null ? h.logp.toFixed(2) : "",
+        h.rings != null ? h.rings : "",
+        h.score.toFixed(4),
+        h.binder ? "Binder" : "Non-binder",
+      ].join(",")
+    })
+    const csv = [header, ...csvRows].join("\n")
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `screening_${protein.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const renderResultsTable = ({ hits, protein, timestamp, currentSortCol, currentSortAsc, onSort, currentHoverSmiles, onHoverEnter, onHoverLeave, hoverPosition, onDownloadCsv }) => {
+    const sorted = sortHits(hits, currentSortCol, currentSortAsc)
+    const indicator = (col) => {
+      if (currentSortCol !== col) return " \u2195"
+      return currentSortAsc ? " \u2191" : " \u2193"
+    }
+    const thS = (col) => ({
+      padding: "8px 10px", borderBottom: "2px solid #ddd", cursor: "pointer",
+      userSelect: "none", whiteSpace: "nowrap",
+      background: currentSortCol === col ? "#e8edf5" : "#f5f5f5",
+    })
+
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <h3 style={{ margin: 0 }}>Screening Results</h3>
+          <button type="button" onClick={onDownloadCsv}
+            style={{ padding: "5px 14px", fontSize: 12, cursor: "pointer", border: "1px solid #ccc", borderRadius: 4, background: "#fff" }}>
+            Download CSV
+          </button>
+        </div>
+        <p style={{ color: "#555", fontSize: 13, margin: "0 0 10px" }}>
+          Target: <b>{protein}</b> &mdash; {hits.length} compounds screened &mdash; {new Date(timestamp).toLocaleString()}
+        </p>
+        <div style={{ overflowX: "auto", position: "relative" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+            <thead>
+              <tr style={{ textAlign: "left" }}>
+                <th style={thS("rank")} onClick={() => onSort("rank")}>Rank{indicator("rank")}</th>
+                <th style={thS("drug_name")} onClick={() => onSort("drug_name")}>Compound{indicator("drug_name")}</th>
+                <th style={{ ...thS("drug"), cursor: "default" }}>SMILES</th>
+                <th style={thS("mw")} onClick={() => onSort("mw")}>MW{indicator("mw")}</th>
+                <th style={thS("logp")} onClick={() => onSort("logp")}>LogP{indicator("logp")}</th>
+                <th style={thS("rings")} onClick={() => onSort("rings")}>Rings{indicator("rings")}</th>
+                <th style={thS("score")} onClick={() => onSort("score")}>Score{indicator("score")}</th>
+                <th style={thS("binder")} onClick={() => onSort("binder")}>Prediction{indicator("binder")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((hit) => (
+                <tr key={hit.drug} style={{
+                  background: hit.binder ? "#e8f5e9" : "transparent",
+                  borderBottom: "1px solid #eee",
+                }}>
+                  <td style={{ padding: "6px 10px", fontWeight: 600 }}>{hit.rank}</td>
+                  <td style={{ padding: "6px 10px", position: "relative" }}
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      onHoverEnter(hit.drug, { x: rect.right + 8, y: rect.top })
+                    }}
+                    onMouseLeave={onHoverLeave}
+                  >
+                    {hit.drug_name || <span style={{ color: "#999", fontStyle: "italic" }}>unnamed</span>}
+                  </td>
+                  <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 11, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    title={hit.drug}>
+                    {hit.drug}
+                  </td>
+                  <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 12 }}>
+                    {hit.mw != null ? hit.mw.toFixed(1) : "\u2013"}
+                  </td>
+                  <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 12 }}>
+                    {hit.logp != null ? hit.logp.toFixed(2) : "\u2013"}
+                  </td>
+                  <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 12, textAlign: "center" }}>
+                    {hit.rings != null ? hit.rings : "\u2013"}
+                  </td>
+                  <td style={{ padding: "6px 10px", fontFamily: "monospace" }}>
+                    {hit.score.toFixed(4)}
+                  </td>
+                  <td style={{ padding: "6px 10px" }}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 600,
+                      background: hit.binder ? "#4caf50" : "#e0e0e0",
+                      color: hit.binder ? "#fff" : "#555",
+                    }}>
+                      {hit.binder ? "Binder" : "Non-binder"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Structure hover tooltip */}
+          {currentHoverSmiles && (
+            <div style={{
+              position: "fixed", left: hoverPosition.x, top: hoverPosition.y, zIndex: 1000,
+              background: "#fff", border: "1px solid #ccc", borderRadius: 8,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)", padding: 6, pointerEvents: "none",
+            }}>
+              <img
+                src={`${API_BASE}/structure/svg?smiles=${encodeURIComponent(currentHoverSmiles)}&w=220&h=180`}
+                alt="2D structure" width={220} height={180} style={{ display: "block" }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   const chipStyle = {
     display: "inline-flex",
@@ -777,105 +866,19 @@ const IndexPage = () => {
               {/* Screening results table */}
               {screenResults && (
                 <div style={{ marginTop: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <h3 style={{ margin: 0 }}>Screening Results</h3>
-                    <button type="button" onClick={downloadCsv}
-                      style={{ padding: "5px 14px", fontSize: 12, cursor: "pointer", border: "1px solid #ccc", borderRadius: 4, background: "#fff" }}>
-                      Download CSV
-                    </button>
-                  </div>
-                  <p style={{ color: "#555", fontSize: 13, margin: "0 0 10px" }}>
-                    Target: <b>{screenResults.protein}</b> &mdash; {screenResults.hits.length} compounds screened &mdash; {new Date(screenResults.timestamp).toLocaleString()}
-                  </p>
-                  <div style={{ overflowX: "auto", position: "relative" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-                      <thead>
-                        <tr style={{ textAlign: "left" }}>
-                          <th style={thStyle("rank")} onClick={() => handleSort("rank")}>Rank{sortIndicator("rank")}</th>
-                          <th style={thStyle("drug_name")} onClick={() => handleSort("drug_name")}>Compound{sortIndicator("drug_name")}</th>
-                          <th style={{ ...thStyle("drug"), cursor: "default" }}>SMILES</th>
-                          <th style={thStyle("mw")} onClick={() => handleSort("mw")}>MW{sortIndicator("mw")}</th>
-                          <th style={thStyle("logp")} onClick={() => handleSort("logp")}>LogP{sortIndicator("logp")}</th>
-                          <th style={thStyle("rings")} onClick={() => handleSort("rings")}>Rings{sortIndicator("rings")}</th>
-                          <th style={thStyle("score")} onClick={() => handleSort("score")}>Score{sortIndicator("score")}</th>
-                          <th style={thStyle("binder")} onClick={() => handleSort("binder")}>Prediction{sortIndicator("binder")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getSortedHits().map((hit) => (
-                          <tr key={hit.drug} style={{
-                            background: hit.binder ? "#e8f5e9" : "transparent",
-                            borderBottom: "1px solid #eee",
-                          }}>
-                            <td style={{ padding: "6px 10px", fontWeight: 600 }}>{hit.rank}</td>
-                            <td style={{ padding: "6px 10px", position: "relative" }}
-                              onMouseEnter={(e) => {
-                                const rect = e.currentTarget.getBoundingClientRect()
-                                setHoverSmiles(hit.drug)
-                                setHoverPos({ x: rect.right + 8, y: rect.top })
-                              }}
-                              onMouseLeave={() => setHoverSmiles(null)}
-                            >
-                              {hit.drug_name || <span style={{ color: "#999", fontStyle: "italic" }}>unnamed</span>}
-                            </td>
-                            <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 11, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                              title={hit.drug}>
-                              {hit.drug}
-                            </td>
-                            <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 12 }}>
-                              {hit.mw != null ? hit.mw.toFixed(1) : "\u2013"}
-                            </td>
-                            <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 12 }}>
-                              {hit.logp != null ? hit.logp.toFixed(2) : "\u2013"}
-                            </td>
-                            <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 12, textAlign: "center" }}>
-                              {hit.rings != null ? hit.rings : "\u2013"}
-                            </td>
-                            <td style={{ padding: "6px 10px", fontFamily: "monospace" }}>
-                              {hit.score.toFixed(4)}
-                            </td>
-                            <td style={{ padding: "6px 10px" }}>
-                              <span style={{
-                                display: "inline-block",
-                                padding: "2px 8px",
-                                borderRadius: 12,
-                                fontSize: 12,
-                                fontWeight: 600,
-                                background: hit.binder ? "#4caf50" : "#e0e0e0",
-                                color: hit.binder ? "#fff" : "#555",
-                              }}>
-                                {hit.binder ? "Binder" : "Non-binder"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    {/* Structure hover tooltip */}
-                    {hoverSmiles && (
-                      <div style={{
-                        position: "fixed",
-                        left: hoverPos.x,
-                        top: hoverPos.y,
-                        zIndex: 1000,
-                        background: "#fff",
-                        border: "1px solid #ccc",
-                        borderRadius: 8,
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        padding: 6,
-                        pointerEvents: "none",
-                      }}>
-                        <img
-                          src={`${API_BASE}/structure/svg?smiles=${encodeURIComponent(hoverSmiles)}&w=220&h=180`}
-                          alt="2D structure"
-                          width={220}
-                          height={180}
-                          style={{ display: "block" }}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  {renderResultsTable({
+                    hits: screenResults.hits,
+                    protein: screenResults.protein,
+                    timestamp: screenResults.timestamp,
+                    currentSortCol: sortCol,
+                    currentSortAsc: sortAsc,
+                    onSort: handleSort,
+                    currentHoverSmiles: hoverSmiles,
+                    onHoverEnter: (smiles, pos) => { setHoverSmiles(smiles); setHoverPos(pos) },
+                    onHoverLeave: () => setHoverSmiles(null),
+                    hoverPosition: hoverPos,
+                    onDownloadCsv: () => makeCsv(sortHits(screenResults.hits, sortCol, sortAsc), screenResults.protein),
+                  })}
                 </div>
               )}
             </>
@@ -889,18 +892,95 @@ const IndexPage = () => {
         </div>
         <ul className={styles.list}>
           {history.length === 0 && <li>No searches yet.</li>}
-          {history.map((h) => (
-            <li key={h.id || h.timestamp} className={styles.listItem} style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <span title={`SMILES: ${h.drug}`}><b>Drug:</b> {h.drug_name || h.drug}</span>
-                <span><b>Protein:</b> {h.protein}</span>
-                <span><b>Score:</b> {typeof h.score === "number" ? h.score.toFixed(4) : h.score}</span>
-                <span><b>Prediction:</b> {h.binder ? "Binder" : "Non-binder"}</span>
-              </div>
-              <small style={{ color: "#666" }}>{new Date(h.timestamp).toLocaleString()}</small>
-            </li>
-          ))}
+          {history.map((h) => {
+            if (h.type === "screen" && h.screen_data) {
+              const sd = h.screen_data
+              const binderCount = sd.hits.filter((x) => x.binder).length
+              return (
+                <li key={h.id || h.timestamp} className={styles.listItem} style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{
+                      display: "inline-block", padding: "2px 8px", borderRadius: 12,
+                      fontSize: 11, fontWeight: 600, background: "#e3f2fd", color: "#1565c0",
+                    }}>Screen</span>
+                    <span><b>Target:</b> {sd.protein}</span>
+                    <span><b>{sd.hits.length}</b> compounds</span>
+                    <span><b>{binderCount}</b> binder{binderCount !== 1 ? "s" : ""}</span>
+                    <button type="button" onClick={() => {
+                      setExpandedScreenId(h.id)
+                      setModalSortCol("rank")
+                      setModalSortAsc(true)
+                      setModalHoverSmiles(null)
+                    }}
+                      style={{
+                        padding: "3px 12px", fontSize: 12, cursor: "pointer",
+                        background: "#1a73e8", color: "#fff", border: "none", borderRadius: 4,
+                      }}>
+                      View Results
+                    </button>
+                  </div>
+                  <small style={{ color: "#666" }}>{new Date(h.timestamp).toLocaleString()}</small>
+                </li>
+              )
+            }
+            // Single prediction
+            return (
+              <li key={h.id || h.timestamp} className={styles.listItem} style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <span title={`SMILES: ${h.drug}`}><b>Drug:</b> {h.drug_name || h.drug}</span>
+                  <span><b>Protein:</b> {h.protein}</span>
+                  <span><b>Score:</b> {typeof h.score === "number" ? h.score.toFixed(4) : h.score}</span>
+                  <span><b>Prediction:</b> {h.binder ? "Binder" : "Non-binder"}</span>
+                </div>
+                <small style={{ color: "#666" }}>{new Date(h.timestamp).toLocaleString()}</small>
+              </li>
+            )
+          })}
         </ul>
+
+        {/* Screen history modal */}
+        {expandedScreenId && (() => {
+          const entry = history.find((h) => h.id === expandedScreenId)
+          if (!entry || !entry.screen_data) return null
+          const sd = entry.screen_data
+          return (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(0,0,0,0.5)", zIndex: 2000,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }} onClick={(e) => { if (e.target === e.currentTarget) setExpandedScreenId(null) }}>
+              <div style={{
+                background: "#fff", borderRadius: 12, padding: 24,
+                width: "90vw", maxWidth: 960, maxHeight: "85vh", overflow: "auto",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h2 style={{ margin: 0 }}>Screening Results</h2>
+                  <button onClick={() => setExpandedScreenId(null)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, padding: "0 4px", color: "#666" }}>
+                    &times;
+                  </button>
+                </div>
+                {renderResultsTable({
+                  hits: sd.hits,
+                  protein: sd.protein,
+                  timestamp: sd.timestamp || entry.timestamp,
+                  currentSortCol: modalSortCol,
+                  currentSortAsc: modalSortAsc,
+                  onSort: (col) => {
+                    if (modalSortCol === col) { setModalSortAsc(!modalSortAsc) }
+                    else { setModalSortCol(col); setModalSortAsc(col === "rank" || col === "drug_name") }
+                  },
+                  currentHoverSmiles: modalHoverSmiles,
+                  onHoverEnter: (smiles, pos) => { setModalHoverSmiles(smiles); setModalHoverPos(pos) },
+                  onHoverLeave: () => setModalHoverSmiles(null),
+                  hoverPosition: modalHoverPos,
+                  onDownloadCsv: () => makeCsv(sortHits(sd.hits, modalSortCol, modalSortAsc), sd.protein),
+                })}
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </Layout>
   )

@@ -38,3 +38,18 @@ class ScreenResponse(BaseModel):
     protein: str
     hits: List[ScreenHit]
     timestamp: str
+
+
+class HistoryEntry(BaseModel):
+    """Unified history entry for both single predictions and virtual screens."""
+    id: Optional[str]
+    type: str  # "single" | "screen"
+    timestamp: str
+    # Single prediction fields
+    drug: Optional[str] = None
+    drug_name: Optional[str] = None
+    protein: Optional[str] = None
+    score: Optional[float] = None
+    binder: Optional[bool] = None
+    # Screen fields
+    screen_data: Optional[ScreenResponse] = None
