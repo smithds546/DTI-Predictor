@@ -89,4 +89,7 @@ npm run develop
 - The history is limited to the latest 100 entries and persists to JSON. You can swap to SQLite/SQLModel later without changing the frontend.
 - CORS currently allows `http://localhost:8000` (Gatsby dev). Add production origin(s) as needed.
 
-latexmk -pdf Main.tex from the Report/ directory
+from the Report/ directory:
+latexmk -pdf Main.tex 
+latexmk -pdf -bibtex Main.tex
+latexmk -C Main.tex && latexmk -pdf -bibtex Main.tex

@@ -19,18 +19,57 @@ This modular design allows for better organization of code and easier maintenanc
 % Group endpoints by domain: prediction, screening, autocomplete, structure, history
 The API exposes twelve endpoints, grouped by domain in Table~\ref{tab:endpoints}.
 The Prediction and screening endpoints handle model inference, and the autocomplete and filtering endpoints support the search and drug selection workflows.
-
+The history endpoints allows the user review and clear previous predictions.
+The structure endpoint provides on-demand molecular visualisations provided by RDKit.
+\begin{table}[ht]
+\centering
+\caption{API endpoint specification.}
+\label{tab:endpoints}
+\begin{tabular}{llp{6.5cm}}
+\hline
+\textbf{Method} & \textbf{Path} & \textbf{Description} \\
+\hline
+\multicolumn{3}{l}{\textit{Prediction}} \\
+POST & \texttt{/predict} & Accepts a single drug--target pair and returns a binding probability score. \\
+POST & \texttt{/screen} & Accepts up to 100 drugs against a single protein target and returns ranked scores (virtual screening). \\
+\hline
+\multicolumn{3}{l}{\textit{Autocomplete and Filtering}} \\
+GET & \texttt{/autocomplete/drug} & Returns up to 10 drug matches by name or SMILES substring. \\
+GET & \texttt{/autocomplete/protein} & Returns up to 10 matching protein target names. \\
+GET & \texttt{/autocomplete/drug-sample} & Returns a random sample of drugs for quick screening. \\
+GET & \texttt{/drug-filters} & Returns available filter definitions for the frontend to render. \\
+GET & \texttt{/drug-filter} & Returns compounds matching physicochemical and activity filters. \\
+GET & \texttt{/drug-filter/count} & Returns the count of compounds matching the given filters. \\
+\hline
+\multicolumn{3}{l}{\textit{Visualisation}} \\
+GET & \texttt{/structure/svg} & Returns an SVG depiction of a molecule from its SMILES string. \\
+\hline
+\multicolumn{3}{l}{\textit{History}} \\
+GET & \texttt{/history} & Returns the most recent 100 predictions and screens. \\
+DELETE & \texttt{/history} & Clears all stored prediction history. \\
+\hline
+\multicolumn{3}{l}{\textit{System}} \\
+GET & \texttt{/health} & Returns the health status of the API. \\
+\hline
+\end{tabular}
+\end{table}
 \subsection{Data Loading and Preprocessing}
 % CSV ingestion, descriptor caching to pickle, ProtBERT embedding cache,
 % binder index construction — all the startup-time work
 At startup time, the backend performs several data loading and preprocessing steps to ensure that the system is ready for user interactions.
-These are as follows:
-\begin{itemize}
-    \item Ingesting the CSV files containing drug and target information, and storing them in a suitable format for quick access.
-    \item Caching molecular descriptors and ProtBERT embeddings to pickle files for faster loading during inference.
-    \item Constructing the binder index for efficient retrieval of drug-target pairs during virtual screening.
-\end{itemize}
-Having these preprocessing steps at startup ensures that the system can provide fast responses to user queries without the need for on-the-fly computations, thus improving overall performance and user experience.
+
+The training dataset, a processed BindingDB CSV containing drug SMILES strings, protein target names, amino acid sequences, and binary interaction labels, is loaded into a pandas DataFrame at module import time by the training data service.
+From this, the autocomplete endpoint creates drug and target lists.
+
+Molecular descriptors for all unique compounds are computed using RDKit~\cite{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
+A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five percent.
+(ADD THE CODE)
+
+Protein representations are handled through a hash-indexed cache of precomputed ProtBERT embeddings~\cite{ProtBERT}.
+Each protein sequence is mapped to a 1024-dimensional embedding vector stored as a NumPy \texttt{.npy} file, keyed by an MD5 hash of the sequence.
+At startup the prediction service builds a lookup table to map protein names to their amino acid sequences, reducing retrieval time of embeddings.
+
+To support the known-binders filter, a binder index is constructed by grouping together the training data by target name and collecting the set of SMILES strings that bind.
 \subsection{Model Inference Pipeline}
 % MACCS fingerprinting, embedding lookup, DNN forward pass, single vs batch
 Here we will explain how raw drug and target inputs become a binding probability score through a series feature extraction and neural network inference steps.
@@ -48,17 +87,22 @@ To fully emulate virtual screening, the pipeline also supports batch predictions
 \subsubsection{Filtering}
 The virtual screening pipeline allows users to test multiple drugs against a single protein through a series of filters.
 Users can apply filters on physiochemical properties such as:
-\begin{table}
-    Molecular Weight Range
-    Ring Count
-    Lipinski's Rule of Five \citep{lipinski2001}
-    Known binders to a specified target
+\begin{table}[ht]
+\centering
+\caption{Available compound filters for virtual screening.}
+\label{tab:filters}
+\begin{tabular}{lp{8cm}}
+\hline
+\textbf{Filter} & \textbf{Description} \\
+\hline
+Molecular Weight Range & Molecular weight in Daltons \citep{lipinski2001, veber2002}. \\
+Ring Count & Filters by the number of ring structures present in the molecule \citep{bemis1996}. \\
+Lipinski's Rule of Five & Enforces MW $\leq$ 500, LogP $\leq$ 5, HBA $\leq$ 10, and HBD $\leq$ 5, selecting compounds with drug-like oral bioavailability~\citep{lipinski2001}. \\
+Known Binders & Restricts the pool to compounds with a positive interaction label against a user-selected protein target in the training data. \\
+\hline
+\end{tabular}
 \end{table}
 These filters are applied as boolean masks over a precomputed descriptor table to narrow down large compound sets efficiently.
-\subsubsection{Molecular Weight Range}
-\subsubsection{Ring Count}
-\subsubsection{Lipinski's Rule of Five}
-\subsubsection{Known Binders}
 \subsubsection{Limited Selection}
 When the number of compounds matching the filters exceeds the processable limit, the system employs a `MaxMin` diverse picking algorithm sing MACCS-based Tanimoto distance \citep{tanimoto}.
 Instead of using a random sample, this algorithm makes sure to select a structurally diverse subset to ensure broad coverage of drugs in the test.
