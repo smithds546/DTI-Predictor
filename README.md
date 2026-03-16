@@ -10,33 +10,16 @@ pip install -r requirements.txt
 # 2. Run the data preparation script
 python -m app.data.download_and_prepare
 
-https://www.kaggle.com/datasets/christang0002/davis-and-kiba/data
-
-for protein sequences:
-	1.	Pull the UniProt ID from BindingDB.
-	2.	Query UniProt for the amino acid sequence.
-	3.	Combine the two into your dataset.
-
-for drug SMILES:
-    1.  rest api json output
-
-Use ProtBERT for Feature Extraction of protein sequences
-
-Use RdKIT to convert SMILES to MACCS keys
-
-Evaluation of models:
-    1.	different train/test split
-    2.	different loss functions (mse vs bce)
-    3.	different thresholds
-    4.  different hyperparameters
-    5.  different weights and biases
 
 Next Steps:
     - Do i need discussion, do i need to show front end(images)?
     - put data table in data chapter - statistics of the data, distribution of binders/non-binders, etc.
-    - Check what i said i would accomplish with this project (the scope)
-    - add drug structure instead of smiles to results
     - write about front end
+    - get citations for Fastapi, 
+    - not sure what to write in \subsection{Model Inference Pipeline}
+    - Where are SMILES and MACCs fingerprints retrievd from 
+    - How is batch predictions done?
+    - use code examples
 
 
 How to run frontend:

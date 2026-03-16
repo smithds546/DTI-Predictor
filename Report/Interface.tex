@@ -1,12 +1,80 @@
 \chapter{System Interface and API}
-
+This chapter describes the design and implementation of the system interface and API for the Drug-Target interactive Predictor.
+It covers the architecture of the system, the design of the backend API, the frontend design, and the integration between the frontend and backend components.
+Additionally, it discusses performance considerations, security measures, limitations, and provides a summary of the interface design.
 \section{System Architecture}
+The system architecture was designed with consideration of performance and speed, as well as an intuitive user interface.
+The architecture consists of a backend that contains data and the predictive model, a frontend interface that allows users to interact with the system and visualize results, and an API to link it all together.
+
+(GET AN IMAGE IN HERE)
 
 \section{Backend API Design}
-\subsection{API Framework}
+To link the frontend and backend components, a RESTful API was designed to ensure seamless communication between the two.
+The API was designed with a focus on simplicity, scalability, and maintainability, allowing for easy integration with the frontend and potential future extensions.
+\subsection{Framework and Architecture}
+We used FastAPI as the framework for our backend API due to its high performance, ease of use, and robustness\citep{fastapi}.
+The API follows a modular architecture, with separate modules for data loading, model inference, virtual screening, and input validation.
+This modular design allows for better organization of code and easier maintenance.
 \subsection{Endpoint Specification}
-\subsection{Input Validation and Error Handling}
+% Group endpoints by domain: prediction, screening, autocomplete, structure, history
+The API exposes twelve endpoints, grouped by domain in Table~\ref{tab:endpoints}.
+The Prediction and screening endpoints handle model inference, and the autocomplete and filtering endpoints support the search and drug selection workflows.
+
+\subsection{Data Loading and Preprocessing}
+% CSV ingestion, descriptor caching to pickle, ProtBERT embedding cache,
+% binder index construction — all the startup-time work
+At startup time, the backend performs several data loading and preprocessing steps to ensure that the system is ready for user interactions.
+These are as follows:
+\begin{itemize}
+    \item Ingesting the CSV files containing drug and target information, and storing them in a suitable format for quick access.
+    \item Caching molecular descriptors and ProtBERT embeddings to pickle files for faster loading during inference.
+    \item Constructing the binder index for efficient retrieval of drug-target pairs during virtual screening.
+\end{itemize}
+Having these preprocessing steps at startup ensures that the system can provide fast responses to user queries without the need for on-the-fly computations, thus improving overall performance and user experience.
 \subsection{Model Inference Pipeline}
+% MACCS fingerprinting, embedding lookup, DNN forward pass, single vs batch
+Here we will explain how raw drug and target inputs become a binding probability score through a series feature extraction and neural network inference steps.
+For the drug input, the Natural drug name drug CHembl ID is converted back into SMILES format and then MACCS fingerprint using the cached data.
+For the Target input, the (protein input representation) is mapped to its amino acid sequence via a lookup table built at startup, and then the precomputed ProtBERT embedding is retrieved from the cache.
+
+The two feature vectors are concatenated and passed through our PyTorch model, trained on known drug-target interactions.
+The model outputs a probability score between 0 and 1 where values above 0.5 indicate a predicted binding.
+
+\subsubsection{Batch Inference Pipeline}
+To fully emulate virtual screening, the pipeline also supports batch predictions.
+
+\subsection{Virtual Screening Pipeline}
+% Filtering by physicochemical properties, MaxMin diversity picking, result ranking
+\subsubsection{Filtering}
+The virtual screening pipeline allows users to test multiple drugs against a single protein through a series of filters.
+Users can apply filters on physiochemical properties such as:
+\begin{table}
+    Molecular Weight Range
+    Ring Count
+    Lipinski's Rule of Five \citep{lipinski2001}
+    Known binders to a specified target
+\end{table}
+These filters are applied as boolean masks over a precomputed descriptor table to narrow down large compound sets efficiently.
+\subsubsection{Molecular Weight Range}
+\subsubsection{Ring Count}
+\subsubsection{Lipinski's Rule of Five}
+\subsubsection{Known Binders}
+\subsubsection{Limited Selection}
+When the number of compounds matching the filters exceeds the processable limit, the system employs a `MaxMin` diverse picking algorithm sing MACCS-based Tanimoto distance \citep{tanimoto}.
+Instead of using a random sample, this algorithm makes sure to select a structurally diverse subset to ensure broad coverage of drugs in the test.
+The selected drug molecules are scored against the target protein using the batch inference pipeline, ranked by binding probability, and matched to metadata such as molecular weight, LogP, and ring count before being returned to the frontend.
+
+\subsection{Input Validation and Error Handling}
+% Pydantic schemas, Query param constraints, HTTPException patterns
+\subsubsection{Input Validation}
+Input validation is handled through two complementary mechanisms. 
+At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and uses automatic validation of incoming JSON requests \citep{pydantic}.
+For query parameter endpoints, FastAPI's \texttt{Query} annotations are used to enforce value constraints directly in the function signatures.
+This is allowing us to limit the batch size to 100 and ...
+\subsubsection{Error Handling}
+The service layer will raise \texttt{descriptive exceptions} when errors occur during inference.
+These are caught at the route level and returned as HTTP error responses using FastAPI's \texttt{HTTPException}.
+Status codes distinguish the differences between client errors (400 for bad input) and server errors (500 for unexpected failures).
 
 \section{Frontend Design}
 \subsection{Frontend Framework and Technology Stack}
