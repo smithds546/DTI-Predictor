@@ -9,6 +9,7 @@ The architecture consists of a backend that contains data and the predictive mod
 (GET AN IMAGE IN HERE)
 
 \section{Backend API Design}
+\label{sec:backend_api}
 To link the frontend and backend components, a RESTful API was designed to ensure seamless communication between the two.
 The API was designed with a focus on simplicity, scalability, and maintainability, allowing for easy integration with the frontend and potential future extensions.
 \subsection{Framework and Architecture}
@@ -54,6 +55,7 @@ GET & \texttt{/health} & Returns the health status of the API. \\
 \end{tabular}
 \end{table}
 \subsection{Data Loading and Preprocessing}
+\label{subsec:data_loading}
 % CSV ingestion, descriptor caching to pickle, ProtBERT embedding cache,
 % binder index construction — all the startup-time work
 At startup time, the backend performs several data loading and preprocessing steps to ensure that the system is ready for user interactions.
@@ -121,17 +123,72 @@ These are caught at the route level and returned as HTTP error responses using F
 Status codes distinguish the differences between client errors (400 for bad input) and server errors (500 for unexpected failures).
 
 \section{Frontend Design}
-\subsection{Frontend Framework and Technology Stack}
-\subsection{User Interface Design}
-\subsection{Autocomplete and Search Functionality}
+Creating a simple and intuitive design is essential for usability, we utilised a react framework to ensure speed and optimisations for what we need it to achieve.
+\subsection{Frontend Framework}
+To develop the frontend we have used Gatsby, a react framework that is optimal for static websites.
+It does this by pre-rendering pages into HTML, called Static Site Generation (SSG), resulting in superior performance.
+Gatsby benefits from high security with no server-side attacks as it doesnt have a server-side database or dependencies, only static files\citep{Gatsby citation here}.
 
+\subsection{User Interface Design}
+To keep things simple we only have two tabs for the user to test a single drug to a single protein target, and batch virtual screening to emulate a wet-lab experiment more closely.
+\subsubsection{Single comparison}
+One input box for the molecule input and another for target input, both have suggested activators greyed out and once the user begins typing a dropdown menu will present the closest match to whats been written in a top-down fashion.
+PHOTO HERE
+Once selected and compared, the results appear just below in a simplified form:
+PHOTO HERE
+Below this tab is the prediction history, showcasing previous comparisons made by the user, sorted by the most recent.
+PHOTO HERE
+\subsubsection{Batch Comparison}
+To begin the batch comparison, the user can filter for the group of molecules they'd like to compare against a protein.
+The user can toggle for Lipinski's rule of five, select a preset for Molecular Weight Range and number of Rings.
+PHOTO HERE
+We also allow the user to filter molecules that bind to a specific target to see if there are any crossovers/they're more likely to bind.
+At the bottom of the filter section, it will instantly update the number of molecules that match the set of filters applied.
+PHOTO HERE
+Once the user has added up-to 100 molecules for testing and selected the target, they can continue with testing.
+This will produce a results table sorting the bindings from most likely to least likely and colour code them.
+The table also shows meaningful meta data for each molecule, and hovering over the molecule name will produce a widget with the chemical structure of the molecule.
+2 PHOTOS HERE
+\subsection{Autocomplete and Search Functionality}
+Autocomplete was a necessary feature to help users quickly identify the activators in question.
+Some have names with over 15 characters, so the autocomplete search makes it more usable for people.
+PHOTO HERE
+Search is linked to the bindingDB database to have the most up-to-date naming for molecules and targets.
 
 \section{Frontend-Backend Integration}
+The frontend and backend communicate through HTTP requests to the RESTful API described in Section~\ref{sec:backend_api}.
+All the data transmissions use JSON, where the frontend sends user inputs and receives structured responses containing prediction scores, screening results or autocomplete suggestions.
+
+For the autocomplete, endpoints are called on each keystroke with a debounce delay to return up to 10 matches to populate dropdown suggestions.
+When predicting a single pair, the frontend issues a POST request to \texttt{/predict} and displays the returned score and binding classification.
+For full virtual screening, the frontend initially retrieves the filtered molecules set from \texttt{/drug-filter} endpoint, then submits the selected drugs to \texttt{/screen} for batch scoring.
+Molecular structure diagrams are rendered by requesting Scalable Vector Graphics (SVGs) from the \texttt{/structure/svg} endpoint and embedding them directly in the interface as a widget.
+
+Prediction history is fetched from \texttt{/history} on page load and refreshes after each new prediction.
 
 \section{Performance Considerations}
+The design choices were made to minimise response times during use, for a better user experience.
+
+The most significant improvement is the computations at startup described in Section~\ref{subsec:data_loading}.
+By loading the training dataset, computing molecular descriptors, and indexing known binders at server startup, the system avoids expensive computations during inference.
+ProtBERT embeddings, which are the most costly feature to compute, are precomputed offline and cached as individual\texttt{.npy} files, reducing protein featurisation to a single file read.
+
+To allow for virtual screening, we run all candidate drugs through the model in a single forward pass using batch inference.
+This will exploit CPU or GPU parallelism through PyTorch's tensor operations~\citep{paszke2019pytorch}.
 
 \section{Security and Robustness}
+The frontend is a static web page that is independant to the backend, so no server-side rendering, therefore making server-side attacks redundant.
 
+The backend validates all incoming data through Pydantic schemas and FastAPI query parameter constraints, rejecting improper requests before they reach the service layer.
+This provides a degree of protection against injection attacks, as inputs are type-checked and bound-checked before being passed to RDKit or the model.
+
+At the moment there isn't any user authentication or account system or sensitive data, heavily reducing the attack surface area.
+Therefore, upon deployment the prediction history will be shared among all users.
+If the system were to be deployed in a multi-user clinical setting, user isolation through accounts and authentication will need to be added.
 \section{Limitations}
-
+No account or session for each user.
+Linking research to educational institutes.
+No knowledge of why the binding interaction occurred in the way it did.
+Structural insight on how the two would look bound together
 \section{Summary}
+We have a well performing service which is intuitive, secure and informative for the user.
