@@ -6,7 +6,12 @@ Additionally, it discusses performance considerations, security measures, limita
 The system architecture was designed with consideration of performance and speed, as well as an intuitive user interface.
 The architecture consists of a backend that contains data and the predictive model, a frontend interface that allows users to interact with the system and visualize results, and an API to link it all together.
 
-(GET AN IMAGE IN HERE)
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Report/system_architecture.pdf}
+    \caption{System architecture of the Drug--Target Interaction Predictor.}
+    \label{fig:architecture}
+\end{figure}
 
 \section{Backend API Design}
 \label{sec:backend_api}
@@ -20,9 +25,9 @@ This modular design allows for better organization of code and easier maintenanc
 % Group endpoints by domain: prediction, screening, autocomplete, structure, history
 The API exposes twelve endpoints, grouped by domain in Table~\ref{tab:endpoints}.
 The Prediction and screening endpoints handle model inference, and the autocomplete and filtering endpoints support the search and drug selection workflows.
-The history endpoints allows the user review and clear previous predictions.
+The history endpoints allow the user review and clear previous predictions.
 The structure endpoint provides on-demand molecular visualisations provided by RDKit.
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{API endpoint specification.}
 \label{tab:endpoints}
@@ -54,6 +59,7 @@ GET & \texttt{/health} & Returns the health status of the API. \\
 \hline
 \end{tabular}
 \end{table}
+
 \subsection{Data Loading and Preprocessing}
 \label{subsec:data_loading}
 % CSV ingestion, descriptor caching to pickle, ProtBERT embedding cache,
@@ -65,7 +71,22 @@ From this, the autocomplete endpoint creates drug and target lists.
 
 Molecular descriptors for all unique compounds are computed using RDKit~\cite{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
 A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five percent.
-(ADD THE CODE)
+This is shown in the following code snippet:
+
+\begin{lstlisting}[language=Python, caption={Descriptor cache loading with staleness check.}, label={lst:cache_load}]
+def _load_or_build() -> pd.DataFrame:
+    if os.path.exists(_CACHE_PATH):
+        cached = pd.read_pickle(_CACHE_PATH)
+        n_unique = DRUG_ROWS["drug_smiles"].nunique()
+        if abs(len(cached) - n_unique) < n_unique * 0.05:
+            return cached
+        print("Descriptor cache is stale, rebuilding...")
+
+    table = _build_descriptor_table()
+    os.makedirs(_CACHE_DIR, exist_ok=True)
+    table.to_pickle(_CACHE_PATH)
+    return table
+\end{lstlisting}
 
 Protein representations are handled through a hash-indexed cache of precomputed ProtBERT embeddings~\cite{ProtBERT}.
 Each protein sequence is mapped to a 1024-dimensional embedding vector stored as a NumPy \texttt{.npy} file, keyed by an MD5 hash of the sequence.
@@ -89,7 +110,7 @@ To fully emulate virtual screening, the pipeline also supports batch predictions
 \subsubsection{Filtering}
 The virtual screening pipeline allows users to test multiple drugs against a single protein through a series of filters.
 Users can apply filters on physiochemical properties such as:
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{Available compound filters for virtual screening.}
 \label{tab:filters}
@@ -157,7 +178,7 @@ Search is linked to the bindingDB database to have the most up-to-date naming fo
 
 \section{Frontend-Backend Integration}
 The frontend and backend communicate through HTTP requests to the RESTful API described in Section~\ref{sec:backend_api}.
-All the data transmissions use JSON, where the frontend sends user inputs and receives structured responses containing prediction scores, screening results or autocomplete suggestions.
+All the data transmissions use JSON, where the frontend sends user inputs and receives structured responses containing prediction scores, screening results, or autocomplete suggestions.
 
 For the autocomplete, endpoints are called on each keystroke with a debounce delay to return up to 10 matches to populate dropdown suggestions.
 When predicting a single pair, the frontend issues a POST request to \texttt{/predict} and displays the returned score and binding classification.
@@ -186,9 +207,16 @@ At the moment there isn't any user authentication or account system or sensitive
 Therefore, upon deployment the prediction history will be shared among all users.
 If the system were to be deployed in a multi-user clinical setting, user isolation through accounts and authentication will need to be added.
 \section{Limitations}
-No account or session for each user.
-Linking research to educational institutes.
-No knowledge of why the binding interaction occurred in the way it did.
-Structural insight on how the two would look bound together
-\section{Summary}
-We have a well performing service which is intuitive, secure and informative for the user.
+The current system has some limitations that must be acknowledged.
+There is currently no session management or accounts system, meaning the history section is global instead of for a user.
+But this is okay in its current form, as its just a prototype on how the model can be accessed in an intuitive manner.
+
+The model currently just produces a binding probability, but it doesn't offer a reason into why the interaction is predicted to occur.
+An insight into what drives the prediction, such as molecular features or substructures, would improve reliability in the system for users.
+
+Another insight that could benefit users would be a structural visualisation of how the bound pair would look at a molecular level.
+Currently, users can only view the 2D structure of drug molecules, but there is no binding structure prediction.
+Integrating molecular docking tools can address these issues in future work.
+
+Finally, the model has only been trained on bindingDB from a fixed dataset.
+There isn't an option for users to upload their own data source, limiting its ability for predictions on drugs and proteins outside the training set.
