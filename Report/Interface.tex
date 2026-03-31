@@ -48,7 +48,7 @@ GET & \texttt{/drug-filter} & Returns compounds matching physicochemical and act
 GET & \texttt{/drug-filter/count} & Returns the count of compounds matching the given filters. \\
 \hline
 \multicolumn{3}{l}{\textit{Visualisation}} \\
-GET & \texttt{/structure/svg} & Returns an SVG depiction of a molecule from its SMILES string. \\
+GET & \texttt{/structure/svg} & Returns an Scalable Vector Graphic (SVG) depiction of a molecule from its SMILES string. \\
 \hline
 \multicolumn{3}{l}{\textit{History}} \\
 GET & \texttt{/history} & Returns the most recent 100 predictions and screens. \\
@@ -134,10 +134,12 @@ The selected drug molecules are scored against the target protein using the batc
 \subsection{Input Validation and Error Handling}
 % Pydantic schemas, Query param constraints, HTTPException patterns
 \subsubsection{Input Validation}
-Input validation is handled through two complementary mechanisms. 
-At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and uses automatic validation of incoming JSON requests \citep{pydantic}.
+Validating the inputs is handled through two complementary mechanisms.
+At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and uses automatic validation of incoming JSON requests\citep{pydantic}.
+
 For query parameter endpoints, FastAPI's \texttt{Query} annotations are used to enforce value constraints directly in the function signatures.
-This is allowing us to limit the batch size to 100 and ...
+This is allowing us to limit the batch size to 100, capping the drug sample endpoint to 50 results, and keeping the Scalable Vector Graphics (SVG) rendering dimensions between 50 and 500 pixels.
+FastAPI rejects requests that violate these constraints automatically with 422 unprocessable entity response before reaching the service layer.
 \subsubsection{Error Handling}
 The service layer will raise \texttt{descriptive exceptions} when errors occur during inference.
 These are caught at the route level and returned as HTTP error responses using FastAPI's \texttt{HTTPException}.
@@ -146,36 +148,98 @@ Status codes distinguish the differences between client errors (400 for bad inpu
 \section{Frontend Design}
 Creating a simple and intuitive design is essential for usability, we utilised a react framework to ensure speed and optimisations for what we need it to achieve.
 \subsection{Frontend Framework}
-To develop the frontend we have used Gatsby, a react framework that is optimal for static websites.
+To develop the frontend, we have used Gatsby, a React framework that is optimal for static websites.
 It does this by pre-rendering pages into HTML, called Static Site Generation (SSG), resulting in superior performance.
-Gatsby benefits from high security with no server-side attacks as it doesnt have a server-side database or dependencies, only static files\citep{Gatsby citation here}.
+Gatsby benefits from high security with no server-side attacks as it doesnt have a server-side database or dependencies, only static files\citep{gatsby_definitive, gatsby}.
 
 \subsection{User Interface Design}
 To keep things simple we only have two tabs for the user to test a single drug to a single protein target, and batch virtual screening to emulate a wet-lab experiment more closely.
 \subsubsection{Single comparison}
-One input box for the molecule input and another for target input, both have suggested activators greyed out and once the user begins typing a dropdown menu will present the closest match to whats been written in a top-down fashion.
-PHOTO HERE
+One input box for the molecule input and another for target input, both have suggested activators greyed out, and once the user begins typing a dropdown menu will present the closest match to what's been written in a top-down fashion.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/Autocomplete single pred.png}
+    \caption{Single prediction input with autocomplete dropdown.}
+    \label{fig:single_autocomplete}
+\end{figure}
 Once selected and compared, the results appear just below in a simplified form:
-PHOTO HERE
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/single pred results.png}
+    \caption{Single prediction result displaying the binding probability and classification.}
+    \label{fig:single_results}
+\end{figure}
 Below this tab is the prediction history, showcasing previous comparisons made by the user, sorted by the most recent.
-PHOTO HERE
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/Previous searches.png}
+    \caption{Prediction history panel showing previous queries sorted by date.}
+    \label{fig:history}
+\end{figure}
 \subsubsection{Batch Comparison}
 To begin the batch comparison, the user can filter for the group of molecules they'd like to compare against a protein.
 The user can toggle for Lipinski's rule of five, select a preset for Molecular Weight Range and number of Rings.
-PHOTO HERE
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/VS filters 1.png}
+    \caption{Virtual screening filter controls for physicochemical properties.}
+    \label{fig:vs_filters}
+\end{figure}
 We also allow the user to filter molecules that bind to a specific target to see if there are any crossovers/they're more likely to bind.
 At the bottom of the filter section, it will instantly update the number of molecules that match the set of filters applied.
-PHOTO HERE
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/VS filters whole.png}
+    \caption{Complete filter panel with known-binders target selection and live compound count.}
+    \label{fig:vs_filters_whole}
+\end{figure}
 Once the user has added up-to 100 molecules for testing and selected the target, they can continue with testing.
 This will produce a results table sorting the bindings from most likely to least likely and colour code them.
-The table also shows meaningful meta data for each molecule, and hovering over the molecule name will produce a widget with the chemical structure of the molecule.
-2 PHOTOS HERE
+The table also shows meaningful meta-data for each molecule, and hovering over the molecule name will produce a widget with the chemical structure of the molecule.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/VS whole.png}
+    \caption{Virtual screening overview showing selected compounds and target protein.}
+    \label{fig:vs_whole}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/VS results + SVG.png}
+    \caption{Screening results table with colour-coded binding scores and molecular structure popup.}
+    \label{fig:vs_results_svg}
+\end{figure}
 \subsection{Autocomplete and Search Functionality}
 Autocomplete was a necessary feature to help users quickly identify the activators in question.
 Some have names with over 15 characters, so the autocomplete search makes it more usable for people.
-PHOTO HERE
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/Autocomplete Long length.png}
+    \caption{Autocomplete handling long compound names.}
+    \label{fig:autocomplete_long}
+\end{figure}
 Search is linked to the bindingDB database to have the most up-to-date naming for molecules and targets.
-
+\subsection{Previous Searches}
+An important design feature is how the previous searches are visualised.
+We have it sorted by date and time occurred, with the ability to view results.
+This allows the user to potentially compare results between closely related targets and drug molecules.
+We decided to display the previous results as a widget if the user would like to see the information closer.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/Screening results widget.png}
+    \caption{Expanded results widget showing detailed screening output.}
+    \label{fig:results_widget}
+\end{figure}
+\subsubsection{Comparisons}
+Allowing the user to compare previous results is extremely important and can highlight certain differences between two near identical searches, extremely valuable in drug discovery.
+This provides the user with insightful information into their tests which can hopefully improve the usability of the product.
+The comparison can also be between batch screening and single screening, allowing for full customisability.
+(\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{project screenshots/Comparison.png}
+    \caption{Side-by-side comparison of two previous prediction results.}
+    \label{fig:comparison}
+\end{figure}
 \section{Frontend-Backend Integration}
 The frontend and backend communicate through HTTP requests to the RESTful API described in Section~\ref{sec:backend_api}.
 All the data transmissions use JSON, where the frontend sends user inputs and receives structured responses containing prediction scores, screening results, or autocomplete suggestions.
@@ -198,7 +262,7 @@ To allow for virtual screening, we run all candidate drugs through the model in 
 This will exploit CPU or GPU parallelism through PyTorch's tensor operations~\citep{paszke2019pytorch}.
 
 \section{Security and Robustness}
-The frontend is a static web page that is independant to the backend, so no server-side rendering, therefore making server-side attacks redundant.
+The frontend is a static web page that is independent of the backend, so no server-side rendering, therefore making server-side attacks redundant.
 
 The backend validates all incoming data through Pydantic schemas and FastAPI query parameter constraints, rejecting improper requests before they reach the service layer.
 This provides a degree of protection against injection attacks, as inputs are type-checked and bound-checked before being passed to RDKit or the model.

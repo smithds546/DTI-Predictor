@@ -1,16 +1,95 @@
 \chapter{Discussion}
 
 \section{Interpretation of Results}
+\subsection{Model Performance}
+Each iteration of the model produced measurable gains in performance, lets break it down into what makes the most difference when it comes to model performance.
+\subsubsection{Training}
+During the iterative improvement to training we saw the largest improvement with ReLu activations, suggesting the model was suffering from vanishing gradients in its hidden layers.
+Sigmoid activations squash their output to the range (0, 1), and their gradient peaks at just 0.25, meaning that in a multi-layer network the gradients diminish exponentially as they propagate backward through each layer.
+This causes the earlier layers to learn very slowly, effectively limiting the network's capacity to extract meaningful patterns from the input features.
+ReLU avoids this by passing a constant gradient of 1 for all positive inputs, allowing the network to train its deeper layers effectively and make better use of the available model capacity.
+Early Stopping had the only reduction in performance.
+It might have been reducing generalisation but at the cost of exposure to data, which is a common trade-off with early stopping, but it stopped before the model could learn patterns in the data.
+\subsubsection{Architecture}
+The architectural changes we made had a smaller impact on performance, but they still contributed to the overall improvement.
+The introduction of more hidden layers and differing numbers of neurons in each layer (64, 32), saw only an improvement in recall, suggesting the model was better at identifying binders but at the cost of more false positives.
+To try and deal with an overconfident model we added dropout, which had a mixed effect but made the biggest improvemtn to Precision.
+This suggests that dropout was effective at reducing overfitting, which is a common cause of overconfident models, but it also reduced the model's ability to identify binders, which is a common trade-off with regularisation techniques.
+\subsubsection{Framework}
+\subsubsection{How do they compare}
+
+\subsubsection{Final Model Performance}
+Our final model achieved an AUC-ROC of ~0.86; this is a significant gap to a research paper MINDG\citep{Yang2024}, but it's expected with the architectural differences between the two models.
+MINDG uses a more complex architecture blending GNNs and CNNs to learn both structural and fingerprint representations.
+This is a well-known gap in performance stated in \citep{Vefghi2025}, where structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.
+This tells us that our primary bottleneck is our feature representation, limiting the model, not network architecture.
+\subsection{Threshold Sweep}
+The threshold sweep revealed the optimal threshold for ... to be 0.3, getting the highest f1 score of all threshold levels.
+This visualises the effect of the class imbalance we have in our dataset; the score of 0.3 suggests the models raw probability outputs are miscalibrated.
+This is common when training data has an unequal ratio of postive and negative.
 
 \section{Impact of Design Choices}
+\subsection{Data Preprocessing}
+\subsubsection{Binarisation}
+The binarisation threshold was chosen to create a clear distinction between binders and non-binders, with the grey area defining an area of uncertainty where interactions that fall within are unaccounted for.
+This gave the model stronger reasoning signals to learn from, with the tradeoff of having fewer interactions to train the model from.
+\subsubsection{Class Imbalance}
+To handle our class imbalance, we used a weighted loss function during model training.
+Specifically, we calculated a \textit{pos\_weight} as the ratio of non-binders to binders and passed it to the \textit{BCEWithLogitsLoss} function in PyTorch.
+This ensured that the model did not become biased towards the more frequent class and could effectively learn to identify both binders and non-binders.
+
+\subsection{Drug \& Target Representations}
+MAACS fingerprints were chosen for their simplicity over more complex representations such as molecular graphs.
+Avoiding a GNN infrastructure and a slow inference time with the API was a key design choice, as the goal was to have a fast and responsive interface for users to quickly get predictions.
+ProtBERT embeddings were chosen because they encode evolutionary and structural information from protein sequences without needing 3D structures, which aligns with the practical constraint that many proteins lack experimentally resolved structures.
+\subsection{Model Architecture}
+The decision to use a fixed train/val/test split rather than k-fold cross-validation was made to simply serve a single trained model via an API, rather than needing to train multiple models for each fold.
+The choice to use the PyTorch framework to build the final model was because of its ease of flexibility and customisation.
+Giving me more freedom to experiment with different architectural combinations, resulting in a better final model.
+\subsection{System Architecture}
+\subsubsection{Frontend and Backend Separation}
+The fronted and backend were built as separate components and connected via a restful API because it allows for greater scalability should the system be developed further.
+This separation also allows for the frontend to be developed independently of the backend, which is useful for testing and iterating on the user interface without needing to retrain the model or change the backend code.
+\subsubsection{Caching Embeddings}
+ProtBERT embeddings were cached as \textbf{Pickle} files instead of being computed at inference time because computing the embeddings is computationally expensive and would lead to long inference times, which would negatively impact the user experience.
+\subsubsection{Batch Screening}
+For Virtual Screening functionality we used MaxMin diversity picking because it provides a better coverage of the chemical space with lots of different compounds, which is more useful for users who want to quickly screen a large number of compounds and get a diverse set of predictions.
+However, this may obviously miss out some key binders that are similar to each other but are still important to test.
 
 \section{Limitations}
 \subsection{Dataset}
+Only using 2\% of the data from BindingDB NOV2025
+Using a Single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
+The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
 \subsection{Model}
+Fixed fingerprint representation limits what the model can learn.
+Without structural information, the model is restricted to only learning from the presence or absence of substructures and can't learn from the spatial arrangement of atoms, which is valuable for understanding molecular interactions.
+Also, approaching the task as binary classification loses granularity in the data, as the model is only learning to predict whether an interaction is likely or not, rather than the strength of the interaction.
+Finally, having no interpretability mechanism means the user has no insight into why the model is making certain predictions, which can reduce trust and make it harder to identify potential issues with the model's reasoning.
 \subsection{API}
+We capped the batch screening functionality at 100 compounds to keep inference time reasonable, but its shadowed by real virtual screening campaigns that can do millions of compounds\citep{}.
+If the ProtBERT embedding isn't pre-cached the request will fail and not compute at all.
+No rate limiting - zero throttling
 \subsection{Frontend}
+The scale of our operation is limited by the resources available, we are only able to test compounds already in the training dataset as the autocomplete functions use the loaded dataset for suggestions.
+Therefore, we can't easily make predictions we know are novel without extending the pipeline to include a more comprehensive dataset, or by using an external API to fetch the data for the autocomplete.
+
 
 \section{Further Improvements}
+\label{sec:further-improvements}
+
 \subsection{Alternative encoders}
+Models such as DeepDTA and/or MINDG \citep{} use graphical encoders as well as fingerprints to produce a more reliable prediction, because they learn structural features.
+Applying such techniques would replace MACCS with a molecular grap encoder such as GCN, GAT or GIN\citep{}.
+For the target, using ESM-2 instead of ProtBERT because its a more capable protein language model.
+\citep{Vefghi2025} Explores these options extensively.
 \subsection{Regression Model}
+Reframing the task as a regression problem instead of classification could provide greater insights into the strength of the interaction between the drug and target, rather than just a binary prediction.
+Using the raw pKd/pKi values from BindingDB rather than binarising them would provide more informative predictions.
 \subsection{External data validations}
+To better validate the model's predictions, using different datasets to evaluate the performance and generalisation would be beneficial.
+This technique was utilised by \citep{}, where they used...
+\subsection{Interpretability}
+To give the user more confidence in the model's predictions, it would be insightful to integrate Grad-CAM.
+Grad-CAM is a technique that provides visual explanations for the prediction made, highlighting the regions of the input that were most influential in the model's decision.
+This would allow the user to understand what features drove the interaction to act how it did, and could potentially reveal insights into the underlying biological mechanisms of drug-target interactions.

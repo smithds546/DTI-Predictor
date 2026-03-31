@@ -44,6 +44,27 @@ const IndexPage = () => {
   const [modalHoverSmiles, setModalHoverSmiles] = React.useState(null)
   const [modalHoverPos, setModalHoverPos] = React.useState({ x: 0, y: 0 })
 
+  // --- compare mode ---
+  const [compareIds, setCompareIds] = React.useState(new Set())
+  const [showCompare, setShowCompare] = React.useState(false)
+  const [compareSortStates, setCompareSortStates] = React.useState({})
+  const [compareHoverSmiles, setCompareHoverSmiles] = React.useState(null)
+  const [compareHoverPos, setCompareHoverPos] = React.useState({ x: 0, y: 0 })
+
+  const toggleCompareId = (id) => {
+    setCompareIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const clearCompare = () => {
+    setCompareIds(new Set())
+    setShowCompare(false)
+  }
+
   // --- compound library filters ---
   const [filterLipinski, setFilterLipinski] = React.useState(false)
   const [filterMwPreset, setFilterMwPreset] = React.useState("all")
@@ -888,17 +909,47 @@ const IndexPage = () => {
         {/* History (shown in both modes) */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h2 style={{ margin: 0 }}>Previous Searches</h2>
-          <button onClick={onClearHistory} style={{ padding: "6px 12px"}}>Clear</button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {compareIds.size >= 2 && (
+              <button onClick={() => {
+                setCompareSortStates({})
+                setCompareHoverSmiles(null)
+                setShowCompare(true)
+              }}
+                style={{
+                  padding: "6px 14px", fontSize: 13, cursor: "pointer",
+                  background: "#7026b9", color: "#fff", border: "none", borderRadius: 4, fontWeight: 600,
+                }}>
+                Compare Selected ({compareIds.size})
+              </button>
+            )}
+            {compareIds.size > 0 && (
+              <button onClick={clearCompare}
+                style={{ padding: "6px 12px", fontSize: 13, cursor: "pointer", border: "1px solid #ccc", borderRadius: 4, background: "#fff" }}>
+                Deselect All
+              </button>
+            )}
+            <button onClick={onClearHistory} style={{ padding: "6px 12px"}}>Clear</button>
+          </div>
         </div>
+        {history.length > 1 && compareIds.size === 0 && (
+          <p style={{ color: "#888", fontSize: 13, margin: "4px 0 0" }}>
+            Tick checkboxes to select searches for side-by-side comparison.
+          </p>
+        )}
         <ul className={styles.list}>
           {history.length === 0 && <li>No searches yet.</li>}
           {history.map((h) => {
+            const hId = h.id || h.timestamp
+            const isSelected = compareIds.has(hId)
             if (h.type === "screen" && h.screen_data) {
               const sd = h.screen_data
               const binderCount = sd.hits.filter((x) => x.binder).length
               return (
-                <li key={h.id || h.timestamp} className={styles.listItem} style={{ display: "flex", flexDirection: "column" }}>
+                <li key={hId} className={styles.listItem} style={{ display: "flex", flexDirection: "column", background: isSelected ? "#f3e8ff" : "transparent", borderRadius: 6, padding: 6 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleCompareId(hId)}
+                      style={{ cursor: "pointer", width: 16, height: 16 }} title="Select for comparison" />
                     <span style={{
                       display: "inline-block", padding: "2px 8px", borderRadius: 12,
                       fontSize: 11, fontWeight: 600, background: "#e3f2fd", color: "#1565c0",
@@ -919,20 +970,22 @@ const IndexPage = () => {
                       View Results
                     </button>
                   </div>
-                  <small style={{ color: "#666" }}>{new Date(h.timestamp).toLocaleString()}</small>
+                  <small style={{ color: "#666", marginLeft: 24 }}>{new Date(h.timestamp).toLocaleString()}</small>
                 </li>
               )
             }
             // Single prediction
             return (
-              <li key={h.id || h.timestamp} className={styles.listItem} style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <li key={hId} className={styles.listItem} style={{ display: "flex", flexDirection: "column", background: isSelected ? "#f3e8ff" : "transparent", borderRadius: 6, padding: 6 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <input type="checkbox" checked={isSelected} onChange={() => toggleCompareId(hId)}
+                    style={{ cursor: "pointer", width: 16, height: 16 }} title="Select for comparison" />
                   <span title={`SMILES: ${h.drug}`}><b>Drug:</b> {h.drug_name || h.drug}</span>
                   <span><b>Protein:</b> {h.protein}</span>
                   <span><b>Score:</b> {typeof h.score === "number" ? h.score.toFixed(4) : h.score}</span>
                   <span><b>Prediction:</b> {h.binder ? "Binder" : "Non-binder"}</span>
                 </div>
-                <small style={{ color: "#666" }}>{new Date(h.timestamp).toLocaleString()}</small>
+                <small style={{ color: "#666", marginLeft: 24 }}>{new Date(h.timestamp).toLocaleString()}</small>
               </li>
             )
           })}
@@ -977,6 +1030,111 @@ const IndexPage = () => {
                   hoverPosition: modalHoverPos,
                   onDownloadCsv: () => makeCsv(sortHits(sd.hits, modalSortCol, modalSortAsc), sd.protein),
                 })}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Compare modal */}
+        {showCompare && (() => {
+          const selected = history.filter((h) => compareIds.has(h.id || h.timestamp))
+          if (selected.length < 2) return null
+          const singlePreds = selected.filter((h) => h.type !== "screen")
+          const screens = selected.filter((h) => h.type === "screen" && h.screen_data)
+
+          return (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(0,0,0,0.5)", zIndex: 3000,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }} onClick={(e) => { if (e.target === e.currentTarget) setShowCompare(false) }}>
+              <div style={{
+                background: "#fff", borderRadius: 12, padding: 24,
+                width: "95vw", maxWidth: 1400, maxHeight: "90vh", overflow: "auto",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <h2 style={{ margin: 0 }}>Compare Results ({selected.length} searches)</h2>
+                  <button onClick={() => setShowCompare(false)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, padding: "0 4px", color: "#666" }}>
+                    &times;
+                  </button>
+                </div>
+
+                {/* Single prediction comparison table */}
+                {singlePreds.length > 0 && (
+                  <div style={{ marginBottom: 24 }}>
+                    <h3 style={{ margin: "0 0 8px" }}>Single Predictions</h3>
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                        <thead>
+                          <tr style={{ textAlign: "left" }}>
+                            <th style={{ padding: "8px 10px", borderBottom: "2px solid #ddd", background: "#f5f5f5" }}>Drug</th>
+                            <th style={{ padding: "8px 10px", borderBottom: "2px solid #ddd", background: "#f5f5f5" }}>SMILES</th>
+                            <th style={{ padding: "8px 10px", borderBottom: "2px solid #ddd", background: "#f5f5f5" }}>Protein</th>
+                            <th style={{ padding: "8px 10px", borderBottom: "2px solid #ddd", background: "#f5f5f5" }}>Score</th>
+                            <th style={{ padding: "8px 10px", borderBottom: "2px solid #ddd", background: "#f5f5f5" }}>Prediction</th>
+                            <th style={{ padding: "8px 10px", borderBottom: "2px solid #ddd", background: "#f5f5f5" }}>Time</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {singlePreds.map((h, i) => (
+                            <tr key={h.id || h.timestamp} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: "1px solid #eee" }}>
+                              <td style={{ padding: "6px 10px", fontWeight: 500 }}>{h.drug_name || h.drug}</td>
+                              <td style={{ padding: "6px 10px", fontFamily: "monospace", fontSize: 11, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={h.drug}>{h.drug}</td>
+                              <td style={{ padding: "6px 10px" }}>{h.protein}</td>
+                              <td style={{ padding: "6px 10px", fontFamily: "monospace" }}>{typeof h.score === "number" ? h.score.toFixed(4) : h.score}</td>
+                              <td style={{ padding: "6px 10px" }}>
+                                <span style={{
+                                  display: "inline-block", padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 600,
+                                  background: h.binder ? "#4caf50" : "#e0e0e0", color: h.binder ? "#fff" : "#555",
+                                }}>{h.binder ? "Binder" : "Non-binder"}</span>
+                              </td>
+                              <td style={{ padding: "6px 10px", fontSize: 12, color: "#666" }}>{new Date(h.timestamp).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Screening comparison - side by side */}
+                {screens.length > 0 && (
+                  <div>
+                    <h3 style={{ margin: "0 0 12px" }}>Screening Results</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: `repeat(${screens.length}, 1fr)`, gap: 16 }}>
+                      {screens.map((h) => {
+                        const sd = h.screen_data
+                        const hId = h.id || h.timestamp
+                        const sortState = compareSortStates[hId] || { col: "rank", asc: true }
+                        return (
+                          <div key={hId} style={{ border: "1px solid #e0e0e0", borderRadius: 8, padding: 12, overflow: "hidden" }}>
+                            {renderResultsTable({
+                              hits: sd.hits,
+                              protein: sd.protein,
+                              timestamp: sd.timestamp || h.timestamp,
+                              currentSortCol: sortState.col,
+                              currentSortAsc: sortState.asc,
+                              onSort: (col) => {
+                                setCompareSortStates((prev) => {
+                                  const cur = prev[hId] || { col: "rank", asc: true }
+                                  if (cur.col === col) return { ...prev, [hId]: { col, asc: !cur.asc } }
+                                  return { ...prev, [hId]: { col, asc: col === "rank" || col === "drug_name" } }
+                                })
+                              },
+                              currentHoverSmiles: compareHoverSmiles,
+                              onHoverEnter: (smiles, pos) => { setCompareHoverSmiles(smiles); setCompareHoverPos(pos) },
+                              onHoverLeave: () => setCompareHoverSmiles(null),
+                              hoverPosition: compareHoverPos,
+                              onDownloadCsv: () => makeCsv(sortHits(sd.hits, sortState.col, sortState.asc), sd.protein),
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )

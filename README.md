@@ -12,13 +12,9 @@ python -m app.data.download_and_prepare
 
 
 Next Steps:
-    - Do i need discussion, do i need to show front end(images)?
-    - put data table in data chapter - statistics of the data, distribution of binders/non-binders, etc.
-    - write about front end
+    - put data table in data chapter - statistics of the data, distribution of binders/non-binders, class imbalance etc.
     - get citations for Fastapi, 
     - not sure what to write in \subsection{Model Inference Pipeline}
-    - Where are SMILES and MACCs fingerprints retrievd from 
-    - How is batch predictions done?
     - use code examples
 
 
@@ -30,36 +26,6 @@ How to run backend:
 
 cd /Users/drs/Projects/DTI/Backend
 uvicorn app.main:app --reload
-
-
-what Junie did:
-
-### What I changed
-- Implemented a FastAPI backend with endpoints to predict binder/non-binder and to manage a history of predictions.
-- Replaced the default Gatsby starter homepage with a React-based DTI form that calls the FastAPI backend, shows the latest result, and lists previous searches.
-
-### Backend (FastAPI)
-- File added/updated: `Backend/app/main.py`
-  - Added endpoints:
-    - `GET /health` — health check
-    - `POST /predict` — takes `drug` and `protein`, returns `{binder, score, timestamp, ...}` and stores in history
-    - `GET /history` — returns the latest 100 predictions (most recent first)
-    - `DELETE /history` — clears stored history
-  - Enabled CORS for Gatsby dev (`http://localhost:8000`).
-  - Implemented lightweight, simple placeholder scoring (`simple_score`) with deterministic features to make the API functional while you wire in the real model.
-  - Implemented persistent JSON-backed history at `Backend/app/data/history.json` (auto-created). 
-
-Note: This backend scaffolding is designed so you can later replace `simple_score(drug, protein)` with a call to your trained model (e.g., load weights at startup and compute the real binder/non-binder probability and threshold at inference).
-
-### Frontend (Gatsby/React)
-- File updated: `Frontend/src/pages/index.js`
-  - Replaced the default starter page with a DTI Checker UI:
-    - Input form for `drug` and `protein`.
-    - On submit, calls `POST /predict`.
-    - Displays prediction (binder/non-binder) and score.
-    - Fetches and displays history from `GET /history`.
-    - Button to clear history via `DELETE /history`.
-  - API base URL is configurable: `GATSBY_API_BASE_URL` (defaults to `http://localhost:8001`).
 
 ### How to run (local dev)
 1) Backend (FastAPI)
@@ -93,3 +59,9 @@ from the Report/ directory:
 latexmk -pdf Main.tex 
 latexmk -pdf -bibtex Main.tex
 latexmk -C Main.tex && latexmk -pdf -bibtex Main.tex
+
+for claude code opus 4.6:
+claude --model opus
+
+
+Our dataset exhibited a slight class imbalance, with binders (60.25\%) outnumbering non-binders (39.75\%) after removing interactions in the "grey area" (pAffinity between 5.3 and 7.0).
