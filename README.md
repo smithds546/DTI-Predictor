@@ -12,7 +12,7 @@ python -m app.data.download_and_prepare
 
 
 Next Steps:
-    - put data table in data chapter - statistics of the data, distribution of binders/non-binders, class imbalance etc.
+    - in evaluation - try a narrower grey area 5.5-6.5 and 5.0-8.0, compare class balance and performance
     - get citations for Fastapi, 
     - not sure what to write in \subsection{Model Inference Pipeline}
     - use code examples
@@ -65,3 +65,36 @@ claude --model opus
 
 
 Our dataset exhibited a slight class imbalance, with binders (60.25\%) outnumbering non-binders (39.75\%) after removing interactions in the "grey area" (pAffinity between 5.3 and 7.0).
+
+
+
+Backend/app/Models/Experiments/grey_area/prepare_data.py — Data preparation + distribution     
+  figures:                                                                                       
+  1. Processes the raw BindingDB zip once (caches result for re-runs)                            
+  2. Filters to proteins with cached ProtBERT embeddings                                         
+  3. Computes MACCS fingerprints for all unique drugs                                            
+  4. For each variant (original 5.3-7.0, narrow 5.5-6.5, wide 4.5-8.0): applies thresholds,      
+  counts binder/non-binder/grey, splits 65/20/15, saves .npy + .csv                              
+  5. Generates:                                                                                  
+    - figures/class_distribution.png — Two-panel: (a) binder/non-binder/grey counts, (b) binder  
+  percentage showing class balance                                                               
+    - figures/paffinity_thresholds.png — pAffinity histogram with the three grey bands overlaid  
+    - figures/dataset_summary.json — All counts                                                
+                                                                                                 
+  Backend/app/Models/Experiments/grey_area/train_and_compare.py — Training + comparison figures: 
+  1. Trains DTI_DNN with Adam + CosineAnnealing for each variant (same hyperparameters as your   
+  existing run_dnn_adam.py)                                                                      
+  2. Supports selective training: python train_and_compare.py narrow to run one at a time        
+  3. Generates:                                                                                  
+    - figures/comparison_roc.png — 3-way ROC overlay                                             
+    - figures/comparison_metrics.png — Side-by-side metrics table with best values highlighted in
+   green                                                                                         
+    - figures/comparison_loss.png — 3-panel loss curves with early stopping markers              
+   
+  To run:                                                                                        
+  cd Backend/app/Models/Experiments/grey_area               
+  python prepare_data.py           # ~10-15 min (zip processing + MACCS computation)             
+  python train_and_compare.py      # ~30-90 min depending on hardware (3 training runs)          
+                                                                                                 
+  If memory is tight, set SAMPLE_FRAC = 0.1 at the top of prepare_data.py to use 10% of data.    
+                   

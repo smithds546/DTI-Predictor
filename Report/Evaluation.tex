@@ -451,35 +451,33 @@ However, the biggest differences appear in how our models are evaluated, with De
 \section{Data Sensitivity Analysis}
 \label{sec: eval_data}
 To get the best understanding of the models' performance, we will conduct a data sensitivity analysis to evaluate how changes in the training data size and decision threshold affect the model's performance.
-    \subsection{Learning Curve Analysis}
-    \label{sec: eval_sample_size}
-We will start by evaluating how the size of the training data impacts the model's performance, which is crucial for understanding the data efficiency of our model and its potential for improvement with more data.
-Due to the computational restraints and the inability to process more data, we are originally restricted to only ~0.6\% of the original BindingDB dataset.
-To see whether using more data would have improved our model, we will conduct a learning curve analysis, which involves training the model on progressively larger subsets of the training data and evaluating its performance on the test set at each step.
-These were the results of the learning curve analysis:
-\begin{figure}
+    \subsection{Increased Sample Size}
+After the move to the PyTorch framework, we have unlocked the ability to scale up our dataset to train the model on 50x more data.
+PyTorch can handle the load better than a NumPy approach for the following reasons.
+
+\begin{itemize}
+    \item \textbf{GPU acceleration:} PyTorch offloads matrix multiplications to the GPU, NumPy runs everything on a single CPU.
+    \item \textbf{Automatic batched computation:} PyTorch's DataLoader streams mini-batches to the GPU without loading the full dataset into working memory at once.
+    The NumPy scripts manually slice arrays and do full matrix operations on CPU RAM.
+    \item \textbf{Optimised autograd:} As mentioned earlier, autograd performs the backpropogation on a compiled C++ computation graph, when NumPy computes gradients with python loops.
+\end{itemize}
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/learning_curve_auc.png}
-    \caption{Learning curve showing the relationship between training data size and AUC-ROC performance.}
-    \label{fig:learning_curve}
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep.png}
+        \caption{Threshold Sweep Graph}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep_table.png}
+        \caption{Threshold Sweep Metric Table}
+    \end{minipage}
+    \caption{Analysis of Threshold Levels on Model Performance.}
+    \label{fig:threshold_sweep}
 \end{figure}
-The results demonstrate a clear positive correlation between training data size and model performance but ultimately shows signs of diminishing returns as training data increases.
-At 25\% of the training data, the model achieves an AUC-ROC of 0.7982.
-Performance increased substantially when the training set was doubled to 50\%, reaching an AUC-ROC of 0.8387, a gain of 0.0405.
-The increase from 50\% to 75\% saw a smaller improvement but still meaningful, with the AUC-ROC increasing by 0.0135.
-The jump from 75\% to 100\% also resulted in a small marginal increase of 0.0175, suggesting that the model is approaching a performance plateau with the current architecture and training procedure.
-This implies that the primary bottleneck has shifted from data availability to model capacity or inherent task complexity.
-
-\subsection{Power-Law Projection}
-To try and quantify the expected performance from additional data collection, a power-law learning curve was fitted to the plotted data points.
-The Power-Law model is a well-established method within machine learning for characterising the relationship between the training set size and generalisation performance \citep{Cortes1994}.
-The model is defined as:
-\begin{equation}
-    \text{AUC}(n) = a - \frac{b}{n^\alpha}
-\end{equation}
-Where $n$ is the training set size, $a$ is the asymptotic AUC as $n$ approaches infinity, $b$ is a scaling constant that determines the initial offset, and $\alpha$ is the decay exponent deciding the rate at which performance improves with additional data.
-$a$ was constrained to lie between the current maximum AUC(0.8697) and 1, while $b$ and $\alpha$ were constrained to be positive with $\alpha$ bounded between (0,2).
-
 
     \subsection{Effect of Decision Threshold}
     \label{sec: data_threshold}
@@ -575,27 +573,6 @@ We ran our best model with each new threshold dataset to compare the performance
 
 Figures~\ref{fig:comparison_loss} and~\ref{fig:comparison_metrics} tell an interesting story, because despite the dataset being distributed more evenly with new grey area thresholds, the original threshold (5.3 < pAffinity < 7.0) with a ~60/40 split has performed the best.
 Outperforming the other grey area thresholds across all metrics proves its validity and provides supporting evidence for removing the grey area as all the thresholds performed better than no threshold.
-
-
-\begin{table}[htbp]
-\centering
-\caption{Classification performance across grey area threshold strategies. Asterisks (*) denote the best result for each metric.}
-\label{tab:grey-area-comparison}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Metric} & \textbf{Original (5.30--7.00)} & \textbf{k=0.25 (6.15--6.92)} & \textbf{k=0.50 (5.77--7.30)} & \textbf{No Grey (median=6.54)} \\
-\midrule
-Accuracy  & 0.9162\textsuperscript{*} & 0.8664 & 0.9060 & 0.8169 \\
-AUC-ROC   & 0.9703\textsuperscript{*} & 0.9394 & 0.9660 & 0.8998 \\
-PR-AUC    & 0.9789\textsuperscript{*} & 0.9385 & 0.9638 & 0.8953 \\
-F1        & 0.9309\textsuperscript{*} & 0.8699 & 0.9068 & 0.8180 \\
-Precision & 0.9335\textsuperscript{*} & 0.8622 & 0.8942 & 0.8148 \\
-Recall    & 0.9283\textsuperscript{*} & 0.8778 & 0.9197 & 0.8212 \\
-\bottomrule
-\end{tabular}
-\end{table}
-\subsubsection{Discussion}
-
 
 % ============================================================
 \section{Evaluation Summary}

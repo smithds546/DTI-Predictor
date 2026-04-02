@@ -166,40 +166,36 @@ This approach generates an area between the thresholds, which represents an ambi
     \label{fig:affinity_dist}
 \end{figure}
 
-\begin{table}[H]
-  \centering
-  \caption{BindingDB Dataset Summary Before Thresholding}
-  \label{tab:dataset_summary}
-  \begin{tabular}{l r r}
-    \toprule
-    \textbf{Metric} & \textbf{Count} & \textbf{Percentage} \\
-    \midrule
-    Total interaction pairs & 1,563,308 & -- \\
-    Unique drugs (by SMILES) & 802,994 & -- \\
-    Unique proteins & 2,906 & -- \\
-    \midrule
-    Binders ($\mathrm{pAffinity} > 7.0$) & 613,673 & 39.25\% \\
-    Non-binders ($\mathrm{pAffinity} < 5.3$) & 389,632 & 24.92\% \\
-    Grey area ($5.3 \leq \mathrm{pAffinity} \leq 7.0$) & 560,003 & 35.82\% \\
-    \bottomrule
-  \end{tabular}
+\begin{table}[htbp]
+\centering
+\caption{BindingDB Dataset Summary Before Thresholding}
+\label{tab:dataset-before-threshold}
+\begin{tabular}{lrc}
+\toprule
+\textbf{Metric} & \textbf{Count} & \textbf{Percentage} \\
+\midrule
+Total interaction pairs                          & 1,416,025 & --      \\
+Binders (pAffinity $> 7.0$)                      & 552,618   & 39.03\% \\
+Non-binders (pAffinity $< 5.3$)                  & 356,025   & 25.14\% \\
+Grey area ($5.3 \leq$ pAffinity $\leq 7.0$)      & 507,382   & 35.83\% \\
+\bottomrule
+\end{tabular}
 \end{table}
 
-After removing the 560,003 pairs falling within the grey area, the remaining interactions were assigned binary labels, resulting in the class distribution shown in Table\ref{tab:class_distribution}.
-\begin{table}[H]
-  \centering
-  \caption{Final Class Distribution after Thresholding}
-  \label{tab:class_distribution}
-  \begin{tabular}{l l l r r}
-    \toprule
-    \textbf{Class Label} & \textbf{Interaction Type} & \textbf{Threshold Criteria} & \textbf{Count} & \textbf{Percentage} \\
-    \midrule
-    \textbf{1} & Binder (Positive) & $\mathrm{pAffinity} > 7.0$ & 557,959 & 60.25\% \\
-    \textbf{0} & Non-Binder (Negative) & $\mathrm{pAffinity} < 5.3$ & 368,066 & 39.75\% \\
-    \midrule
-    \textbf{Total} & & & \textbf{926,025} & \textbf{100\%} \\
-    \bottomrule
-  \end{tabular}
+After removing the 560,003 pairs falling within the grey area, the remaining interactions were assigned binary labels, resulting in the class distribution shown in Table\ref{tab:class_distribution}.\begin{table}[htbp]
+\centering
+\caption{Final Class Distribution After Thresholding}
+\label{tab:class-distribution}
+\begin{tabular}{clllrc}
+\toprule
+\textbf{Class Label} & \textbf{Interaction Type} & \textbf{Threshold Criteria} & \textbf{Count} & \textbf{Percentage} \\
+\midrule
+1     & Binder (Positive)      & pAffinity $> 7.0$ & 552,618 & 60.82\% \\
+0     & Non-Binder (Negative)  & pAffinity $< 5.3$ & 356,025 & 39.18\% \\
+\midrule
+\textbf{Total} & & & \textbf{908,643} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
 \end{table}
 
 \section{Feature Engineering}
@@ -232,19 +228,19 @@ The splitting was split into two stages:
     \item \textbf{Primary Split} - The merged dataset was split into a 65\% for Training and 35\% for a Secondary set.
     \item \textbf{Secondary Split} - the secondary set of data was split to 57.14\% and 42.86\% to obtain the overall split of 20\% for validation and 15\% for testing.
 \end{itemize}
-\begin{table}[H]
-\setlength{\tabcolsep}{30pt}
+
+\begin{table}[htbp]
 \centering
-\caption{Dataset Partitioning for Model Training and Evaluation (65:20:15 Split)}
-\label{tab:data_split}
-\begin{tabular}{l l r}
-    \toprule
-    \textbf{Subset} & \textbf{Split \%} & \textbf{Sample Count} \\
-    \midrule
-    Training & 65\% & 601,916 \\
-    Validation & 20\% & 185,205 \\
-    Testing & 15\% & 138,903 \\
-    \bottomrule
+\caption{Dataset Partitioning (65:20:15 Split)}
+\label{tab:dataset-split}
+\begin{tabular}{lcr}
+\toprule
+\textbf{Subset} & \textbf{Split \%} & \textbf{Sample Count} \\
+\midrule
+Training   & 65\% & 590,617 \\
+Validation & 20\% & 181,729 \\
+Testing    & 15\% & 136,297 \\
+\bottomrule
 \end{tabular}
 \end{table}
 \subsection{Justification of Split Ratios}
