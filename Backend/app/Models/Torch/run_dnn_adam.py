@@ -129,8 +129,25 @@ def evaluate(model, loader, criterion, device):
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
-def main():
-    os.makedirs(SAVE_DIR, exist_ok=True)
+def run(data_root=None, prefix=None, label=None, save_dir=None,
+        checkpoint=None, baseline=None, baseline_label="Baseline",
+        threshold_sweep=True):
+    """
+    Train DTI_DNN with Adam + CosineAnnealing and generate all figures.
+
+    All parameters are optional — when omitted they fall back to the
+    module-level defaults so the script still works standalone.
+
+    Returns:
+        dict with keys: test_metrics, losses, roc, stop_epoch
+    """
+    data_root  = data_root  or DATA_ROOT
+    prefix     = prefix     or PREFIX
+    label      = label      or LABEL
+    save_dir   = save_dir   or SAVE_DIR
+    checkpoint = checkpoint or CHECKPOINT
+
+    os.makedirs(save_dir, exist_ok=True)
 
     if torch.backends.mps.is_available():
         device = torch.device("mps")
@@ -142,9 +159,23 @@ def main():
 
     # ── Data ──────────────────────────────────────────────────────────────
     print("\nLoading data...")
-    (X_drug_train, X_prot_train, y_train,
-     X_drug_val,   X_prot_val,   y_val,
-     X_drug_test,  X_prot_test,  y_test) = load_data()
+    X_drug_train = torch.tensor(np.load(f"{data_root}/drugs/drug_train.npy"),    dtype=torch.float32)
+    X_drug_val   = torch.tensor(np.load(f"{data_root}/drugs/drug_val.npy"),      dtype=torch.float32)
+    X_drug_test  = torch.tensor(np.load(f"{data_root}/drugs/drug_test.npy"),     dtype=torch.float32)
+
+    X_prot_train = torch.tensor(np.load(f"{data_root}/proteins/prot_train.npy"), dtype=torch.float32)
+    X_prot_val   = torch.tensor(np.load(f"{data_root}/proteins/prot_val.npy"),   dtype=torch.float32)
+    X_prot_test  = torch.tensor(np.load(f"{data_root}/proteins/prot_test.npy"),  dtype=torch.float32)
+
+    y_train = torch.tensor(
+        pd.read_csv(f"{data_root}/bindingdb/bindingdb_train.csv")["interaction"].values,
+        dtype=torch.float32).unsqueeze(1)
+    y_val = torch.tensor(
+        pd.read_csv(f"{data_root}/bindingdb/bindingdb_validation.csv")["interaction"].values,
+        dtype=torch.float32).unsqueeze(1)
+    y_test = torch.tensor(
+        pd.read_csv(f"{data_root}/bindingdb/bindingdb_test.csv")["interaction"].values,
+        dtype=torch.float32).unsqueeze(1)
 
     print(f"  Train : {X_drug_train.shape[0]:,}  "
           f"(drug {X_drug_train.shape[1]}d, prot {X_prot_train.shape[1]}d)")
@@ -178,7 +209,7 @@ def main():
     )
 
     # ── Training loop ─────────────────────────────────────────────────────
-    print(f"\n[{LABEL}] Training up to {EPOCHS} epochs "
+    print(f"\n[{label}] Training up to {EPOCHS} epochs "
           f"(batch={BATCH_SIZE}, lr={LR}, wd={WEIGHT_DECAY}, patience={PATIENCE})...")
 
     train_losses, val_losses = [], []
@@ -203,7 +234,7 @@ def main():
         if val_auc > best_val_auc:
             best_val_auc      = val_auc
             epochs_no_improve = 0
-            torch.save(model.state_dict(), CHECKPOINT)
+            torch.save(model.state_dict(), checkpoint)
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= PATIENCE:
@@ -212,8 +243,8 @@ def main():
                       f"(no improvement for {PATIENCE} epochs).")
                 break
 
-    print(f"\nBest val_auc: {best_val_auc:.4f}  (checkpoint: {CHECKPOINT})")
-    model.load_state_dict(torch.load(CHECKPOINT, map_location=device))
+    print(f"\nBest val_auc: {best_val_auc:.4f}  (checkpoint: {checkpoint})")
+    model.load_state_dict(torch.load(checkpoint, map_location=device, weights_only=True))
 
     # ── Evaluate ──────────────────────────────────────────────────────────
     _, train_probs, train_labels = evaluate(model, train_loader, criterion, device)
@@ -224,69 +255,85 @@ def main():
     val_metrics   = compute_metrics(val_labels.astype(int),   val_probs,   THRESHOLD)
     test_metrics  = compute_metrics(test_labels.astype(int),  test_probs,  THRESHOLD)
 
-    print(f"\n{'='*50}\nFINAL RESULTS — {LABEL}\n{'='*50}")
+    print(f"\n{'='*50}\nFINAL RESULTS — {label}\n{'='*50}")
     for split, m in [("Train", train_metrics), ("Val", val_metrics), ("Test", test_metrics)]:
         print(f"\n  {split}:")
         for k, v in m.items():
             print(f"    {k:<12}: {v:.4f}")
 
     # ── Persist ───────────────────────────────────────────────────────────
-    with open(f"{SAVE_DIR}/{PREFIX}_test_metrics.json", "w") as f:
+    with open(f"{save_dir}/{prefix}_test_metrics.json", "w") as f:
         json.dump(test_metrics, f, indent=2)
-    with open(f"{SAVE_DIR}/{PREFIX}_losses.json", "w") as f:
+    with open(f"{save_dir}/{prefix}_losses.json", "w") as f:
         json.dump({"train": train_losses, "val": val_losses}, f)
 
     fpr, tpr, _ = roc_curve(test_labels.astype(int), test_probs)
     auc         = roc_auc_score(test_labels.astype(int), test_probs)
-    with open(f"{SAVE_DIR}/{PREFIX}_roc_data.json", "w") as f:
+    with open(f"{save_dir}/{prefix}_roc_data.json", "w") as f:
         json.dump({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": auc}, f)
 
     # ── Figures ───────────────────────────────────────────────────────────
     print("\nGenerating figures...")
-    baseline = load_metrics(f"{SAVE_DIR}/dnn_sgd_test_metrics.json", label="run_dnn.py")
 
-    prev_losses = load_metrics(f"{SAVE_DIR}/dnn_sgd_losses.json", label="run_dnn.py")
+    # Use provided baseline, or fall back to SGD baseline for standalone use
+    if baseline is None:
+        baseline = load_metrics(f"{save_dir}/dnn_sgd_test_metrics.json", label="run_dnn.py")
+        baseline_label = "Torch SGD"
+
+    prev_losses = load_metrics(f"{save_dir}/dnn_sgd_losses.json", label="run_dnn.py")
     if prev_losses:
         save_loss_curve_overlay(
             prev_losses["train"], prev_losses["val"], train_losses, val_losses,
-            prev_label="Torch SGD", curr_label="Torch Adam",
-            title=f"Loss Curve — Torch SGD vs {LABEL}",
-            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
+            prev_label="Torch SGD", curr_label=label,
+            title=f"Loss Curve — Torch SGD vs {label}",
+            save_path=f"{save_dir}/{prefix}_loss_curve.png",
             stop_epoch=stop_epoch,
         )
     else:
         save_loss_curve(
             train_losses, val_losses,
-            title=f"Loss Curve — {LABEL}",
-            save_path=f"{SAVE_DIR}/{PREFIX}_loss_curve.png",
+            title=f"Loss Curve — {label}",
+            save_path=f"{save_dir}/{prefix}_loss_curve.png",
             stop_epoch=stop_epoch,
         )
 
-    prev_roc = load_metrics(f"{SAVE_DIR}/dnn_sgd_roc_data.json", label="run_dnn.py")
+    prev_roc = load_metrics(f"{save_dir}/dnn_sgd_roc_data.json", label="run_dnn.py")
     if prev_roc:
         save_roc_curve_overlay(
             prev_roc["fpr"], prev_roc["tpr"], prev_roc["auc"],
             fpr.tolist(), tpr.tolist(), auc,
-            prev_label="Torch SGD", curr_label="Torch Adam",
-            title=f"ROC Curve — Torch SGD vs {LABEL}",
-            save_path=f"{SAVE_DIR}/{PREFIX}_roc_curve.png",
+            prev_label="Torch SGD", curr_label=label,
+            title=f"ROC Curve — Torch SGD vs {label}",
+            save_path=f"{save_dir}/{prefix}_roc_curve.png",
         )
 
     save_metrics_table(
         {"Train": train_metrics, "Validation": val_metrics, "Test": test_metrics},
-        title=f"Performance Metrics — {LABEL}",
-        save_path=f"{SAVE_DIR}/{PREFIX}_metrics_table.png",
+        title=f"Performance Metrics — {label}",
+        save_path=f"{save_dir}/{prefix}_metrics_table.png",
         baseline=baseline,
-        baseline_label="Torch SGD",
+        baseline_label=baseline_label,
     )
-    save_threshold_plot(
-        test_labels.astype(int), test_probs,
-        thresholds=THRESHOLD_SWEEP,
-        title=f"Metric vs Threshold — {LABEL}",
-        save_path=f"{SAVE_DIR}/{PREFIX}_threshold_sweep.png",
-    )
+    if threshold_sweep:
+        save_threshold_plot(
+            test_labels.astype(int), test_probs,
+            thresholds=THRESHOLD_SWEEP,
+            title=f"Metric vs Threshold — {label}",
+            save_path=f"{save_dir}/{prefix}_threshold_sweep.png",
+        )
 
-    print(f"\nAll figures saved to {SAVE_DIR}/")
+    print(f"\nAll figures saved to {save_dir}/")
+
+    return {
+        "test_metrics": test_metrics,
+        "losses":       {"train": train_losses, "val": val_losses},
+        "roc":          {"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": auc},
+        "stop_epoch":   stop_epoch,
+    }
+
+
+def main():
+    run()
 
 
 if __name__ == "__main__":

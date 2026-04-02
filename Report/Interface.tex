@@ -66,7 +66,7 @@ GET & \texttt{/health} & Returns the health status of the API. \\
 % binder index construction — all the startup-time work
 At startup time, the backend performs several data loading and preprocessing steps to ensure that the system is ready for user interactions.
 
-The training dataset, a processed BindingDB CSV containing drug SMILES strings, protein target names, amino acid sequences, and binary interaction labels, is loaded into a pandas DataFrame at module import time by the training data service.
+The full BindingDB CSV containing drug SMILES strings, protein target names, amino acid sequences, and binary interaction labels, is loaded into a pandas DataFrame at module import time by the training data service.
 From this, the autocomplete endpoint creates drug and target lists.
 
 Molecular descriptors for all unique compounds are computed using RDKit~\cite{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.

@@ -2,22 +2,30 @@
 \label{chap:data-pipeline}
 \sloppy
 \section{Introduction}
-This chapter provides a detailed overview of how the data was sourced, processed and prepped for two inputs, proteins and drugs, turning them from raw data to computationally readable for the model.
+This chapter provides a detailed overview of how the data was sourced, processed, and prepped for two inputs, proteins and drugs, turning them from raw data to computationally readable for the model.
 
 \section{Data Collection and Curation}
-Data is an extremely important part of this project, and it's important to gather a sufficient amount of scientifically accurate data so the model can be the most accurate as possible. This section will define how the data was sourced and manipulated to reach its final representation.
+Data is an extremely important part of this project, and it's important to gather a sufficient amount of scientifically accurate data so the model can be the most accurate as possible.
+This section will define how the data was sourced and manipulated to reach its final representation.
 \subsection{Primary Data Source}
-I extracted the initial bulk of my data from BindingDB \citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins. BindingDB serves as a critical resource to a diverse range of applications, including development of artificial intelligence models. The database has grown significantly, holding information on 2.9 million binding measurements for 1.3 million compounds. Data can be extracted through its web-services or downloaded directly. Due to the nature of the project, the initial phase begun with a local download of two raw data files to facilitate data cleaning and binarization: 
+I extracted the initial bulk of my data from BindingDB\citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins.
+BindingDB serves as a critical resource to a diverse range of applications, including development of artificial intelligence models.
+The database has grown significantly, holding information on 2.9 million binding measurements for 1.3 million compounds.
+Data can be extracted through its web-services or downloaded directly.
+Due to the nature of the project, the initial phase begun with a local download of two raw data files to facilitate data cleaning and binarization:
 \begin{itemize}
     \item \texttt{BindingDB\_all.tsv} file containing millions of interaction records
     \item \texttt{Sequences.fasta} file containing the amino acid sequences for all protein targets in the database.
 \end{itemize} 
 \subsection{Data Merging and Cleaning}
-The raw data from BindingDB didn't contain protein sequences making it unsuitable for feature engineering, so the first step after downloading all raw data was to unify the interaction and protein sequence data. Using the proteins name as a common key, the \texttt{.tsv} and \texttt{.fasta} file were merged creating a unified dataset where each row contained \textbf{Drug SMILES}, \textbf{Target Sequence}, \textbf{Binding Affinity Value} and the \textbf{Interaction classification}.
+The raw data from BindingDB didn't contain protein sequences, making it unsuitable for feature engineering, so the first step after downloading all raw data was to unify the interaction and protein sequence data.
+Using the protein name as a common key, the \texttt{.tsv} and \texttt{.fasta} file were merged, creating a unified dataset where each row contained \textbf{Drug SMILES}, \textbf{Target Sequence}, \textbf{Binding Affinity Value,} and the \textbf{Interaction classification}.
 
-To generate the binding affinity value, we unified multiple affinity sources (Ki, Kd, IC50 and EC50) into a singular NanoMolar value and converted them into a log-scaled representation \textit{pAffinity} similarly to He \citep{He2017}. This compressed the range of BindingDB affinity values into a more stable scale, improving the models behavior when learning.
+To generate the binding affinity value, we unified multiple affinity sources (Ki, Kd, IC50, and EC50) into a singular NanoMolar value and converted them into a log-scaled representation \textit{pAffinity} similarly to He\citep{He2017}.
+This compressed the range of BindingDB affinity values into a more stable scale, improving the models' behavior when learning.
 
-During the merge, the data was also cleaned to remove duplicate interactions or any rows with NULL values and was filtered for Homo-Sapien targets only. The result was a completely unified table containing the necessary information to continue with feature engineering. 
+During the merge, the data was also cleaned to remove duplicate interactions or any rows with NULL values and was filtered for Homo-Sapien targets only.
+The result was a completely unified table containing the necessary information to continue with feature engineering.
 
 \subsection{Ligand Identifier Normalization}
 Ligand identifiers provided by BindingDB corresponded to experimental compounds instead of approved and recognized drug names. This made it difficult to use the front end as the identifiers were very lengthy and chemically descriptive. To address this, the identifiers were normalized to be in simpler forms while being retained to ensure traceability back to the original BindingDB database.
@@ -91,7 +99,7 @@ These two sources were merged on the target name. After merging, cleaning, and b
 % ------------------------------------------
 
 \subsection{Affinity Type Justification (Ki, Kd, IC50)}
-BindingDB already provides some experimentally measured binding affinity types, such as \textit{Ki}, \textit{Kd} and \textit{IC50}. Although these quantities are related, they do not supply us with meaning and are not suitable to begin our classification of the dataset. 
+BindingDB already provides some experimentally measured binding affinity types, such as \textit{Ki}, \textit{Kd,} and \textit{IC50}. Although these quantities are related, they do not supply us with meaning and are not suitable to begin our classification of the dataset.
 \subsubsection{Definitions and Mechanistic Differences}
 \textbf{Ki} (inhibition) measures the binding between an inhibitor ligand to an enzyme, which strictly reduces the catalytic activity of the enzyme. 
 \textbf{Kd} (dissociation) also measures the binding equilibrium between a ligand and protein but in a more general, all-encompassing term to include all the dissociated components. While mechanistically similar to Ki, Kd describes the general tendency of a complex to dissociate into its constituent components. Both Ki and Kd are equilibrium constants governed by the same thermodynamic principles~\citep{sciencesnail_ki_kd}.
@@ -158,7 +166,26 @@ This approach generates an area between the thresholds, which represents an ambi
     \label{fig:affinity_dist}
 \end{figure}
 
-After the binarization and cleaning it generated the figures seen below in Table \ref{tab:class_distribution}.
+\begin{table}[H]
+  \centering
+  \caption{BindingDB Dataset Summary Before Thresholding}
+  \label{tab:dataset_summary}
+  \begin{tabular}{l r r}
+    \toprule
+    \textbf{Metric} & \textbf{Count} & \textbf{Percentage} \\
+    \midrule
+    Total interaction pairs & 1,563,308 & -- \\
+    Unique drugs (by SMILES) & 802,994 & -- \\
+    Unique proteins & 2,906 & -- \\
+    \midrule
+    Binders ($\mathrm{pAffinity} > 7.0$) & 613,673 & 39.25\% \\
+    Non-binders ($\mathrm{pAffinity} < 5.3$) & 389,632 & 24.92\% \\
+    Grey area ($5.3 \leq \mathrm{pAffinity} \leq 7.0$) & 560,003 & 35.82\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+After removing the 560,003 pairs falling within the grey area, the remaining interactions were assigned binary labels, resulting in the class distribution shown in Table\ref{tab:class_distribution}.
 \begin{table}[H]
   \centering
   \caption{Final Class Distribution after Thresholding}
@@ -221,7 +248,10 @@ The splitting was split into two stages:
 \end{tabular}
 \end{table}
 \subsection{Justification of Split Ratios}
-While an 80:20 ratio between training and testing is common \citep{Talukder2025, Zhan2025}, A higher validation set of data at 20\% was used for more accurate estimates of model performance during training. This can allow for better hyperparameter tuning so the model can be tweaked to optimize performance on the unseen test data. This specific split has been used among other deep learning studies that require rigorous hyperparameter tuning, such as in medical image analysis \citep{Nunes2019} and environmental prediction modeling \citep{Lorenz2019}. A large allowance to the validation set reduces the risk of overfitting before the final evaluation on the unseen test data.
+While an 80:20 ratio between training and testing is common\citep{Talukder2025, Zhan2025}, A higher validation set of data at 20\% was used for more accurate estimates of model performance during training.
+This can allow for better hyperparameter tuning so the model can be tweaked to optimise performance on the unseen test data.
+This specific split has been used among other deep learning studies that require rigorous hyperparameter tuning, such as in medical image analysis \citep{Nunes2019} and environmental prediction modeling\citep{Lorenz2019}.
+A large allowance to the validation set reduces the risk of overfitting before the final evaluation on the unseen test data.
 
 
 

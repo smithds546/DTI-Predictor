@@ -508,10 +508,99 @@ As the threshold increases , precision improves to 0.897 and recall drops down t
 The F1 score, which is the harmonic mean of precision and recall, peaks at a threshold of 0.3 suggesting that this is the optimal operating point for the model.
 Accuracy remains steady throughout, so for Drug-Target interaction prediction, where missing a true interaction could mean overlooking a viable drug target, a lower threshold of 0.3 will be preferable.
 
+\subsection{Grey Area Analysis}\label{subsec:grey-area-analysis}
+To further understand the impact of the \textbf{grey area} (week predictions with no clear classification), adaptations to such thresholds will be tested to see how it affects model performance and the class imbalance issue.
+Analysing the distribution of data we can identify appropriate cutoffs to keep the distribution balanced between binders and non-binders using standard deviation.
+The original thresholds of 5.30 and 7.00 were chosen to create a clear separation between binders and non-binders based off of literature standards, but this wasn't based off of the actual distribution of the data used in this work.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/paffinity_distribution.png}
+    \caption{pAffinity distribution with median and mean marked}
+    \label{fig:paffinity_distribution}
+\end{figure}
+
+\subsubsection{New Thresholds}
+The original thresholds (5.30-7.00) were asymmetric with the upper bound being only 0.31 std above the mean, but the lower bound is 0.81 std below the mean.
+Hence, the 61/39 imbalance within our original split dataset and the new approach of using more symmetric thresholds to give more naturally balanced classes with the following formula:
+
+Formula expression for mean +- k * std
+
+Where k is the number of standard deviations from the mean (mean - 6.53, std = 1.52) and std is the standard deviation of the pAffinity distribution.
+This ensures equal margins on both sides and produced the following new \textbf{grey area thresholds}:
+
+\begin{itemize}
+    \item \textbf{Original:} 5.30 - 7.00
+    \item \textbf{k = 0.25:} 6.15 - 6.92
+    \item \textbf{k = 0.5:} 5.77 - 7.30
+    \item \textbf{No Grey Area:} median = 6.54
+\end{itemize}
+
+\subsubsection{Data Distribution Analysis}
+After preprocessing the dataset again with the new thresholds, it created a more even class distribution, and here you can visualise the extent of the new grey areas over the data.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/class_distribution.png}
+    \caption{Class distribution of new grey area thresholds comapred to original thresholds}
+    \label{fig:class_distribution}
+\end{figure}
+
+All the new grey area variations have much more even split between binders and non-binders, with no grey area giving the best balance 50.1/49.9 but will lose the ability to exclude weak predictions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/paffinity_thresholds.png}
+    \caption{pAffinity distribution with new grey area thresholds marked}
+    \label{fig:new_thresholds_distribution}
+\end{figure}
+
+Figure~\ref{fig:new_thresholds_distribution} shows the new thresholds over the pAffinity distribution, with the original thresholds being more extreme and excluding a larger portion of the data as grey area, while the new thresholds are more central and include more data in the training set.
+
+\subsubsection{Model Performance Analysis}
+We ran our best model with each new threshold dataset to compare the performance of the model, here is what we discovered:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/comparison_loss.png}
+    \caption{Comparison of training and validation loss between the thresholds ran on the same model}
+    \label{fig:comparison_loss}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/comparison_metrics.png}
+    \caption{Comparison of metrics between the thresholds ran on the same model}
+    \label{fig:comparison_metrics}
+\end{figure}
+
+Figures~\ref{fig:comparison_loss} and~\ref{fig:comparison_metrics} tell an interesting story, because despite the dataset being distributed more evenly with new grey area thresholds, the original threshold (5.3 < pAffinity < 7.0) with a ~60/40 split has performed the best.
+Outperforming the other grey area thresholds across all metrics proves its validity and provides supporting evidence for removing the grey area as all the thresholds performed better than no threshold.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Classification performance across grey area threshold strategies. Asterisks (*) denote the best result for each metric.}
+\label{tab:grey-area-comparison}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{Original (5.30--7.00)} & \textbf{k=0.25 (6.15--6.92)} & \textbf{k=0.50 (5.77--7.30)} & \textbf{No Grey (median=6.54)} \\
+\midrule
+Accuracy  & 0.9162\textsuperscript{*} & 0.8664 & 0.9060 & 0.8169 \\
+AUC-ROC   & 0.9703\textsuperscript{*} & 0.9394 & 0.9660 & 0.8998 \\
+PR-AUC    & 0.9789\textsuperscript{*} & 0.9385 & 0.9638 & 0.8953 \\
+F1        & 0.9309\textsuperscript{*} & 0.8699 & 0.9068 & 0.8180 \\
+Precision & 0.9335\textsuperscript{*} & 0.8622 & 0.8942 & 0.8148 \\
+Recall    & 0.9283\textsuperscript{*} & 0.8778 & 0.9197 & 0.8212 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\subsubsection{Discussion}
+
+
 % ============================================================
 \section{Evaluation Summary}
 \label{sec: eval_summary}
-After our full evaluation we have determined the optimal model to be the Pytorch implementation with Adam optimiser, using a threshold of 0.3 for classification.
+After our full evaluation, we have determined the optimal model to be the Pytorch implementation with Adam optimiser, using a threshold of 0.3 for classification.
 This model gave us the best overall performance with an F1 score of 0.841 and an AUC-ROC of 0.8670, which is a significant improvement over the baseline model and is competitive with the literature baseline of DeepCDA.
 The most impactful improvement across iterations was the switch to the PyTorch framework, which provided a significant boost in performance.
 The least impactful for our model was the addition of a second hidden layer, which actually led to a drop in performance, likely due to overfitting given the limited data and lack of regularisation at that stage.
