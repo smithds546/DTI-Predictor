@@ -403,8 +403,8 @@ The use of the Adam optimiser led to a significant improvement in recall without
 
 \section{Comparison Against Literature Baseline (DeepCDA)}
 \label{sec: eval_deepcda}
-To give our results context and demonstrate the effectiveness of our modeling choices, we will be comparing it to the DeepCDA model \citep{Abbasi2020}, which is an established deep learning DTI prediction model that was evaluated on the BindingDB dataset.
-Reported metrics are drawn from the comparative study of \citep{Yang2024}.
+To give our current results context and demonstrate the effectiveness of our modeling choices, we will be comparing it to the DeepCDA model\citep{Abbasi2020}, which is an established deep learning DTI prediction model that was evaluated on the BindingDB dataset.
+Reported metrics are drawn from the comparative study of\citep{Yang2024}.
 \subsection{DeepCDA Architecture}
 DeepCDA uses a dual-branch architecture where one branch processes protein sequences using an LSTM (Long Short-Term Memory) network, while the other branch processes drug SMILES strings using a CNN (Convolutional Neural Network).
 The outputs of these two branches are then concatenated and passed through a fully connected (FC) classification layer to predict the binding interaction \citep{Abbasi2020}.
@@ -414,7 +414,7 @@ This makes for a fair comparison with our model because both are binary classifi
 Neither model is a direct implementation of the other, but they share enough similarities in their overall approach and training data to allow for a meaningful comparison of their performance metrics.
 
 \subsection{Performance Comparison}
-Here we will compare the performance of our final model against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
+Here we will compare the performance of our current model against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
 
 \subsubsection{Methodological Differences}
 Before comparing our model's performance against DeepCDA, it's important to acknowledge the methodological differences between the two evaluations.
@@ -444,8 +444,11 @@ This work (best model)         & 0.8686 & 0.8978 & 0.8326 & 0.8217 & 0.7959 \\
 \bottomrule
 \end{tabular}
 \end{table}
-The differences seen in the table above could be put towards the difference in data representations, we use industry standard ProtBERT and MACCS fingerprints, whereas DeepCDA uses a custom encoding of the sequences and SMILES.
+The differences seen in the table above could be put towards the difference in data representations; we use industry standard ProtBERT and MACCS fingerprints, whereas DeepCDA uses a custom encoding of the sequences and SMILES.
 However, the biggest differences appear in how our models are evaluated, with DeepCDA using 10-fold cross-validation and this work using a fixed train/validation/test split.
+
+It is worth noting that these results reflect an early checkpoint in our model developement; subsequent sections detail further improvements through data.
+A broader comaprison against multiple literature baselines, including the improved final model, is presented in Section~\ref{sec:lit_comparison}.
 
 
 \section{Data Sensitivity Analysis}
@@ -466,18 +469,22 @@ PyTorch can handle the load better than a NumPy approach for the following reaso
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep.png}
-        \caption{Threshold Sweep Graph}
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_metrics_table_standalone.png}
+        \caption{Pytorch with adam on reduced dataset}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep_table.png}
-        \caption{Threshold Sweep Metric Table}
+        \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/original_metrics_table.png}
+        \caption{Pytorch with adam on full dataset}
     \end{minipage}
-    \caption{Analysis of Threshold Levels on Model Performance.}
-    \label{fig:threshold_sweep}
+    \caption{Analysis of increased sample size}
+    \label{fig:full_dataset}
 \end{figure}
+
+The increased sample size has dramatically improved the performance of the model, being much more consistent over validation and test datasets.
+The models were exactly the same, yet the change in data from ~18k to ~900k has reduced overfitting without redistributing the class balance, which we get onto in the following subsections.
+
 
     \subsection{Effect of Decision Threshold}
     \label{sec: data_threshold}
@@ -506,7 +513,8 @@ As the threshold increases , precision improves to 0.897 and recall drops down t
 The F1 score, which is the harmonic mean of precision and recall, peaks at a threshold of 0.3 suggesting that this is the optimal operating point for the model.
 Accuracy remains steady throughout, so for Drug-Target interaction prediction, where missing a true interaction could mean overlooking a viable drug target, a lower threshold of 0.3 will be preferable.
 
-\subsection{Grey Area Analysis}\label{subsec:grey-area-analysis}
+\subsection{Grey Area Analysis}
+\label{subsec:grey-area-analysis}
 To further understand the impact of the \textbf{grey area} (week predictions with no clear classification), adaptations to such thresholds will be tested to see how it affects model performance and the class imbalance issue.
 Analysing the distribution of data we can identify appropriate cutoffs to keep the distribution balanced between binders and non-binders using standard deviation.
 The original thresholds of 5.30 and 7.00 were chosen to create a clear separation between binders and non-binders based off of literature standards, but this wasn't based off of the actual distribution of the data used in this work.
@@ -574,12 +582,89 @@ We ran our best model with each new threshold dataset to compare the performance
 Figures~\ref{fig:comparison_loss} and~\ref{fig:comparison_metrics} tell an interesting story, because despite the dataset being distributed more evenly with new grey area thresholds, the original threshold (5.3 < pAffinity < 7.0) with a ~60/40 split has performed the best.
 Outperforming the other grey area thresholds across all metrics proves its validity and provides supporting evidence for removing the grey area as all the thresholds performed better than no threshold.
 
+
+\section{Literature Comparison}
+\label{sec:lit_comparison}
+Having completed all iterations of model development, we now compare our final model against a broader set of deep learning DTI prediction methods evaluated on the BindingDB dataset.
+Section~\ref{sec: eval_deepcda} presented a preliminary comparison against DeepCDA at an early stage of development; here we extend that comparison to include TripletMulti-DTI, GAT, and MINDG, all reported in the comparative study of \citet{Yang2024}.
+
+\subsection{Compared Architectures}
+Each of the compared methods takes a fundamentally different approach to modelling drug--target interactions, making this a diverse and informative benchmark.
+
+\subsubsection{DeepCDA}
+As discussed in Section~\ref{sec: eval_deepcda}, DeepCDA \citep{Abbasi2020} uses a dual-branch architecture with an LSTM for protein sequences and a CNN for drug SMILES strings, followed by a fully connected classification layer.
+
+\subsubsection{TripletMulti-DTI}
+TripletMulti-DTI employs a multi-task learning framework that jointly optimises a triplet loss alongside the binary classification objective.
+It uses separate encoders for drugs and targets and learns a shared embedding space where interacting pairs are pulled closer together while non-interacting pairs are pushed apart\citep{Yang2024}.
+This contrastive learning component gives the model a richer representation of similarity between drug--target pairs beyond what a standard classification loss provides.
+
+\subsubsection{GAT (Graph Attention Network)}
+The GAT-based approach represents drugs as molecular graphs, where atoms are nodes and bonds are edges, and applies graph attention layers to learn molecular representations\citep{Yang2024}.
+Protein targets are encoded separately, and the combined representations are passed through dense layers for prediction.
+Graph-based methods have the advantage of directly encoding molecular topology, but they tend to be more computationally expensive and sensitive to graph construction choices.
+
+\subsubsection{MINDG}
+MINDG is the strongest baseline in the comparison, combining graph neural networks with multi-scale interaction modelling \citep{Yang2024}.
+It captures both local substructure patterns and global molecular properties, and uses a dual-graph architecture to model drug and target features at multiple resolutions.
+MINDG achieved the highest reported performance among the baselines across most metrics, making it the most challenging benchmark for our model.
+
+\subsubsection{This Work}
+Our model uses a dual-branch fully connected DNN that processes pre-computed ProtBERT embeddings for protein targets and MACCS fingerprints for drug molecules.
+Unlike the other methods, which learn feature representations end-to-end from raw sequences or molecular graphs, our approach relies on established, domain-specific featurisation pipelines.
+The model was trained using the Adam optimiser with cosine annealing learning rate decay on the full BindingDB dataset, as detailed in the preceding sections.
+
+\subsection{Methodological Differences}
+As noted in Section~\ref{sec: eval_deepcda}, all four baseline methods were evaluated using 10-fold cross-validation, where the dataset is partitioned into 10 subsets and performance is averaged across 10 training runs.
+Our model was evaluated using a fixed train/validation/test split, meaning our reported metrics are based on a single partitioning of the data rather than an average over multiple folds.
+Cross-validation generally produces more stable estimates with lower variance, and the reported standard deviations for the baselines confirm this.
+Our single-split evaluation may therefore be more sensitive to the specific data partition, and the absence of confidence intervals should be kept in mind when interpreting the results.
+Despite this methodological difference, the comparison remains informative as both approaches evaluate generalisation to unseen data drawn from the same BindingDB source.
+
+\subsection{Results}
+Table~\ref{tab:performance-comparison} presents the full comparison.
+All baseline results are reproduced from \citet{Yang2024}.
+
+\begin{table}[htbp]
+\centering
+\caption{Performance comparison of different methods on BindingDB dataset.
+Bold values indicate the best performance in each column.
+Results for DeepCDA, TripletMulti-DTI, GAT, and MINDG are reproduced from \citet{Yang2024} and were evaluated using 10-fold cross-validation.
+This work uses a fixed train/validation/test split.}
+\label{tab:performance-comparison}
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Method} & \textbf{AUPRC} & \textbf{AUROC} & \textbf{F1-score} & \textbf{Sen.} & \textbf{Spec.} & \textbf{Precision} & \textbf{Accuracy} \\
+\midrule
+DeepCDA          & $0.901 \pm 0.012$ & $0.894 \pm 0.003$ & $0.811 \pm 0.005$ & $0.872 \pm 0.013$ & $0.840 \pm 0.004$ & $0.760 \pm 0.016$ & $0.831 \pm 0.011$ \\
+TripletMulti-DTI & $0.940 \pm 0.003$ & $0.931 \pm 0.001$ & $0.840 \pm 0.002$ & $0.917 \pm 0.022$ & $\mathbf{0.863 \pm 0.001}$ & $0.792 \pm 0.008$ & $0.865 \pm 0.005$ \\
+GAT              & $0.923 \pm 0.002$ & $0.913 \pm 0.001$ & $0.755 \pm 0.021$ & $0.887 \pm 0.001$ & $0.851 \pm 0.001$ & $0.701 \pm 0.013$ & $0.775 \pm 0.012$ \\
+MINDG            & $0.971 \pm 0.008$ & $0.951 \pm 0.004$ & $0.857 \pm 0.013$ & $0.923 \pm 0.006$ & $0.842 \pm 0.015$ & $0.800 \pm 0.013$ & $0.875 \pm 0.007$ \\
+\midrule
+Ours             & $\mathbf{0.9789}$ & $\mathbf{0.9703}$ & $\mathbf{0.9309}$ & $\mathbf{0.9283}$ & $0.--$ & $\mathbf{0.9335}$ & $\mathbf{0.9162}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Discussion}
+Our model achieves the highest scores across six of the seven reported metrics, outperforming all four baselines in AUPRC, AUROC, F1-score, sensitivity, precision, and accuracy.
+The margin of improvement over MINDG, the strongest baseline, is notable: our AUROC of 0.9703 exceeds MINDG's 0.951, and our F1-score of 0.9309 represents a substantial improvement over MINDG's 0.857.
+Precision sees the largest relative gain, with our model achieving 0.9335 compared to MINDG's 0.800, indicating that our model produces significantly fewer false positive predictions.
+
+These results are particularly encouraging given the relative simplicity of our architecture.
+While the baselines employ graph neural networks, attention mechanisms, contrastive learning, and multi-scale interaction modelling, our model uses a straightforward fully connected DNN operating on pre-computed ProtBERT and MACCS features.
+This suggests that the quality of input featurisation, specifically the use of ProtBERT embeddings that capture deep contextual protein semantics and MACCS fingerprints that encode pharmacologically relevant substructures, may be at least as important as architectural complexity for DTI prediction on this dataset.
+
+However, the comparison should be interpreted with appropriate caution.
+The absence of specificity in our results (marked as $0.--$ in Table~\ref{tab:performance-comparison}) means we cannot fully assess the false positive rate relative to the baselines.
+More importantly, our use of a fixed split versus the baselines' 10-fold cross-validation means our reported metrics lack the variance estimates that would strengthen claims of statistical significance.
+Notwithstanding these caveats, the consistently strong performance across multiple metrics provides evidence that our approach is competitive with, and potentially exceeds, the current state of the art for DTI prediction on BindingDB, as reported in a 2024 study \citep{Yang2024}.
 % ============================================================
 \section{Evaluation Summary}
 \label{sec: eval_summary}
-After our full evaluation, we have determined the optimal model to be the Pytorch implementation with Adam optimiser, using a threshold of 0.3 for classification.
-This model gave us the best overall performance with an F1 score of 0.841 and an AUC-ROC of 0.8670, which is a significant improvement over the baseline model and is competitive with the literature baseline of DeepCDA.
-The most impactful improvement across iterations was the switch to the PyTorch framework, which provided a significant boost in performance.
+After our full evaluation, we have determined the optimal model to be the Pytorch implementation with Adam optimiser on the full dataset, using a threshold of 0.3 for classification.
+This model gave us the best overall performance with an F1 score of 0.9309 and an AUC-ROC of 0.9703, which is a significant improvement over the baseline model and is competitive with the literature baseline of DeepCDA and MINDG.
+The most impactful improvement across iterations was the switch to the PyTorch framework, which provided a significant boost in performance because it unlocked the ability to use the full dataset instead of a subset.
 The least impactful for our model was the addition of a second hidden layer, which actually led to a drop in performance, likely due to overfitting given the limited data and lack of regularisation at that stage.
 The main limitation with our evaluation is the differing methodologies used to evaluate our model and the literature baseline, with DeepCDA using 10-fold cross-validation and our model using a fixed train/validation/test split.
 This means that the metrics we report for our model are based on a single run and may be more sensitive to the specific train/test split used, while the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data.
