@@ -11,7 +11,8 @@ from rdkit.Chem import MACCSkeys
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
 _APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_MODEL_PATH = os.path.join(_APP_DIR, "Models", "Torch", "dnn_adam_best.pt")
+_MODEL_PATH = os.path.join(_APP_DIR, "Models", "Experiments", "grey_area",
+                           "data", "original", "original_best.pt")
 _PROT_CACHE_DIR = os.path.join(_APP_DIR, "data", "preprocessed", "protein_cache")
 _DATA_LOADED_DIR = os.path.join(_APP_DIR, "data", "loaded")
 
