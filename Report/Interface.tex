@@ -94,13 +94,30 @@ At startup the prediction service builds a lookup table to map protein names to 
 
 To support the known-binders filter, a binder index is constructed by grouping together the training data by target name and collecting the set of SMILES strings that bind.
 \subsection{Model Inference Pipeline}
-% MACCS fingerprinting, embedding lookup, DNN forward pass, single vs batch
-Here we will explain how raw drug and target inputs become a binding probability score through a series feature extraction and neural network inference steps.
-For the drug input, the Natural drug name drug CHembl ID is converted back into SMILES format and then MACCS fingerprint using the cached data.
-For the Target input, the (protein input representation) is mapped to its amino acid sequence via a lookup table built at startup, and then the precomputed ProtBERT embedding is retrieved from the cache.
+This section describes how raw drug and target inputs become a binding probability score through feature extraction and neural network inference.
 
-The two feature vectors are concatenated and passed through our PyTorch model, trained on known drug-target interactions.
-The model outputs a probability score between 0 and 1 where values above 0.5 indicate a predicted binding.
+\subsubsection{Model Artefact}
+The trained model is stored as a \texttt{.pt} file, which is PyTorch's standard serialisation format for model weights.
+During training, the training script monitors the validation AUC after each epoch and saves the model's \texttt{state\_dict} --- a Python dictionary mapping each layer name to its learned weight tensor --- whenever a new best validation score is achieved.
+This best-checkpoint strategy ensures that the saved file captures the model at its best point rather than just at the end of training where overfitting may have occurred.
+
+The resulting file (\texttt{original\_best.pt}) contains only the learned parameters (weights and biases) of the \texttt{DTI\_DNN} network, not the architecture definition itself.
+This means the model class must be available in code at load time so that PyTorch can reconstruct the network and populate it with the saved weights.
+
+\subsubsection{Model Loading at Startup}
+When the FastAPI backend starts, the prediction service loads the \texttt{.pt} file once and retains the model in memory for the lifetime of the process.
+The loading procedure is as follows:
+\begin{enumerate}
+    \item An empty \texttt{DTI\_DNN} instance is created with the same architecture hyperparameters used during training (167-dimensional drug input, 1024-dimensional protein input, encoder widths of 256/512/256, and a dropout rate of 0.4).
+    \item \texttt{torch.load} deserialises the \texttt{.pt} file into a state dictionary, mapping it to the best available hardware accelerator (Apple MPS, CUDA, or CPU).
+    \item \texttt{load\_state\_dict} populates the empty model with the saved weights.
+    \item The model is set to evaluation mode via \texttt{model.eval()}, which disables dropout and batch normalisation updates so that inference results are deterministic.
+\end{enumerate}
+Because the model is loaded once at startup rather than on each request, inference latency is kept low and repeated file I/O is avoided.
+
+\subsubsection{Feature Extraction and Forward Pass}
+The two feature vectors (SMILES, Amino acid sequence) are passed through their respective encoder subnetworks and joined into a single joint representation.
+This joint vector is then fed through the interaction predictor head, which outputs a probability score between 0 and 1, where values above 0.5 indicate predicted binding.
 
 \subsubsection{Batch Inference Pipeline}
 To fully emulate virtual screening, the pipeline also supports batch predictions.

@@ -3,7 +3,7 @@ import Layout from "../components/layout"
 import Seo from "../components/seo"
 import * as styles from "../components/index.module.css"
 
-const API_BASE = process.env.GATSBY_API_BASE_URL || "http://127.0.0.1:8001"
+const API_BASE = process.env.GATSBY_API_BASE_URL || "http://127.0.0.1:8000"
 
 const IndexPage = () => {
   // --- mode toggle ---

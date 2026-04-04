@@ -40,7 +40,7 @@ This is common when training data has an unequal ratio of positive and negative.
 \subsection{Data Preprocessing}
 \subsubsection{Binarisation}
 The binarisation threshold was chosen to create a clear distinction between binders and non-binders, with the grey area defining an area of uncertainty where interactions that fall within are unaccounted for.
-The grey area was defined as (5.3 ≤ pAffinity ≤ 7.0), to remove genuinely ambiguous interactions (560,003 pairs), above 7.0 is considered a good binder, and below 5.3 is used across papers including\citep{Gfeller2013}.
+The grey area was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (560,003 pairs), above 7.0 is considered a good binder, and below 5.3 is used across papers including\citep{Gfeller2013}.
 As seen in the Chapter~\ref{chap:data-pipeline}, this leaves us with an unbalanced dataset of ~61\% being binders.
 This gave the model stronger reasoning signals to learn from, with the tradeoff of having fewer interactions to train the model from.
 \subsubsection{Class Imbalance}
@@ -79,6 +79,12 @@ The dataset split may cause data leakage with the same drug or protein appearing
 Fixed fingerprint representation limits what the model can learn.
 Without structural information, the model is restricted to only learning from the presence or absence of substructures and can't learn from the spatial arrangement of atoms, which is valuable for understanding molecular interactions.
 Also, approaching the task as binary classification loses granularity in the data, as the model is only learning to predict whether an interaction is likely or not, rather than the strength of the interaction.
+A practical consequence of this is observable through the virtual screening interface: when filtering for compounds that are known binders to a given protein in the training data and then screening those same compounds against the same protein, the model predicts fewer than half as binders.
+This is not a bug but a natural outcome of how the model generalises.
+The known-binder labels come directly from BindingDB, but the model's predictions are based on learned patterns from compressed feature representations (167-bit MACCS fingerprints and 1024-dimensional ProtBERT embeddings).
+Regularisation techniques such as dropout and weight decay actively prevent the model from memorising the training set, meaning it will not perfectly reproduce the training labels.
+Some true binders may have fingerprint representations that sit close to the decision boundary and fall on the wrong side, particularly when their binding is driven by structural features that MACCS fingerprints do not capture.
+While this gap between ground-truth labels and model predictions may appear concerning, a model that perfectly reproduced all training labels would be a stronger indication of overfitting rather than genuine predictive ability.
 Finally, having no interpretability mechanism means the user has no insight into why the model is making certain predictions, which can reduce trust and make it harder to identify potential issues with the model's reasoning.
 \subsection{API}
 We capped the batch screening functionality at 100 compounds to keep inference time reasonable, but it's shadowed by real virtual screening campaigns that can do millions of compounds.
