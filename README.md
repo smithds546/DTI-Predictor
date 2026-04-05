@@ -1,20 +1,8 @@
 # DTI-Predictor
 This is my final year project where I use machine learning to predict the binding success rate between drug molecules and protein targets. I will code the frontend off of the react js framework and use a REST API to connect it to the backend - Neural network, Database
 
-For Data:
-
-# 1. Install dependencies (if not already done)
-cd Backend
-pip install -r requirements.txt
-
-# 2. Run the data preparation script
-python -m app.data.download_and_prepare
-
-
 Next Steps:
-    - in evaluation - try a narrower grey area 5.5-6.5 and 5.0-8.0, compare class balance and performance
-    - get citations for Fastapi, 
-    - not sure what to write in \subsection{Model Inference Pipeline}
+    - Add ethical warning message to front end
     - use code examples
 
 

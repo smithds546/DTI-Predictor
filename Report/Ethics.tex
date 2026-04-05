@@ -1,7 +1,34 @@
 \chapter{Ethical Considerations}
+Computational drug discovery is the bridge between machine learning and human health, where errors or misuses can have real world consequences.
+DTI predictions would be the driving force for drug development pipelines, so a false positive would waste research resources, but a false positive can overlook a promising drug candidate.
+
 
 \section{Data Licensing}
+\subsection{BindingDB}
+This work uses data from the BindingDB database, downloaded in November 2025.
+BindingDB is a publicly accessible where, the data is curated directly by BindingDB staff and released under the Creative Commons Attribution 3.0 (CC BY 3.0) licence.
+The licence permits use, redistribution, and adaptation of the data for non-commercial research purposes, provided appropriate attribution is given.
+This work cites BindingDB accordingly and uses the data solely for academic research.
+\subsection{ProtBERT}
+For protein sequence encoding, this project uses ProtBERT, a pre-trained protein language model developed by Rostlab and distributed via Hugging Face.
+The ProtTrans model family, including ProtBERT, is released under the Academic Free Licence v3.0 (AFL-3.0), which permits free use, modification, and redistribution for academic purposes.
+The model weights were used as provided, without modification to the pre-trained parameters, and the original work is cited in this dissertation.
 
+The use of both dataset and pre-trained model is compliant with their respective licensing terms, and no restricted data was used without permission.
 \section{Model Misuse}
-
+This tool is purely for academic purposes and not clinical decision making, therefore a certain tolerance level needs to be considered for model, biological, and chemical accuracy.
+\subsection{Easy Accessability}
+By wrapping our model in an intuitive web interface, its making virtual screening accessible to more people who might not have pharmacological knowledge.
+Users might not fully understand the limitations and real meaning of the predictions, so there's an ethical obligation to communicate uncertainty clearly.
+The barrier for misuse has been lowered, through greater accessibility.
+\subsection{Dual Use}
+Another issue with broadening the type of users who have access to the product is they may twist the model the wrong way
+The same system that can identify therapeutic drug-target interactions can theoretically be used to identify toxic interactions.
+This is only a university project however, its important to consider all pathways if a similar product were to go onto market.
+A way to limimt this as it is a concern for chemical biological security, is to only show bindings that are successful.
+\subsection{Over-Reliance}
+If a user treats this DTI tool as a definitive rather than a prioritisation tool, it could lead to a sigificant waste in resources or unsafe compound progressing.
 \section{Biological Data Bias}
+The BindingDB dataset tends to over-represent certain protein families (Kinases, GPCRs) and underrepresent others, so our model will naturally perform better on more popular targets.
+There is also a publication bias, where more positive interactions are going to be published, hence the imbalanced dataset performed better than the more balanced dataset.
+The judgement of the binding thresholds when binarizing the data and also producing the results has genuine on impacts further along the pipeline, making this work unique compared to others.
