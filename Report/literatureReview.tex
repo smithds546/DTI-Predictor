@@ -4,7 +4,7 @@ This chapter reviews the current state of research and available tools in the fi
 \section{Initial concept}
 Drug discovery is the process through which potential new therapeutic entities are identified, using a combination of computational, experimental, translational, and clinical models \citep{Zhou2017}.
 Drug-Target Interaction (DTI) prediction is a critical aspect of drug discovery, as it helps in identifying potential drug candidates that can interact with target proteins to exert their desired therapeutic effects \citep{Yang2024}.
-A drug is a chemical compounds which cause physiological changes in the body when consumed, injected or absorbed. A target, also known as a biological target, is a structure located in an organism that is recognized or bound by other substances such as ligands or drugs and can be acted upon by a drug or other targeted molecules \citep{Overington2006}.
+A drug is a chemical compounds which cause physiological changes in the body when consumed, injected, or absorbed. A target, also known as a biological target, is a structure located in an organism that is recognized or bound by other substances such as ligands or drugs and can be acted upon by a drug or other targeted molecules \citep{Overington2006}.
 The pharmaceutical industry faces mounting financial pressures and long development cycles in drug discovery which creates a huge challenge when discovering new drugs, especially when they are need in short time spans, as seen and experienced with COVID-19. One way to combat these challenges is to utilize machine learning to potentially automate the initial screening process, reducing both equipment and labour costs. This approach is very valuable in the initial stages of drug discovery when the sample size is extremely large and can be accurately whittled down by an algorithm trained to predict interactions based on known patterns.
 
 
@@ -15,7 +15,7 @@ In the beginning of DTI using machine learning, methods included similarity-base
 Deep Learning has become a strong way to determine interactions, due to its ability to learn high dimensional representations from raw data. There are many approaches for deep learning architectures, for example the use of fully connected neural networks (FCNN), \citep{Talukder2025}\citep{Zhan2025} which is a layered network that connects every neuron in one layer to every neuron in the next layer and evaluated using Accuracy, Precision, Recall, AUC-ROC, and AUC-PR.
 
 \subsection{Sequence-Based Models}
-A Sequence based model encodes raw data, Drug SMILES and Protein amino acid sequences, directly. Recurrent Neural Networks (RNN) and Convolutional Neural Network (CNN) are used to learn patterns in local chemical environments or amino-acid motifs. Models like DeepDTA \citep{Ozturk2018} displays impressive predictive performance using sequence-only architectures.
+A Sequence based model encodes raw data, Drug SMILES, and Protein amino acid sequences, directly. Recurrent Neural Networks (RNN) and Convolutional Neural Network (CNN) are used to learn patterns in local chemical environments or amino-acid motifs. Models like DeepDTA \citep{Ozturk2018} displays impressive predictive performance using sequence-only architectures.
 
 \subsection{Graph-Based models}
 Graph Neural Networks (GNNs) take as input the structure of molecules as graphs of atoms, learning structural information which, to sequence based models, are difficult to learn. \citep{Yang2024} utilized this as part of their algorithm using Message Passing Neural Network (MPNN) to encode drug sequences as a part of a greater system. An MPNN can extract more detailed relational features, for improved modeling of chemical structure.
@@ -69,13 +69,13 @@ The interface is plain and a bit scattered but provides an easy use, you select 
 
 The methodology is based on using Kernels to convert (i)chemical structure (ii) side-effect and (iii) Protein sequence profiles to separate matrices. The server combines the matrices and in its simplest mode will just average them together to create a single combined drug similarity matrix.
 
-However this foundational machine learning method has become very limited compared to other products as it over relies on features and it only learns simple mapping, not complex mapping or non-linear relationships from raw data. Furthermore, the UI is not designed for simple queries as it requires the user to format and upload their own data matrices, creating a high barrier to entry for most researchers.
+However this foundational machine learning method has become very limited compared to other products as it over relies on features and it only learns simple mapping, not complex mapping, or non-linear relationships from raw data. Furthermore, the UI is not designed for simple queries as it requires the user to format and upload their own data matrices, creating a high barrier to entry for most researchers.
 
 
 \section{Gap analysis}
 After a detailed review of Drug-Target interaction products and papers, from foundational similarity-based methods to modern deep learning models, three gaps in the current landscape have appeared: (i) \textbf{SOTA vs Usability Gap}, gap between modern, cutting-edge research models and tools accessible to the public (ii) \textbf{Novelty problem}, similarity-based models will struggle when given novel drugs or targets which have no known analogs (iii) \textbf{The Data Imbalance gap}, older datasets were imbalanced and some using conventional loss functions to counteract but they can turn out biased, resulting in poor performance.
 
-My proposed predictive ML pipeline will be designed to directly address these three gaps, (i) It will deliver SOTA accuracy by using modern neural network architectures to learn representations reducing the novelty issue (ii) utilizing the PolyLoss function to force the model to focus on hard-to-find positive interactions to address the data imbalance challenge (iii) diminishing the usability gap by connecting powerful backend to a simple UI, displaying results and information in an accessible way, a feature missing from most complex models.
+My proposed predictive ML pipeline will be designed to directly address these three gaps, (i) It will deliver SOTA accuracy by using modern neural network architectures to learn representations reducing the novelty issue (ii) utilising weighted loss functions to force the model to focus on hard-to-find positive interactions to address the data imbalance challenge (iii) diminishing the usability gap by connecting powerful backend to a simple UI, displaying results and information in an accessible way, a feature missing from most complex models.
 
 
 

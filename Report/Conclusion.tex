@@ -1,0 +1,42 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+\section{Summary}
+The identification of novel drug-target interactions remains a critical bottleneck in early-stage drug discovery, where computational approaches offer significant potential to reduce both cost and time.
+This project developed a complete pipeline for DTI prediction.
+It starts by preprocessing raw datasets and engineering features with industry standard encodings, and leads to an iterative development of a deep neural network.
+The pipeline was made accessible with a React-based interface through FastAPI backend, providing a virtual screening interface designed for use in the early stages of drug discovery.
+
+\section{Objectives}
+\label{sec:objectives}
+This section evaluates the project against the three gaps identified in the gap analysis.
+\subsection{Competing with State-of-the-Art Models}
+\label{subsec:competing-with-state-of-the-art-models}
+The final model competes directly with current State-Of-The-Art prediction methods in DTI.
+When evaluated with an increased sample size, the model achieved an AUROC of approximately 0.97, exceeding both MINDG (~0.95) and DeepCDA (~0.89) across all reported metrics.
+It should be noted that the evaluation methodology differs, meaning the comparison is approximate rather than direct.
+Nonetheless, the results demonstrate that the architecture is capable of competitive performance.
+\subsection{Addressing Class Imbalance}
+\label{subsec:addressing-class-imbalance}
+The gap analysis identified class imbalance as a key challenge, with positive interactions being harder to identify than negatives.
+We used the weighted loss function BCEWithLogitsLoss in PyTorch to address this, which increased the penalty for misclassifying positive interactions during training.
+This allowed the model to learn hard-to-identify binding patterns rather than defaulting to predicting the majority class.
+\subsection{Closing the Usability Gap}
+\label{subsec:closing-the-usability-gap}
+The React-based frontend provides an intuitive interface where users can select drugs and protein targets in plain English rather than requiring raw SMILES strings or protein sequences.
+This directly addresses the gap identified in the literature, where most high-performing DTI models lack accessible interfaces for practical use, thus decreasing the barriers for use of the model.
+
+\section{Contributions}
+This project makes three key contributions.
+First, it proves that a complex deep learning model for DTI prediction can be made accessible through an intuitive web application, closing the gap between machine learning pipelines and practical usability for researchers in early-stage drug discovery.
+Second, an iterative developement methodology which shows incremental improvements and provides transparency on how architectural, training, and framework decisions impact model performance.
+Third, Using a recent version of BindingDB, November 2025, demonstrates its ability to work on up-to-date data and give accurate results.
+
+\section{Reflection}
+\label{sec:reflection}
+This project introduced new concepts across the full pipeline of developing and deploying a deep learning system, from raw data processing to a user-facing application.
+Iterating from NumPy, building the backpropogation function from scratch, to PyTorch provided insight into understanding the mechanics that frameworks abstract away.
+This made the subsequent migration to PyTorch far more informed, as decisions around optimiser selection, weight initialisation, and regularisation could be made with an understanding of their underlying effects.
+Developing an intuitive frontend and connecting it to the model using a RESTful API was challenging, requiring significant work in API design and state management that extended beyond the machine learning focus of the project.
+Adopting cross-validation rather than a fixed data split could have further improved the performance and strengthened the evaluation when comparing it against state-of-the-art models.
+Overall, the project developed skills across machine learning, backend engineering, and frontend development that extend well beyond the immediate scope of DTI prediction.
+
