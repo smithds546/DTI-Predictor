@@ -2,7 +2,7 @@
 
 \section{Interpretation of Results}
 \subsection{Model Performance}
-Each iteration of the model produced measurable gains in performance, lets break it down into what makes the most difference when it comes to model performance.
+Each iteration of the model produced measurable gains in performance, let us break it down into what makes the most difference when it comes to model performance.
 \subsubsection{Training}
 During the iterative improvement to training, the largest improvement came with ReLu activations, suggesting the model was suffering from vanishing gradients in its hidden layers.
 Sigmoid activations squash their output to the range (0, 1), and their gradient peaks at just 0.25, meaning that in a multi-layer network the gradients diminish exponentially as they propagate backward through each layer.
@@ -13,7 +13,7 @@ While its purpose is to prevent overfitting by halting training when validation 
 Especially with the high dimensionality of the ProtBERT embeddings.
 \subsubsection{Architecture}
 The architectural changes made had a smaller impact on performance, but they still contributed to the overall improvement.
-The introduction of more hidden layers and differing numbers of neurons in each layer (64, 32), saw only an improvement in recall, suggesting the model was better at identifying binders at the cost of more false positives.
+The introduction of more hidden layers and differing numbers of neurons in each layer (64, 32) saw only an improvement in recall, suggesting the model was better at identifying binders at the cost of more false positives.
 Dropout was used to deal with the overconfidence in the model, which had a mixed effect but made the biggest improvement to Precision.
 This suggests that dropout was effective at reducing overfitting, which is a common cause of overconfident models.
 However, it also reduced the model's ability to identify binders, which is a common trade-off with regularisation techniques.
@@ -91,10 +91,10 @@ While this gap between ground-truth labels and model predictions may appear conc
 Finally, having no interpretability mechanism means the user has no insight into why the model is making certain predictions, which can reduce trust and make it harder to identify potential issues with the model's reasoning.
 \subsection{API}
 We capped the batch screening functionality at 100 compounds to keep inference time reasonable, but it's shadowed by real virtual screening campaigns that can do millions of compounds.
-For example, an ultra large docking study by Lyu \citep{lyu2019ultra}, where they docked 170 million compounds against a target, which is orders of magnitude more than our system can handle.
-No rate limiting was implemented so the system can withstand multiple large requests, howevewr this can have its consequences and be vulnerable to DDOS attacks.
+For example, an ultra large docking study by Lyu\citep{lyu2019ultra}, where they docked 170 million compounds against a target, which is orders of magnitude more than our system can handle.
+No rate limiting was implemented so the system can withstand multiple large requests, however, this can have its consequences and be vulnerable to DDOS attacks.
 If an account system was implemented, rate limiting would be required to prevent a single user from consuming all resources.
-Also, the number of compounds and targets to select is limited to only whats present in small percentage of the dataset the model trained on.
+Also, the number of compounds and targets to select is limited to only what's present in a small percentage of the dataset the model trained on.
 Only those targets have their ProtBERT embeddings pre-computed and cached.
 Therefore, it can't be used for truly novel drug discovery, where the target of interest is not present in the training dataset, which is a significant limitation for real-world applications.
 \subsection{Frontend}
@@ -107,7 +107,7 @@ Therefore, it's challenging to make predictions that are novel without extending
 
 \subsection{Alternative encoders}
 \label{subsec:alternative-encoders}
-Models such as MINDG \citep{Yang2024} use graphical encoders as well as fingerprints to produce a more reliable prediction, because they learn structural features.
+Models such as MINDG \citep{Yang2024}use graphical encoders as well as fingerprints to produce a more reliable prediction because they learn structural features.
 Applying such techniques would replace MACCS with a molecular graph encoder such as GCN, GAT, or GIN.
 For the target, using ESM-2 instead of ProtBERT because it's a more capable protein language model.
 \citep{Vefghi2025} Explores these options extensively.
