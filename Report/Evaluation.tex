@@ -32,7 +32,7 @@ Within this section, we will outline the components of our evaluation methodolog
     \end{itemize}
 
 Accuracy is a fundamental metric that measures the performance by finding out the ratio between correct predictions and all predictions.
-This alon would be meaningless because in an imbalanced dataset, a model could achieve high accuracy by simply predicting the majority class.
+This alone would be meaningless because in an imbalanced dataset, a model could achieve high accuracy by simply predicting the majority class.
 Precision and recall are crucial in the context of DTI prediction, where false positives (predicting a drug-target interaction that does not exist) can lead to wasted resources in experimental validation, while false negatives (failing to predict a true interaction) can result in missed opportunities for drug discovery.
 The F1 score balances precision and recall into a single metric, providing a more holistic view of model performance.
 Area Under Curve (AUC) metrics, including AUC-ROC and PR-AUC, are threshold-independent measures that evaluate the model's ability to rank positive instances higher than negative ones, visualising both precision-recall and true positive rate-false positive rate trade-offs across all possible thresholds.
@@ -60,7 +60,7 @@ Here we will begin the evaluation of our models, opening with a basic NumPy impl
     \subsection{Experimental Setup}
     \label{sec: eval_setup}
 Before we venture further, it's good to determine our setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
-We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model used 100, but will implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
+We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model used 100, both will implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
     % Briefly describe training procedure
     % (e.g. number of epochs, early stopping criteria, hardware used)
 

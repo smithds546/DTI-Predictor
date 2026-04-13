@@ -85,7 +85,7 @@ As with the drug encoder, the protein encoder operates as a fixed feature extrac
 \label{subsec:-prediction_network}
 The prediction network contains three hidden layers (256, 128, 64) using ReLU activations for learning non-linear interactions between the drug and protein representations.
 The network also makes use of dropout and L2 regularisation to prevent overfitting, which is a common issue in models with limited training data and high-dimensional inputs.
-The network uses the sigmoid function only on the output layer to produce a continuous interaction score between 0 and 1.
+The network uses the sigmoid function only on inference to map a logit to a probability or computing the loss
 Here is a tale describing the architecture of the prediction network:
   \begin{table}[H]
   \centering
@@ -131,7 +131,7 @@ The model is trained using Sigmoid + Binary Cross Entropy (BCE) loss function to
     E = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i) \right],
 \]
 Where $N$ is the number of training samples, $y_i$ is the true binary label for the $i$-th sample, and $\hat{y}_i$ is the predicted probability of the positive class (binding interaction) for the $i$-th sample.
-This loss function is more appropriate for binary classification because it penalises confident wrong predictions more heavily than MSE\citep{goodfellow2016deep}, and it pairs better with sigmoid output.
+This loss function is more appropriate for binary classification because it penalises confident wrong predictions more heavily than MSE\citep{goodfellow2016deep}.
 
 \subsection{Optimisation Strategy}
 \label{subsec:optimisation_strategy}

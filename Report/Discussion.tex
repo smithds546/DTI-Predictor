@@ -74,7 +74,7 @@ However, this may obviously miss out some key binders that are similar to each o
 
 \section{Limitations}
 \subsection{Dataset}
-The model was trained on only 2\% of the BindingDB NOV2025 dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
+The NumPy model was trained on only 2\% of the BindingDB NOV2025 dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
 This was due to computational constraints when using NumPy-based backpropogation, tests couldn't be complete in an appropriate time-frame.
 Using a Single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
 The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
