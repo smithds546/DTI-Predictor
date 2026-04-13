@@ -67,3 +67,12 @@ Backend/app/Models/Experiments/grey_area/prepare_data.py — Data preparation + 
                                                                                                  
   If memory is tight, set SAMPLE_FRAC = 0.1 at the top of prepare_data.py to use 10% of data.    
                    
+
+Model design:
+    to include in report:
+    he forward pass returns raw logits (no in‑network sigmoid) and BCEWithLogitsLoss applies sigmoid implicitly during training.
+    
+    Fix:
+    The hidden=32 / dropout=0.2 / no‑BN / no‑scheduler row looks copy‑pasted from the arch3 NumPyiteration, not the final PyTorch model.
+
+interface:

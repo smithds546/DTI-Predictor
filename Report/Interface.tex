@@ -4,7 +4,7 @@ It covers the architecture of the system, the design of the backend API, the fro
 Additionally, it discusses performance considerations, security measures, limitations, and provides a summary of the interface design.
 \section{System Architecture}
 The system architecture was designed with consideration of performance and speed, as well as an intuitive user interface.
-The architecture consists of a backend that contains data and the predictive model, a frontend interface that allows users to interact with the system and visualize results, and an API to link it all together.
+The architecture consists of a backend that contains data and the predictive model, a frontend interface that allows users to interact with the system and visualise results, and an API to link it all together.
 
 \begin{figure}[H]
     \centering
@@ -20,7 +20,7 @@ The API was designed with a focus on simplicity, scalability, and maintainabilit
 \subsection{Framework and Architecture}
 We used FastAPI as the framework for our backend API due to its high performance, ease of use, and robustness\citep{fastapi}.
 The API follows a modular architecture, with separate modules for data loading, model inference, virtual screening, and input validation.
-This modular design allows for better organization of code and easier maintenance.
+This modular design allows for better organisation of code and easier maintenance.
 \subsection{Endpoint Specification}
 % Group endpoints by domain: prediction, screening, autocomplete, structure, history
 The API exposes twelve endpoints, grouped by domain in Table~\ref{tab:endpoints}.
@@ -70,10 +70,10 @@ The full BindingDB CSV containing drug SMILES strings, protein target names, ami
 From this, the autocomplete endpoint creates drug and target lists.
 
 Molecular descriptors for all unique compounds are computed using RDKit~\cite{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
-A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five percent.
+A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five per cent.
 This is shown in the following code snippet:
 
-\begin{lstlisting}[language=Python, caption={Descriptor cache loading with staleness check.}, label={lst:cache_load}]
+\begin{lstlisting}[language=Python, caption={Descriptor cache loading with staleness check.}, label={lst:cache\_load}]
 def _load_or_build() -> pd.DataFrame:
     if os.path.exists(_CACHE_PATH):
         cached = pd.read_pickle(_CACHE_PATH)
@@ -117,7 +117,7 @@ Because the model is loaded once at startup rather than on each request, inferen
 
 \subsubsection{Feature Extraction and Forward Pass}
 The two feature vectors (SMILES, Amino acid sequence) are passed through their respective encoder subnetworks and joined into a single joint representation.
-This joint vector is then fed through the interaction predictor head, which outputs a probability score between 0 and 1, where values above 0.5 indicate predicted binding.
+This joint vector is then fed through the interaction predictor head, which outputs a probability score between 0 and 1, where values above 0.3 indicate predicted binding.
 
 \subsubsection{Batch Inference Pipeline}
 To fully emulate virtual screening, the pipeline also supports batch predictions.
@@ -136,7 +136,7 @@ Users can apply filters on physiochemical properties such as:
 \textbf{Filter} & \textbf{Description} \\
 \hline
 Molecular Weight Range & Molecular weight in Daltons \citep{lipinski2001, veber2002}. \\
-Ring Count & Filters by the number of ring structures present in the molecule \citep{bemis1996}. \\
+Ring Count & Filters by the number of ring structures present in the molecule\citep{bemis1996}. \\
 Lipinski's Rule of Five & Enforces MW $\leq$ 500, LogP $\leq$ 5, HBA $\leq$ 10, and HBD $\leq$ 5, selecting compounds with drug-like oral bioavailability~\citep{lipinski2001}. \\
 Known Binders & Restricts the pool to compounds with a positive interaction label against a user-selected protein target in the training data. \\
 \hline
@@ -144,7 +144,7 @@ Known Binders & Restricts the pool to compounds with a positive interaction labe
 \end{table}
 These filters are applied as boolean masks over a precomputed descriptor table to narrow down large compound sets efficiently.
 \subsubsection{Limited Selection}
-When the number of compounds matching the filters exceeds the processable limit, the system employs a `MaxMin` diverse picking algorithm sing MACCS-based Tanimoto distance \citep{tanimoto}.
+When the number of compounds matching the filters exceeds the processable limit, the system employs a `MaxMin` diverse picking algorithm sing MACCS-based Tanimoto distance\citep{tanimoto}.
 Instead of using a random sample, this algorithm makes sure to select a structurally diverse subset to ensure broad coverage of drugs in the test.
 The selected drug molecules are scored against the target protein using the batch inference pipeline, ranked by binding probability, and matched to metadata such as molecular weight, LogP, and ring count before being returned to the frontend.
 
@@ -152,7 +152,7 @@ The selected drug molecules are scored against the target protein using the batc
 % Pydantic schemas, Query param constraints, HTTPException patterns
 \subsubsection{Input Validation}
 Validating the inputs is handled through two complementary mechanisms.
-At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and uses automatic validation of incoming JSON requests\citep{pydantic}.
+At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and use automatic validation of incoming JSON requests\citep{pydantic}.
 
 For query parameter endpoints, FastAPI's \texttt{Query} annotations are used to enforce value constraints directly in the function signatures.
 This is allowing us to limit the batch size to 100, capping the drug sample endpoint to 50 results, and keeping the Scalable Vector Graphics (SVG) rendering dimensions between 50 and 500 pixels.
@@ -163,24 +163,24 @@ These are caught at the route level and returned as HTTP error responses using F
 Status codes distinguish the differences between client errors (400 for bad input) and server errors (500 for unexpected failures).
 
 \section{Frontend Design}
-Creating a simple and intuitive design is essential for usability, we utilised a react framework to ensure speed and optimisations for what we need it to achieve.
+Creating a simple and intuitive design is essential for usability, we utilised a React framework to ensure speed and optimisations for what we need it to achieve.
 \subsection{Frontend Framework}
 To develop the frontend, we have used Gatsby, a React framework that is optimal for static websites.
 It does this by pre-rendering pages into HTML, called Static Site Generation (SSG), resulting in superior performance.
-Gatsby benefits from high security with no server-side attacks as it doesnt have a server-side database or dependencies, only static files\citep{gatsby_definitive, gatsby}.
+Gatsby benefits from high security with no server-side attacks as it doesn't have a server-side database or dependencies, only static files\citep{gatsby_definitive, gatsby}.
 
 \subsection{User Interface Design}
-To keep things simple we only have two tabs for the user to test a single drug to a single protein target, and batch virtual screening to emulate a wet-lab experiment more closely.
+To keep things simple, we only have two tabs for the user to test a single drug to a single protein target, and batch virtual screening to emulate a wet-lab experiment more closely.
 \subsubsection{Ethical Considerations Message}
-To inform the user of appropriate use we have a clear message regardig the ethical considerations of the product to prevent misuse adn over reliance on results produced.
+To inform the user of appropriate use, we have a clear message regarding the ethical considerations of the product to prevent misuse and over reliance on results produced.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{project screenshots/full_page.png}
-    \caption{The web page at initial startup with ethical considerations message}
+    \caption{The web page at initial startup with an ethical considerations message}
     \label{fig:full_page}
 \end{figure}
 \subsubsection{Single comparison}
-One input box for the molecule input and another for target input, both have suggested activators greyed out, and once the user begins typing a dropdown menu will present the closest match to what's been written in a top-down fashion.
+One input box for the molecule input and another for target input, both have suggested activators greyed out, and once the user begins typing, a dropdown menu will present the closest match to what's been written in a top-down fashion.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{project screenshots/Autocomplete single pred.png}
@@ -218,9 +218,9 @@ At the bottom of the filter section, it will instantly update the number of mole
     \caption{Complete filter panel with known-binders target selection and live compound count.}
     \label{fig:vs_filters_whole}
 \end{figure}
-Once the user has added up-to 100 molecules for testing and selected the target, they can continue with testing.
-This will produce a results table sorting the bindings from most likely to least likely and colour code them.
-The table also shows meaningful meta-data for each molecule, and hovering over the molecule name will produce a widget with the chemical structure of the molecule.
+Once the user has added up to 100 molecules for testing and selected the target, they can continue with testing.
+This will produce a result table sorting the bindings from most likely to least likely and colour code them.
+The table also shows meaningful metadata for each molecule, and hovering over the molecule name will produce a widget with the chemical structure of the molecule.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{project screenshots/VS whole.png}
@@ -258,8 +258,8 @@ We decided to display the previous results as a widget if the user would like to
 \subsubsection{Comparisons}
 Allowing the user to compare previous results is extremely important and can highlight certain differences between two near identical searches, extremely valuable in drug discovery.
 This provides the user with insightful information into their tests which can hopefully improve the usability of the product.
-The comparison can also be between batch screening and single screening, allowing for full customisability.
-(\begin{figure}[H]
+The comparison can also be between batch screening and single screening, allowing for full customisable testing.
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{project screenshots/Comparison.png}
     \caption{Side-by-side comparison of two previous prediction results.}
@@ -269,7 +269,7 @@ The comparison can also be between batch screening and single screening, allowin
 The frontend and backend communicate through HTTP requests to the RESTful API described in Section~\ref{sec:backend_api}.
 All the data transmissions use JSON, where the frontend sends user inputs and receives structured responses containing prediction scores, screening results, or autocomplete suggestions.
 
-For the autocomplete, endpoints are called on each keystroke with a debounce delay to return up to 10 matches to populate dropdown suggestions.
+For the autocomplete, endpoints are called on each keystroke with a debounced delay to return up to 10 matches to populate dropdown suggestions.
 When predicting a single pair, the frontend issues a POST request to \texttt{/predict} and displays the returned score and binding classification.
 For full virtual screening, the frontend initially retrieves the filtered molecules set from \texttt{/drug-filter} endpoint, then submits the selected drugs to \texttt{/screen} for batch scoring.
 Molecular structure diagrams are rendered by requesting Scalable Vector Graphics (SVGs) from the \texttt{/structure/svg} endpoint and embedding them directly in the interface as a widget.
@@ -298,7 +298,7 @@ If the system were to be deployed in a multi-user clinical setting, user isolati
 \section{Limitations}
 The current system has some limitations that must be acknowledged.
 There is currently no session management or accounts system, meaning the history section is global instead of for a user.
-But this is okay in its current form, as its just a prototype on how the model can be accessed in an intuitive manner.
+But this is okay in its current form, as it's just a prototype on how the model can be accessed in an intuitive manner.
 
 The model currently just produces a binding probability, but it doesn't offer a reason into why the interaction is predicted to occur.
 An insight into what drives the prediction, such as molecular features or substructures, would improve reliability in the system for users.

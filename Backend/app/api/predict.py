@@ -31,7 +31,7 @@ for _, row in DESC_TABLE.iterrows():
 def predict(req: PredictRequest):
     try:
         score = simple_score(req.drug, req.protein)
-        binder = score > 0.5
+        binder = score > 0.3
 
         # Resolve drug name: use client-provided name, fall back to SMILES lookup
         drug_name = req.drug_name or _smiles_to_name.get(req.drug.strip())
