@@ -60,7 +60,7 @@ Here we will begin the evaluation of our models, opening with a basic NumPy impl
     \subsection{Experimental Setup}
     \label{sec: eval_setup}
 Before we venture further, it's good to determine our setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
-We will train each model with a maximum of 1000 epochs, but will implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
+We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model used 100, but will implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
     % Briefly describe training procedure
     % (e.g. number of epochs, early stopping criteria, hardware used)
 
@@ -113,7 +113,7 @@ The data in this table shows strong consistency across splits, which is a sign o
 A recall of $\sim$0.76 indicates that this model is good at catching positive cases, which is important when predicting a false negative is costly.
 A strong recall is important for drug discovery, as missing a true drug-target interaction could mean overlooking a potential binding candidate.
 The AUC-ROC of $\sim$0.75 suggests that the model has a reasonable ability to distinguish between binders and non-binders, although there is certainly room for improvement.
-The Precision score of $\sim$0.75 indicates that when the model predicts a positive interaction, it is correct ~71\% of the time, which is decent but could lead to some false positives that would require experimental validation.
+The Precision score of $\sim$0.75 indicates that when the model predicts a positive interaction, it is correct ~75\% of the time, which is decent but could lead to some false positives that would require experimental validation.
 
     \subsubsection{Hyperparameter tuning}
 To further evaluate the baseline model, we conducted a hyperparameter tuning experiment by varying the learning rate and hidden layer size.

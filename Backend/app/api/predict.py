@@ -80,7 +80,7 @@ def screen(req: ScreenRequest):
             drug=entry.smiles,
             drug_name=name,
             score=score,
-            binder=score > 0.5,
+            binder=score > 0.3,
             rank=0,
             mw=desc.get("mw"),
             logp=desc.get("logp"),

@@ -97,7 +97,7 @@ Here is a tale describing the architecture of the prediction network:
   \midrule
   \textit{Architecture} \\
   \quad Hidden size          & DrugEncoder hidden 256→128, ProteinEncoder 1024→512→256→128, Predictor 256→256→128→64→1\\
-  \quad Activation           & ReLU + Sigmoid (Output layer) \\
+  \quad Activation           & ReLU \\
   \quad Batch normalisation  & Yes \\
   \quad Dropout              & 0.4 \\
   \midrule
@@ -111,7 +111,7 @@ Here is a tale describing the architecture of the prediction network:
   \midrule
   \textit{Regularisation} \\
   \quad Early stopping       & Yes - (Patience = 15) \\
-  \quad LR scheduler         & \textemdash \\
+  \quad LR scheduler         & CosineAnnealingLR(T\_max=100, eta\_min=1e-5) \\
   \bottomrule
   \end{tabular}
   \end{table}
@@ -126,7 +126,7 @@ This combined vector is then passed through the prediction network described abo
 \section{Training Procedure}
 This section describes how the model parameters are optimised during training, a process that is important to how the model learns meaningful patterns and builds internal representations on the data it's exposed to.
 \subsection{Loss Function}
-The model is trained using the Binary Cross Entropy (BCE) loss function, defined as:
+The model is trained using Sigmoid + Binary Cross Entropy (BCE) loss function to have BCEWithLogitsLoss, defined as:
 \[
     E = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i) \right],
 \]
@@ -154,12 +154,13 @@ The weight decay parameter was set to 0.0001, which helps to prevent overfitting
 The batch size of 512 was chosen to provide a good balance between computational efficiency\citep{masters2018revisiting}.
 
 \subsection{Regularisation}
-The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4, which means that during training, 20\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons\citep{srivastava2014dropout}.
+The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4, which means that during training, 40\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons\citep{srivastava2014dropout}.
 L2 regularisation is applied through the weight decay parameter in the Adam optimiser, which adds a penalty proportional to the square of the magnitude of the weights, encouraging smaller weights and thus simpler models that are less likely to overfit.
 
 \section{Model Output Interpretation}
-The model produces a single continuous value $\hat{y} \in (0,1)$ for each drug-target pair, this is obtained through the sigmoid activation function in the output layer.
-This figure is the model prediction of either binding (1) or non-binding (0).
+The model produces a single raw logit for each drug-target pair.
+During training, \texttt{BCEWithLogitsLoss} applies the sigmoid function internally when computing the loss, avoiding numerical instability associated with a separate sigmoid layer.
+At inference time, the sigmoid function is applied explicitly in the prediction service to map the logit to a probability $\hat{y} \in (0,1)$, representing the likelihood of binding (1) or non-binding (0).
 
 To get a discrete prediction from the continuous output score, the score is compared against some predefined thresholds to optimise the performance of the model.
 We settled on a threshold of 0.3 after experimentation as it produced the highest F1 score on the test set, which means it is the optimal balance between precision and recall.

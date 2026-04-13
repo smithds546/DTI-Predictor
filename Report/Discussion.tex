@@ -43,7 +43,7 @@ This is common when training data has an unequal ratio of positive and negative.
 \subsection{Data Preprocessing}
 \subsubsection{Binarisation}
 The binarisation threshold was chosen to create a clear distinction between binders and non-binders, with the grey area defining an area of uncertainty where interactions that fall within are unaccounted for.
-The grey area was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (560,003 pairs), above 7.0 is considered a good binder, and below 5.3 is used across papers including\citep{Gfeller2013}.
+The grey area was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (507,382 pairs), above 7.0 is considered a good binder, and below 5.3 is used across papers including\citep{Gfeller2013}.
 As seen in the Chapter~\ref{chap:data-pipeline}, this leaves us with an unbalanced dataset of ~61\% being binders.
 This gave the model stronger reasoning signals to learn from, with the tradeoff of having fewer interactions to train the model from.
 \subsubsection{Class Imbalance}
@@ -74,8 +74,8 @@ However, this may obviously miss out some key binders that are similar to each o
 
 \section{Limitations}
 \subsection{Dataset}
-The model was trained on only 2\% of the BindingDB NOV2025 dataset, which is a significant limitation as the model could have learned from a larger sample size.
-This was due to computational constraints computing the ProtBERT embeddings; for the whole dataset this would be around 1.5 million embeddings, which is not feasible to compute on a single GPU in a reasonable time frame.
+The model was trained on only 2\% of the BindingDB NOV2025 dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
+This was due to computational constraints when using NumPy-based backpropogation, tests couldn't be complete in an appropriate time-frame.
 Using a Single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
 The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
 \subsection{Model}
