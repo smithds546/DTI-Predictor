@@ -9,7 +9,7 @@ Sigmoid activations squash their output to the range (0, 1), and their gradient 
 This causes the earlier layers to learn very slowly, effectively limiting the network's capacity to extract meaningful patterns from the input features.
 ReLU avoids this by passing a constant gradient of 1 for all positive inputs, allowing the network to train its deeper layers effectively and make better use of the available model capacity.
 Early Stopping had the only reduction in performance.
-While it's purpose is to prevent overfitting by halting training when validation metrics plateau, here the model may have been stopped before it had sufficient training iterations to learn the underlying patterns in the data.
+While its purpose is to prevent overfitting by halting training when validation metrics plateau, here the model may have been stopped before it had sufficient training iterations to learn the underlying patterns in the data.
 Especially with the high dimensionality of the ProtBERT embeddings.
 \subsubsection{Architecture}
 The architectural changes made had a smaller impact on performance, but they still contributed to the overall improvement.
@@ -21,16 +21,19 @@ However, it also reduced the model's ability to identify binders, which is a com
 The switch to PyTorch was the most significant improvement in performance for our model, improving on all metrics bar recall which decreased significantly.
 This is down to the improved optimisation and numerical stability producing a more calibrated model, which predicted fewer false positives but also fewer true positives due to its reserved nature.
 The Adam optimiser was introduced after the PyTorch migration and recovered the loss in recall and therefore improved the f1 score, which is the harmonic mean of precision and recall, suggesting a better balance between the two metrics.
+PyTorch could manage a greater sample size, so we expanded to the full Bindingdb dataset achieving superior performance, but it was important to accurately assess each iteration on the same dataset to show accurate differences.
 \subsubsection{Summary of Iterative Gains}
-The most important takeaway from the iterative improvements is that changing the framework to PyTorch with Adam had the most effective improvement, However it doesn't takeaway from the small improvement made prior to those changes.
+The most important takeaway from the iterative improvements is that changing the framework to PyTorch with Adam had the most effective improvement.
+However, it doesn't take away from the small improvement made prior to those changes.
 The Numpy iterations collectively improved F1 score by ~0.04, whereas the Pytorch migration with a single optimiser contributed ~0.03 on top of that.
 While the framework change made the most effective improvement, it was the foundational improvements to the training procedure that accounted for the majority of the overall performance improvement.
 This highlights that proper training practices and activation function choices can matter as much as, if not more than, the choice of deep learning framework.
 \subsubsection{Final Model Performance}
-Our final model achieved an AUC-ROC of ~0.86; this is a significant gap to a research paper MINDG\citep{Yang2024}.
-however, it's expected with the architectural differences between the two models, MINDG uses a more complex architecture blending GNNs and CNNs to learn both structural and fingerprint representations.
-This is a well-known gap in performance stated in \citep{Vefghi2025}, where structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.
-This tells us that our primary bottleneck is our feature representation, limiting the model, not network architecture.
+Our final model achieved an AUC-ROC of ~0.97; which is competitive with recent work such as MINDG~\citep{Yang2024}.
+This is impressive considering the architectural differences between the two models: MINDG uses a more complex architecture blending GNNs and CNNs to learn both structural and fingerprint representations, whereas our model relies on a fully connected DNN operating on concatenated ProtBERT and MACCS features.
+Despite this more complex architecture, MINDG was evaluated on a substantially smaller dataset of approximately 77,000 interactions compared to our 908,643, making direct comparison difficult.
+It is plausible that our larger training set compensates for the simpler feature representation, narrowing a gap that the literature suggests should be wider~\citep{Vefghi2025}: structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.
+However, a controlled ablation would be needed to determine whether dataset scale or feature richness is the greater contributing factor.
 \subsubsection{Threshold Sweep}
 The threshold sweep revealed the optimal decision boundary for classifying drug-target pairs as interacting to be 0.3, getting the highest f1 score of all threshold levels.
 This visualises the effect concerning the class imbalance of the dataset; the score of 0.3 suggests the models' raw probability outputs are miscalibrated.
@@ -61,7 +64,7 @@ Giving me more freedom to experiment with different architectural combinations, 
 The frontend and backend were built as separate components and connected via a restful API because it allows for greater scalability should the system be developed further.
 This separation also allows for the frontend to be developed independently of the backend, which is useful for testing and iterating on the user interface without needing to retrain the model or change the backend code.
 \subsubsection{Caching Embeddings}
-ProtBERT embeddings were cached as \textbf{Pickle} files instead of being computed at inference time because computing the embeddings is computationally expensive and would lead to long inference times, which would negatively impact the user experience.
+ProtBERT embeddings were cached as \textbf{NumPy} files instead of being computed at inference time because computing the embeddings is computationally expensive and would lead to long inference times, which would negatively impact the user experience.
 However, if the ProtBERT embedding isn't pre-cached, the request will fail and not compute at all.
 This is the case because embeddings are pre-computed and cached upon before the web server starts the autocomplete function can only suggest targets from the training set.
 \subsubsection{Batch Screening}
@@ -71,7 +74,7 @@ However, this may obviously miss out some key binders that are similar to each o
 
 \section{Limitations}
 \subsection{Dataset}
-The model was trained on only 2\% of the BindingDB NOV2025 dataset, which is a signifant limitation as the model could have learned from a larger sample size.
+The model was trained on only 2\% of the BindingDB NOV2025 dataset, which is a significant limitation as the model could have learned from a larger sample size.
 This was due to computational constraints computing the ProtBERT embeddings; for the whole dataset this would be around 1.5 million embeddings, which is not feasible to compute on a single GPU in a reasonable time frame.
 Using a Single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
 The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
@@ -105,7 +108,7 @@ Therefore, it's challenging to make predictions that are novel without extending
 \subsection{Alternative encoders}
 \label{subsec:alternative-encoders}
 Models such as MINDG \citep{Yang2024} use graphical encoders as well as fingerprints to produce a more reliable prediction, because they learn structural features.
-Applying such techniques would replace MACCS with a molecular graph encoder such as GCN, GAT or GIN.
+Applying such techniques would replace MACCS with a molecular graph encoder such as GCN, GAT, or GIN.
 For the target, using ESM-2 instead of ProtBERT because it's a more capable protein language model.
 \citep{Vefghi2025} Explores these options extensively.
 \subsection{Regression Model}
