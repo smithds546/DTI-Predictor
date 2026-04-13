@@ -12,7 +12,9 @@ To extract and process relevant bioactivity data from BindingDB, a public databa
 \subsubsection{Feature Engineering}
 Converting Chemical Compounds to molecular footprints using RDKit and encoding protein targets to numerical vectors using ProtBERT. These processes differ because the biological information is encoded in completely different forms, thus requiring domain-specific feature engineering methods.
 \subsubsection{Model Development, Training \& Evaluation}
-The Neural Network will be developed and trained on the dataset to learn the underlying relationships that cause binders and non-binders. The model will be evaluated on validation metrics like AUC-ROC, AUC-PR, Precision@K and the Enrichment Factor. Based on these techniques, the Neural Network will be iteratively refined to reduce the error rate and improve accuracy. 
+The Neural Network will be developed and trained on the dataset to learn the underlying relationships that cause binders and non-binders.
+The model will be evaluated on validation metrics like AUC-ROC, PR-AUC, F1, Precision, Recall, and Accuracy.
+Based on these techniques, the Neural Network will be iteratively refined to reduce the error rate and improve accuracy.
 \subsubsection{Develop User Interface}
 The Website for this project will be developed using the react framework to speed up the development process and to allow for easy modifications.
 The user interface will be designed to be simple, easy to navigate and only contain necessary information relevant to the workflow. 

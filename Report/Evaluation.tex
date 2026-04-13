@@ -250,8 +250,8 @@ After adding early stopping, we observed the following changes in performance:
 \end{figure}
 As seen in\ref{fig:iter4_improvements}, early stopping led to premature halting of training, missing out on some of the later epochs where the model could have achieved better performance.
 This is a common issue with early stopping, as it relies on the validation loss to determine when to stop training, and if the validation loss is noisy or has a local minimum, it can cause the training to stop too early before the model has fully converged.
-For these reasons we will not be using early stopping in our final model.
-Instead, we will be using iteration 3 as the basis for future advancements to architecture.
+For these reasons we will not be using early stopping in our final model for validation loss but only for validation AUC.
+However, for the rest of the iterative improvements we will be using iteration 3 as the basis for future advancements to architecture.
 
     \subsection{Iteration 2: Architecture Advancements}
     \label{sec: eval_iter2}

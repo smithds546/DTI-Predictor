@@ -58,7 +58,7 @@ This approach enables the model to leverage rich semantic information learned fr
 Due to the heterogeneous nature of Duel Inputs, the architecture is slightly modified from traditional neural networks.
 Separate encoding pathways are used to process each input to a usable, unified representation for interaction prediction.
 
-Both encoders operate as fixed feature extractors and are not updated during model training.
+Both encoders operate as trainable feature extractors and can be updated during model training.
 Learning is therefore concentrated in the prediction stage, reducing model complexity and improving training stability.
 
 This modular design enables future extensions, such as introducing trainable encoder layers or alternative fusion strategies, without requiring changes to the underlying data pipeline.
@@ -69,21 +69,21 @@ The SMILES representation is parsed into an RDKit object, where MACCS fingerprin
 This representation captures essential structural properties of small molecules while maintaining a compact and consistent dimensionality.
 In cases where a SMILES string cannot be successfully parsed, a zero vector is returned to preserve input dimensional consistency and prevent pipeline failure.
 
+\subsection{Protein Representation}
+Protein sequences are represented using contextual embeddings derived from a pretrained ProtBERT transformer model~\citep{Elnaggar2020.07.12.199554}.
+Each amino acid sequence is tokenised and passed through the frozen ProtBERT model to obtain per-token hidden states.
+Mean pooling is then applied across the sequence dimension of the final hidden layer, producing a single 1024-dimensional embedding that summarises the biochemical and contextual properties of the entire sequence.
+
+This process is computationally expensive, so each embedding is cached locally using hash-based lookup, reducing overhead when a sequence has already been computed.
+This is particularly effective during dataset re-processing, as previously computed embeddings are loaded directly from the disk.
+
 \subsection{Protein Encoder}
-Protein sequences are encoded using contextual embeddings derived from a pretrained ProtBERT transformer model\citep{Elnaggar2020.07.12.199554}.
-Each amino acid sequence is tokenised and passed through the frozen ProtBERT model to obtain hidden states.
-
-To obtain a single fixed-length representation per protein, mean pooling is applied across the sequence dimension of the final hidden layer.
-This produces a 1024-dimensional continuous embedding that summarises the biochemical and contextual properties of the entire protein sequence.
-
-This is computationally expensive, so each result is cached locally using hash-based lookup for reduced overhead when a sequence has already been computed.
-This is very effective during dataset re-processing as some sequences are loaded directly from the disk.
-
-As with the drug encoder, the protein encoder operates as a fixed feature extractor and does not participate in gradient-based learning during model training.
+The protein encoder is a four-layer MLP (1024$\rightarrow$512$\rightarrow$256$\rightarrow$128) that compresses the precomputed ProtBERT embedding into a 128-dimensional latent representation.
+Unlike the frozen ProtBERT model, this encoder is trainable and participates in gradient-based optimisation during model training.
 
 \subsection{Prediction Network}
 \label{subsec:-prediction_network}
-The prediction network contains three hidden layers (256, 128, 64) using ReLU activations for learning non-linear interactions between the drug and protein representations.
+The prediction network contains four hidden layers (256, 128, 64, 1) using ReLU activations for learning non-linear interactions between the drug and protein representations.
 The network also makes use of dropout and L2 regularisation to prevent overfitting, which is a common issue in models with limited training data and high-dimensional inputs.
 The network uses the sigmoid function only on inference to map a logit to a probability or computing the loss
 Here is a tale describing the architecture of the prediction network:
