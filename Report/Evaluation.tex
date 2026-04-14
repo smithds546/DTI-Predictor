@@ -1,9 +1,3 @@
-% ====================================/Users/drs/Projects/DTI/Backend/app/Models/basic/figures/basic_BCE_metrics_table=======================================
-% Suggested total word count: 2,500 – 3,500 words
-% Figures are not counted in word totals at most institutions —
-% use them generously.
-% ============================================================
-
 \chapter{Evaluation}
 \label{ch:-evaluation}
 
@@ -189,21 +183,20 @@ These small improvements can be seen within these metrics and comparison of loss
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter2_metrics_table.png}
-        \caption
-        {Iteration 2 model performance across key metrics.}
+        \caption*{Iteration 2 model performance across key metrics.}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter2_loss_curve.png}
-        \caption{Training loss curves comparing Iteration 1 to Iteration 2.}
+        \caption*{Training loss curves comparing Iteration 1 to Iteration 2.}
     \end{minipage}
     \caption{Iteration 2 improvements.}
     \label{fig:iter2_improvements}
 \end{figure}
 The improvements from Iteration 1 to Iteration 2 are modest but consistent across all metrics.
 
-    \subsubsection{ReLu activations}
+    \subsubsection{ReLU activations}
 To further improve the training stability and representational capacity of our model, we will replace the sigmoid activations in the hidden layer with ReLU (Rectified Linear Unit) activations.
 ReLU is defined as:
 \begin{equation}
@@ -216,13 +209,13 @@ This change was impactful and can be seen in the metrics and loss curves:
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter3_metrics_table.png}
-        \caption{Iteration 3 model performance across key metrics.}
+        \caption*{Iteration 3 model performance across key metrics.}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter3_roc_curve.png}
-        \caption{AUC-ROC curves comparing Iteration 2 to Iteration 3.}
+        \caption*{AUC-ROC curves comparing Iteration 2 to Iteration 3.}
     \end{minipage}
     \caption{Iteration 3 improvements.}
     \label{fig:iter3_improvements}
@@ -237,18 +230,18 @@ After adding early stopping, we observed the following changes in performance:
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter4_metrics_table.png}
-        \caption{Iteration 4 model performance across key metrics.}
+        \caption*{Iteration 4 model performance across key metrics.}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/Iterations/figures/iter4_loss_curve.png}
-        \caption{Training loss curves showing early stopping in Iteration 4.}
+        \caption*{Training loss curves showing early stopping in Iteration 4.}
     \end{minipage}
     \caption{Iteration 4 improvements with early stopping.}
     \label{fig:iter4_improvements}
 \end{figure}
-As seen in\ref{fig:iter4_improvements}, early stopping led to premature halting of training, missing out on some of the later epochs where the model could have achieved better performance.
+As seen in Figure~\ref{fig:iter4_improvements}, early stopping led to premature halting of training, missing out on some of the later epochs where the model could have achieved better performance.
 This is a common issue with early stopping, as it relies on the validation loss to determine when to stop training, and if the validation loss is noisy or has a local minimum, it can cause the training to stop too early before the model has fully converged.
 For these reasons we will not be using early stopping in our final model for validation loss but only for validation AUC.
 However, for the rest of the iterative improvements we will be using iteration 3 as the basis for future advancements to architecture.
@@ -265,13 +258,13 @@ After adding a second hidden layer, we observed the following changes in perform
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch1_metrics_table.png}
-        \caption{Architectural Iteration 1}
+        \caption*{Architectural Iteration 1}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch1_loss_curve.png}
-        \caption{Loss curves comparing architecture Iteration 1 to training iteration 3.}
+        \caption*{Loss curves comparing architecture Iteration 1 to training iteration 3.}
     \end{minipage}
     \caption{Improvements from adding a second hidden layer.}
     \label{fig:arch1_improvements}
@@ -281,20 +274,20 @@ This highlights the importance of careful architectural design and the need for 
 Regularisation techniques such as dropout and batch normalisation will be explored in the next iteration to address these issues.
 
 \subsubsection{Dropout Added}
-To combat the overfitting created by a second hidde layer, we will add dropout regularisation, which randomly zeroes out a fraction of the activations during training to prevent co-adaptation of neurons and encourage the model to learn more robust features\citep{srivastava2014dropout}.
+To combat the overfitting created by a second hidden layer, we will add dropout regularisation, which randomly zeroes out a fraction of the activations during training to prevent co-adaptation of neurons and encourage the model to learn more robust features\citep{srivastava2014dropout}.
 After adding a dropout of 0.2, we observed the following changes in performance:
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch2_metrics_table.png}
-        \caption{Architectural Iteration 2}
+        \caption*{Architectural Iteration 2}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch2_loss_curve.png}
-        \caption{Loss curves comparing architecture Iteration 2 to architecture Iteration 1.}
+        \caption*{Loss curves comparing architecture Iteration 2 to architecture Iteration 1.}
     \end{minipage}
     \caption{Improvements from adding dropout regularisation.}
     \label{fig:arch2_improvements}
@@ -315,18 +308,18 @@ After adding L2 regularisation of 0.01 alongside a dropout of 0.2, we observed t
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_metrics_table.png}
-        \caption{Architectural Iteration 3}
+        \caption*{Architectural Iteration 3}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_loss_curve.png}
-        \caption{Loss curves comparing architecture Iteration 3 to architecture Iteration 2.}
+        \caption*{Loss curves comparing architecture Iteration 3 to architecture Iteration 2.}
     \end{minipage}
     \caption{Improvements from adding L2 regularisation.}
     \label{fig:arch3_improvements}
 \end{figure}
-From~\ref{fig:arch3_improvements}, we can see that the addition of L2 regularisation led to a further improvement in precision, while recall dropped significantly.
+From Figure~\ref{fig:arch3_improvements}, we can see that the addition of L2 regularisation led to a further improvement in precision, while recall dropped significantly.
 This is visualised in the loss curve where the training loss is higher but the learning is more stable, which is a sign that the model is now learning more general features and is less likely to overfit to the training data.
 
 To improve this model further, we increased the dropout to 0.4 because the recall is very low, and we want to make sure we are catching as many true positives as possible.
@@ -336,18 +329,18 @@ We recorded this:
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_metrics_table(0.4).png}
-        \caption{Architectural Iteration 4}
+        \caption*{Architectural Iteration 4}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Architecture/figures/arch3_loss_curve(0.4).png}
-        \caption{Loss curves comparing architecture Iteration 4 to architecture Iteration 3.}
+        \caption*{Loss curves comparing architecture Iteration 4 to architecture Iteration 3.}
     \end{minipage}
     \caption{Improvements from increasing dropout to 0.4.}
     \label{fig:arch4_improvements}
 \end{figure}
-From~\ref{fig:arch4_improvements}, we can see that increasing the dropout to 0.4 led to a rebound of recall, which is a sign that the model is now able to capture more true positive interactions.
+From Figure~\ref{fig:arch4_improvements}, we can see that increasing the dropout to 0.4 led to a rebound of recall, which is a sign that the model is now able to capture more true positive interactions.
 However, this came at the cost of a significant drop in precision, which suggests that the model is now making more false positive predictions.
 This highlights the delicate balance between precision and recall when tuning regularisation parameters.
 
@@ -356,21 +349,22 @@ This highlights the delicate balance between precision and recall when tuning re
     \label{sec: eval_iter3}
 The architectural changes to the model have slightly improved performance but still haven't fully addressed the overfitting issue, so we will make more significant changes to the training procedure and architecture in this iteration to further improve performance.
 \subsubsection{Pytorch Implementation}
-We implement the model in pytorch with the same architecture and training procedure used in architectural iteration 3, to maintain comparability whilst also leveraging the benefits of modern deep learning frameworks such as automatic differentiation, efficient GPU computation, and built-in regularisation techniques\citep{paszke2019pytorch}.
-The initial implementation builds upon architectural iteration 3 (reference back to section arch3~\ref{sec: eval_iter3}) whilst also utilising a dual-branch PyTorch encoder to process drug and target features separately before concatenating them for the final prediction.
+We implement the model in pytorch with the same architecture and training procedure used in architectural iteration 3.
+This is to maintain comparability whilst also leveraging the benefits of modern deep learning frameworks such as automatic differentiation, efficient GPU computation, and built-in regularisation techniques\citep{paszke2019pytorch}.
+The initial implementation builds upon architectural iteration 4 (reference back to Figure arch4~\ref{fig:arch4_improvements}) whilst also utilising a dual-branch PyTorch encoder to process drug and target features separately before concatenating them for the final prediction.
 This had significant improvements, as seen in the following metrics table and AUC-ROC curve:
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_sgd_metrics_table.png}
-        \caption{PyTorch DNN model performance across key metrics.}
+        \caption*{PyTorch DNN model performance across key metrics.}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_sgd_roc_curve.png}
-        \caption{AUC-ROC curve for the PyTorch DNN model.}
+        \caption*{AUC-ROC curve for the PyTorch DNN model.}
     \end{minipage}
     \caption{Performance of the PyTorch DNN model.}
     \label{fig:pytorch_improvements}
@@ -381,20 +375,20 @@ However, this is at the expense of Recall, which suggests that the model is now 
 We will address this issue within the next iteration by including the Adam optimiser.
 
     \subsubsection{Adam Optimiser}
-The adam optimiser was adopted as the final optimisation strategy.
+The Adam optimiser was adopted as the final optimisation strategy.
 The improvements from using Adam can be seen in the following metrics table and loss curve:
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_metrics_table.png}
-        \caption{PyTorch DNN with Adam optimiser performance across key metrics.}
+        \caption*{PyTorch DNN with Adam optimiser performance across key metrics.}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_loss_curve.png}
-        \caption{Training loss curve for the PyTorch DNN with Adam optimiser.}
+        \caption*{Training loss curve for the PyTorch DNN with Adam optimiser.}
     \end{minipage}
     \caption{Performance improvements from using the Adam optimiser.}
     \label{fig:adam_improvements}
@@ -432,14 +426,14 @@ Reported DeepCDA metrics are taken from\citep{Yang2024}.
 \caption{Performance comparison against literature baseline on BindingDB. DeepCDA results are reported from \citet{Yang2024}, evaluated using 10-fold cross-validation. This work uses a fixed train/validation/test split, so comparison is indicative rather than definitive.}
 \label{tab:deepcda_comparison}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
 \textbf{Method} & \textbf{AUC-ROC} & \textbf{PR-AUC} & \textbf{F1}
 & \textbf{Precision} & \textbf{Accuracy} \\
 \midrule
 DeepCDA \citep{Abbasi2020}    & 0.894 & 0.901 & 0.811 & 0.760 & 0.831 \\
 \midrule
-This work (best model)         & 0.8670 & 0.8935 & 0.8302 & 0.8322 & 0.7963 \\
+This work (Torch DNN, 18k subset)         & 0.8670 & 0.8935 & 0.8302 & 0.8322 & 0.7963 \\
 \bottomrule
 \end{tabular}
 }%
@@ -471,13 +465,13 @@ PyTorch can handle the load better than a NumPy approach for the following reaso
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_metrics_table_standalone.png}
-        \caption{Pytorch with adam on reduced dataset}
+        \caption*{Pytorch with Adam on reduced dataset}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Experiments/grey_area/figures/original_metrics_table.png}
-        \caption{Pytorch with adam on full dataset}
+        \caption*{Pytorch with Adam on full dataset}
     \end{minipage}
     \caption{Analysis of increased sample size}
     \label{fig:full_dataset}
@@ -496,13 +490,13 @@ Here we will look at how the model metrics alter given different classification 
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep.png}
-        \caption{Threshold Sweep Graph}
+        \caption*{Threshold Sweep Graph}
     \end{minipage}
     \hfill
     \begin{minipage}{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Torch/figures/dnn_adam_threshold_sweep_table.png}
-        \caption{Threshold Sweep Metric Table}
+        \caption*{Threshold Sweep Metric Table}
     \end{minipage}
     \caption{Analysis of Threshold Levels on Model Performance.}
     \label{fig:threshold_sweep}
@@ -516,7 +510,7 @@ Accuracy remains steady throughout, so for Drug-Target interaction prediction, w
 
 \subsection{Grey Area Analysis}
 \label{subsec:grey-area-analysis}
-To further understand the impact of the \textbf{grey area} (week predictions with no clear classification), adaptations to such thresholds will be tested to see how it affects model performance and the class imbalance issue.
+To further understand the impact of the \textbf{grey area} (weak predictions with no clear classification), adaptations to such thresholds will be tested to see how it affects model performance and the class imbalance issue.
 Analysing the distribution of data, we can identify appropriate cutoffs to keep the distribution balanced between binders and non-binders using standard deviation.
 The original thresholds of 5.30 and 7.00 were chosen to create a clear separation between binders and non-binders based off of literature standards, but this wasn't based off of the actual distribution of the data used in this work.
 
@@ -530,10 +524,8 @@ The original thresholds of 5.30 and 7.00 were chosen to create a clear separatio
 \subsubsection{New Thresholds}
 The original thresholds (5.30–7.00) were asymmetric with the upper bound being only 0.31 std above the mean, but the lower bound is 0.81 std below the mean.
 Hence, the 61/39 imbalance within our original split dataset and the new approach of using more symmetric thresholds to give more naturally balanced classes with the following formula:
-
-Formula expression for mean +- k * std
-
-Where k is the number of standard deviations from the mean (mean - 6.53, std = 1.52) and std is the standard deviation of the pAffinity distribution.
+$\mu \pm k \cdot \sigma$
+Where k is the number of standard deviations from the mean ($\mu$) ($\mu$ = 6.53, $\sigma$ = 1.52) and $\sigma$ is the standard deviation of the pAffinity distribution.
 This ensures equal margins on both sides and produces the following new \textbf{grey area thresholds}:
 
 \begin{itemize}

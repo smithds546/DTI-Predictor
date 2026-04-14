@@ -55,7 +55,7 @@ Mean pooling provides a simple method for aggregating variable-length protein se
 This approach enables the model to leverage rich semantic information learned from large protein databases, improving generalisation to unseen targets.
 
 \section{Model Architecture}
-Due to the heterogeneous nature of Duel Inputs, the architecture is slightly modified from traditional neural networks.
+Due to the heterogeneous nature of Dual Inputs, the architecture is slightly modified from traditional neural networks.
 Separate encoding pathways are used to process each input to a usable, unified representation for interaction prediction.
 
 Both encoders operate as trainable feature extractors and can be updated during model training.
@@ -85,8 +85,8 @@ Unlike the frozen ProtBERT model, this encoder is trainable and participates in 
 \label{subsec:-prediction_network}
 The prediction network contains four hidden layers (256, 128, 64, 1) using ReLU activations for learning non-linear interactions between the drug and protein representations.
 The network also makes use of dropout and L2 regularisation to prevent overfitting, which is a common issue in models with limited training data and high-dimensional inputs.
-The network uses the sigmoid function only on inference to map a logit to a probability or computing the loss
-Here is a tale describing the architecture of the prediction network:
+The sigmoid is applied only at inference, to map the raw logit to a probability. During training, BCEWithLogitsLoss applies sigmoid internally when computing the loss for numerical stability.
+Here is a table describing the architecture of the prediction network:
   \begin{table}[H]
   \centering
   \caption{Model Architecture and Training Hyperparameters}
@@ -104,8 +104,8 @@ Here is a tale describing the architecture of the prediction network:
   \textit{Training} \\
   \quad Loss function        & BCEWithLogitsLoss \\
   \quad Optimiser            & Adam \\
-  \quad Learning rate        & 1x10*-3 \\
-  \quad Weight decay         & 1x10*-4 \\
+  \quad Learning rate        & $1\times10^{-3}$ \\
+  \quad Weight decay         & $1\times10^{-4}$ \\
   \quad Batch size           & 512 \\
   \quad Max epochs           & 100 \\
   \midrule
@@ -136,7 +136,7 @@ This loss function is more appropriate for binary classification because it pena
 \subsection{Optimisation Strategy}
 \label{subsec:optimisation_strategy}
 Model parameters were initially optimised using batch gradient descent with backpropagation.
-Following iterative experimentation documented in Chapter~\ref{ch:-evaluation}, the model was reimplemented in PyTorch using the adam optimiser with mini-batch gradient descent and He initialisation for weight initialisation.
+Following iterative experimentation documented in Chapter~\ref{ch:-evaluation}, the model was reimplemented in PyTorch using the Adam optimiser with mini-batch gradient descent and He initialisation for weight initialisation.
 Adam is an adaptive learning rate optimiser that maintains per-parameter learning rates using a combination of momentum and RMSProp, which can lead to faster convergence and improved performance compared to traditional stochastic gradient descent (SGD)\citep{kingma2015adam}.
 Parameters are updated via:
 \begin{equation}

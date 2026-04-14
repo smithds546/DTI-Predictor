@@ -120,7 +120,7 @@ To evaluate which affinity type is most appropriate for my model, we analysed th
 \textbf{Mechanistic Validity:} Ki and Kd represent true equilibrium binding constants that are substrate-independent and thermodynamically well-defined.
 In contrast, IC50 and EC50 are functional assays whose values depend on experimental conditions and do not directly measure binding affinity.
 For a machine learning model intended to learn binding relationships, using equilibrium constants provides a more robust and interpretable basis (Figure~\ref{fig:ki_justification}A).
-\textbf{Data Quality:} After reviewing the graphs generated from the raw bindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 for Kd. Higher consistency is better for training the model as it's reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
+\textbf{Data Quality:} After reviewing the graphs generated from the raw bindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 and Kd. Higher consistency is better for training the model as it's reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
 \textbf{Data Availability:} While IC50 measurements are more abundant in BindingDB (47,043 entries), Ki still provides 16,796 high-quality measurements.
 This is plenty to develop and train machine learning models as modern deep learning models have shown it's more valuable to have high-quality data than a higher quantity\citep{data_quality_ml}.
 \textbf{Cross-Validation with Correlation Analysis:} To confirm the relationships between affinity types, a correlation heatmap was generated across all measurements in the raw BindingDB dataset (Figure~\ref{fig:corr_heatmap}). The high correlation between Ki and Kd (r = 0.94) confirms their mechanistic similarity as equilibrium constants.
@@ -204,7 +204,9 @@ Grey area ($5.3 \leq$pAffinity $\leq 7.0$)      & 507,382   & 35.83\% \\
 \end{tabular}
 \end{table}
 
-After removing the 507,003 pairs falling within the grey area, the remaining interactions were assigned binary labels, resulting in the class distribution shown in the Table\ref{tab:class-distribution}.
+After removing the 507,382 pairs falling within the grey area, the remaining interactions were assigned binary labels, resulting in the class distribution shown in the Table\ref{tab:class-distribution}.
+A subsampled copy with ~18.5k interactions was used for the iterative experiments to be compatible with NumPy backpropogation.
+This was split train/val/text as 12,038/3,704/2,778.
 \begin{table}[htbp]
 \centering
 \caption{Final Class Distribution After Thresholding}

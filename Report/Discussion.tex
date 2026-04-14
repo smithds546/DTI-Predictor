@@ -4,7 +4,7 @@
 \subsection{Model Performance}
 Each iteration of the model produced measurable gains in performance, let us break it down into what makes the most difference when it comes to model performance.
 \subsubsection{Training}
-During the iterative improvement to training, the largest improvement came with ReLu activations, suggesting the model was suffering from vanishing gradients in its hidden layers.
+During the iterative improvement to training, the largest improvement came with ReLU activations, suggesting the model was suffering from vanishing gradients in its hidden layers.
 Sigmoid activations squash their output to the range (0, 1), and their gradient peaks at just 0.25, meaning that in a multi-layer network the gradients diminish exponentially as they propagate backward through each layer.
 This causes the earlier layers to learn very slowly, effectively limiting the network's capacity to extract meaningful patterns from the input features.
 ReLU avoids this by passing a constant gradient of 1 for all positive inputs, allowing the network to train its deeper layers effectively and make better use of the available model capacity.
@@ -20,7 +20,7 @@ However, it also reduced the model's ability to identify binders, which is a com
 \subsubsection{Framework}
 The switch to PyTorch was the most significant improvement in performance for our model, improving on all metrics bar recall which decreased significantly.
 This is down to the improved optimisation and numerical stability producing a more calibrated model, which predicted fewer false positives but also fewer true positives due to its reserved nature.
-The Adam optimiser was introduced after the PyTorch migration and recovered the loss in recall and therefore improved the f1 score, which is the harmonic mean of precision and recall, suggesting a better balance between the two metrics.
+The Adam optimiser was introduced after the PyTorch migration and recovered the loss in recall and therefore improved the F1 score, which is the harmonic mean of precision and recall, suggesting a better balance between the two metrics.
 PyTorch could manage a greater sample size, so we expanded to the full Bindingdb dataset achieving superior performance, but it was important to accurately assess each iteration on the same dataset to show accurate differences.
 \subsubsection{Summary of Iterative Gains}
 The most important takeaway from the iterative improvements is that changing the framework to PyTorch with Adam had the most effective improvement.
@@ -74,7 +74,7 @@ However, this may obviously miss out some key binders that are similar to each o
 
 \section{Limitations}
 \subsection{Dataset}
-The NumPy model was trained on only 2\% of the BindingDB NOV2025 dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
+The NumPy model was trained on only 2\% of the BindingDB dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
 This was due to computational constraints when using NumPy-based backpropogation, tests couldn't be complete in an appropriate time-frame.
 Using a Single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
 The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
