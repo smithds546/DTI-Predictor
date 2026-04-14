@@ -2,7 +2,7 @@
 Architecture Iteration 1 — Two Hidden Layers [64, 32]
 
 Adds a second hidden layer (64 → 32) to the single-hidden-layer baseline.
-He init, ReLU, mini-batch GD, no dropout. Everything else unchanged.
+He init, ReLU, mini-batch GD, no dropout. Everything else is unchanged.
 """
 
 import os

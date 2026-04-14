@@ -181,7 +181,7 @@ def _diverse_pick(smiles_list: list[str], n: int) -> list[int]:
 
     Selects *n* compounds from *smiles_list* that are maximally spread
     across chemical space.  This mirrors how real HTS libraries are
-    curated — you want broad structural coverage, not 50 close analogues.
+    curated - broad structural coverage, not 50 close analogues.
 
     Returns indices into *smiles_list*.
     """

@@ -23,7 +23,7 @@ class BindingDBLoader:
     def __init__(self, data_dir: str = "Backend/app/data"):
         # We'll read from 'raw' and write to 'loaded'
         self.raw_dir = Path(data_dir) / "raw"
-        self.output_dir = Path(data_dir) / "loaded" # Using your 'loaded' folder for output
+        self.output_dir = Path(data_dir) / "loaded" # Outputs to loaded folder
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
@@ -358,19 +358,15 @@ def explore_dataset(df: pd.DataFrame):
 
 # Main execution script
 if __name__ == "__main__":
-    # --- IMPORTANT ---
-    # Manually change these filenames to match what you downloaded
-    # Find the .zip file in your 'raw' folder and put its name here
     TSV_ZIP_FILENAME = "BindingDB_All_202511_tsv.zip"  # e.g., "BindingDB_All_202511_tsv.zip"
     FASTA_FILENAME = "BindingDBTargetSequences.fasta"
-    # --- IMPORTANT ---
 
     print("\n" + "=" * 60)
     print("Loading BindingDB data from LOCAL FILES (Ki and Kd)")
     print("This is the robust, offline method.")
     print("=" * 60)
 
-    # Assumes your 'data' folder is 'Backend/app/data'
+    # Load data
     loader = BindingDBLoader(data_dir="/Users/drs/Projects/DTI/Backend/app/data")
 
     # Check if files exist before running

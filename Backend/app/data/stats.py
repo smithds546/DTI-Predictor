@@ -4,9 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import zipfile
 
-# === CONFIG ===
-# Point this to your ALREADY PROCESSED file if you have it,
-# or run this after running your dataLoader.
 INPUT_CSV = "/Users/drs/Projects/DTI/Backend/app/data/loaded/bindingdb_offline_processed_2025-11-17_20-05.csv"
 RAW_INPUT_CSV = "/Users/drs/Projects/DTI/Backend/app/data/raw/BindingDB_All_202511_tsv.zip"
 
@@ -62,11 +59,6 @@ def generate_stats():
     # === GENERATE PLOT FOR FIGURE 1 ===
     plt.figure(figsize=(10, 6))
 
-    # We plot the p_affinity.
-    # Note: Your processed CSV might only have 0 and 1 interactions.
-    # If you want the full histogram including the gap, you technically need the data
-    # BEFORE you dropped the grey area.
-    # If you only have the final file, the histogram will show two distinct islands.
 
     sns.histplot(data=df, x='p_affinity', bins=50, kde=True, color='blue')
 

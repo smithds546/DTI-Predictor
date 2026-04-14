@@ -2,7 +2,7 @@
 Architecture Iteration 3 — L2 Regularisation (lambda=0.001)
 
 Adds L2 weight regularisation to the two-hidden-layer dropout network from arch2.
-He init, ReLU, mini-batch GD, dropout=0.2. Everything else unchanged.
+He init, ReLU, mini-batch GD, dropout=0.2. Everything else is unchanged.
 """
 
 import os

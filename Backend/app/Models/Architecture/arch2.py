@@ -2,7 +2,7 @@
 Architecture Iteration 2 — Dropout (p=0.2)
 
 Adds inverted dropout (rate=0.2) after each hidden layer to the two-hidden-layer
-network from arch1. He init, ReLU, mini-batch GD. Everything else unchanged.
+network from arch1. He init, ReLU, mini-batch GD. Everything else is unchanged.
 """
 
 import os

@@ -5,7 +5,7 @@ Processes the raw BindingDB dataset and creates four dataset variants
 with grey area thresholds derived from standard deviations around the
 mean pAffinity, then generates class distribution figures for the report.
 
-Threshold selection rationale:
+Threshold selection:
   The pAffinity distribution has mean ~6.53 and std ~1.52.  Defining the
   grey area as mean +/- k*std produces symmetric, statistically motivated
   thresholds that yield near-perfect class balance at every k.
@@ -64,7 +64,6 @@ FASTA_FILE = "BindingDBTargetSequences.fasta"
 CHUNK_SIZE = 200_000
 
 # Fraction of the full dataset to use (1.0 = all data).
-# Reduce to 0.1 or 0.02 if you run into memory issues.
 SAMPLE_FRAC = 1.0
 
 # Variants are built dynamically in main() from the data's mean and std.
