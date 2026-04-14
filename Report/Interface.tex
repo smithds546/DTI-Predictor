@@ -73,7 +73,7 @@ Molecular descriptors for all unique compounds are computed using RDKit~\cite{rd
 A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five per cent.
 This is shown in the following code snippet:
 
-\begin{lstlisting}[language=Python, caption={Descriptor cache loading with staleness check.}, label={lst:cache\_load}]
+\begin{lstlisting}[language=Python, caption={Descriptor cache loading with staleness check.}, label={lst:cache_load}]
 def _load_or_build() -> pd.DataFrame:
     if os.path.exists(_CACHE_PATH):
         cached = pd.read_pickle(_CACHE_PATH)
