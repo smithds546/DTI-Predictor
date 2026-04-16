@@ -54,7 +54,24 @@ Here we will begin the evaluation of our models, opening with a basic NumPy impl
     \subsection{Experimental Setup}
     \label{sec: eval_setup}
 Before we venture further, it's good to determine our setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
-We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model used 100, both will implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
+We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model used 100, both will introduce and implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
+To keep consistency throughout, each iteration will be evaluated on the same subset of the BindingDB dataset, the class distribution of which is shown in Table~\ref{tab:class-distribution}.
+\begin{table}[H]
+\centering
+\caption{Class distribution across train, validation, and test splits.}
+\label{tab:class-distribution}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Split} & \textbf{Binders} & \textbf{Non-binders} & \textbf{Total} \\
+\midrule
+Train      & 7,291  & 4,747 & 12,038 \\
+Validation & 2,226  & 1,478 & 3,704  \\
+Test       & 1,671  & 1,107 & 2,778  \\
+\midrule
+Total      & 11,188 & 7,332 & 18,520 \\
+\bottomrule
+\end{tabular}
+\end{table}
     % Briefly describe training procedure
     % (e.g. number of epochs, early stopping criteria, hardware used)
 
