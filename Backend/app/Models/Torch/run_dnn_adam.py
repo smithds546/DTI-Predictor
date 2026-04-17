@@ -131,7 +131,7 @@ def evaluate(model, loader, criterion, device):
 
 def run(data_root=None, prefix=None, label=None, save_dir=None,
         checkpoint=None, baseline=None, baseline_label="Baseline",
-        threshold_sweep=True):
+        threshold_sweep=True, threshold=None):
     """
     Train DTI_DNN with Adam + CosineAnnealing and generate all figures.
 
@@ -146,6 +146,7 @@ def run(data_root=None, prefix=None, label=None, save_dir=None,
     label      = label      or LABEL
     save_dir   = save_dir   or SAVE_DIR
     checkpoint = checkpoint or CHECKPOINT
+    threshold  = threshold if threshold is not None else THRESHOLD
 
     os.makedirs(save_dir, exist_ok=True)
 
@@ -251,9 +252,9 @@ def run(data_root=None, prefix=None, label=None, save_dir=None,
     _, val_probs,   val_labels   = evaluate(model, val_loader,   criterion, device)
     _, test_probs,  test_labels  = evaluate(model, test_loader,  criterion, device)
 
-    train_metrics = compute_metrics(train_labels.astype(int), train_probs, THRESHOLD)
-    val_metrics   = compute_metrics(val_labels.astype(int),   val_probs,   THRESHOLD)
-    test_metrics  = compute_metrics(test_labels.astype(int),  test_probs,  THRESHOLD)
+    train_metrics = compute_metrics(train_labels.astype(int), train_probs, threshold)
+    val_metrics   = compute_metrics(val_labels.astype(int),   val_probs,   threshold)
+    test_metrics  = compute_metrics(test_labels.astype(int),  test_probs,  threshold)
 
     print(f"\n{'='*50}\nFINAL RESULTS — {label}\n{'='*50}")
     for split, m in [("Train", train_metrics), ("Val", val_metrics), ("Test", test_metrics)]:

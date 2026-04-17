@@ -18,7 +18,7 @@ The architecture consists of a backend that contains data and the predictive mod
 To link the frontend and backend components, a RESTful API was designed to ensure seamless communication between the two.
 The API was designed with a focus on simplicity, scalability, and maintainability, allowing for easy integration with the frontend and potential future extensions.
 \subsection{Framework and Architecture}
-We used FastAPI as the framework for our backend API due to its high performance, ease of use, and robustness\citep{fastapi}.
+We used FastAPI as the framework for our backend API due to its high performance, ease of use, and robustness \citep{fastapi}.
 The API follows a modular architecture, with separate modules for data loading, model inference, virtual screening, and input validation.
 This modular design allows for better organisation of code and easier maintenance.
 \subsection{Endpoint Specification}
@@ -69,11 +69,11 @@ At startup time, the backend performs several data loading and preprocessing ste
 The full BindingDB CSV containing drug SMILES strings, protein target names, amino acid sequences, and binary interaction labels, is loaded into a pandas DataFrame at module import time by the training data service.
 From this, the autocomplete endpoint creates drug and target lists.
 
-Molecular descriptors for all unique compounds are computed using RDKit~\cite{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
+Molecular descriptors for all unique compounds are computed using RDKit \citep{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
 A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five per cent.
 This is shown in the following code snippet:
 
-\begin{lstlisting}[language=Python, caption={Descriptor cache loading with staleness check.}, label={lst:cache_load}]
+\begin{lstlisting}[caption={Descriptor cache loading with staleness check.}, label={lst:cache_load}]
 def _load_or_build() -> pd.DataFrame:
     if os.path.exists(_CACHE_PATH):
         cached = pd.read_pickle(_CACHE_PATH)
@@ -262,7 +262,7 @@ The comparison can also be between batch screening and single screening, allowin
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{project screenshots/Comparison.png}
-    \caption{Side-by-side comparison of two previous prediction results.}
+    \caption{Side-by-side comparison of three previous prediction results.}
     \label{fig:comparison}
 \end{figure}
 \section{Frontend-Backend Integration}

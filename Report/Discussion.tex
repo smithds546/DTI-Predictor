@@ -29,10 +29,10 @@ The Numpy iterations collectively improved F1 score by ~0.04, whereas the Pytorc
 While the framework change made the most effective improvement, it was the foundational improvements to the training procedure that accounted for the majority of the overall performance improvement.
 This highlights that proper training practices and activation function choices can matter as much as, if not more than, the choice of deep learning framework.
 \subsubsection{Final Model Performance}
-Our final model achieved an AUC-ROC of ~0.97; which is competitive with recent work such as MINDG~\citep{Yang2024}.
+Our final model achieved an AUC-ROC of ~0.97; which is competitive with recent work such as MINDG \citep{Yang2024}.
 This is impressive considering the architectural differences between the two models: MINDG uses a more complex architecture blending GNNs and CNNs to learn both structural and fingerprint representations, whereas our model relies on a fully connected DNN operating on concatenated ProtBERT and MACCS features.
 Despite this more complex architecture, MINDG was evaluated on a substantially smaller dataset of approximately 77,000 interactions compared to our 908,643, making direct comparison difficult.
-It is plausible that our larger training set compensates for the simpler feature representation, narrowing a gap that the literature suggests should be wider~\citep{Vefghi2025}: structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.
+It is plausible that our larger training set compensates for the simpler feature representation, narrowing a gap that the literature suggests should be wider \citep{Vefghi2025}: structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.
 However, a controlled ablation would be needed to determine whether dataset scale or feature richness is the greater contributing factor.
 \subsubsection{Threshold Sweep}
 The threshold sweep revealed the optimal decision boundary for classifying drug-target pairs as interacting to be 0.3, getting the highest f1 score of all threshold levels.
@@ -43,7 +43,7 @@ This is common when training data has an unequal ratio of positive and negative.
 \subsection{Data Preprocessing}
 \subsubsection{Binarisation}
 The binarisation threshold was chosen to create a clear distinction between binders and non-binders, with the grey area defining an area of uncertainty where interactions that fall within are unaccounted for.
-The grey area was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (507,382 pairs), above 7.0 is considered a good binder, and below 5.3 is used across papers including\citep{Gfeller2013}.
+The grey area was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (507,382 pairs), above 7.0 is considered a good binder, and below 5.3 is used across papers including \citep{Gfeller2013}.
 As seen in the Chapter~\ref{chap:data-pipeline}, this leaves us with an unbalanced dataset of ~61\% being binders.
 This gave the model stronger reasoning signals to learn from, with the tradeoff of having fewer interactions to train the model from.
 \subsubsection{Class Imbalance}
@@ -91,7 +91,7 @@ While this gap between ground-truth labels and model predictions may appear conc
 Finally, having no interpretability mechanism means the user has no insight into why the model is making certain predictions, which can reduce trust and make it harder to identify potential issues with the model's reasoning.
 \subsection{API}
 We capped the batch screening functionality at 100 compounds to keep inference time reasonable, but it's shadowed by real virtual screening campaigns that can do millions of compounds.
-For example, an ultra large docking study by Lyu\citep{lyu2019ultra}, where they docked 170 million compounds against a target, which is orders of magnitude more than our system can handle.
+For example, an ultra large docking study by Lyu \citep{lyu2019ultra}, where they docked 170 million compounds against a target, which is orders of magnitude more than our system can handle.
 No rate limiting was implemented so the system can withstand multiple large requests, however, this can have its consequences and be vulnerable to DDOS attacks.
 If an account system was implemented, rate limiting would be required to prevent a single user from consuming all resources.
 Also, the number of compounds and targets to select is limited to only what's present in a small percentage of the dataset the model trained on.
@@ -107,7 +107,7 @@ Therefore, it's challenging to make predictions that are novel without extending
 
 \subsection{Alternative encoders}
 \label{subsec:alternative-encoders}
-Models such as MINDG \citep{Yang2024}use graphical encoders as well as fingerprints to produce a more reliable prediction because they learn structural features.
+Models such as MINDG \citep{Yang2024} use graphical encoders as well as fingerprints to produce a more reliable prediction because they learn structural features.
 Applying such techniques would replace MACCS with a molecular graph encoder such as GCN, GAT, or GIN.
 For the target, using ESM-2 instead of ProtBERT because it's a more capable protein language model.
 \citep{Vefghi2025} Explores these options extensively.
@@ -116,10 +116,10 @@ Reframing the task as a regression problem instead of classification could provi
 Using the raw pKd/pKi values from BindingDB rather than binarising them would provide more informative predictions.
 \subsection{External data validations}
 To better validate the model's predictions, using different datasets to evaluate the performance and generalisation would be beneficial.
-This technique was utilised by\citep{Yang2024}, where they used an external dataset, DAVIS, alongside BindingDB to train and evaluate their model independently.
+This technique was utilised by \citep{Yang2024}, where they used an external dataset, DAVIS, alongside BindingDB to train and evaluate their model independently.
 This allowed them to understand the full performance of their model and its ability to generalise to unseen data, which is crucial for real-world applications.
 \subsection{Interpretability}
 To give the user more confidence in the model's predictions, it would be insightful to integrate an interpretability mechanism.
-Techniques such as SHAP (SHapley Additive exPlanations)\citep{lundberg2017shap} or integrated gradients could be applied to the current fully connected architecture to quantify the contribution of individual input features to each prediction.
+Techniques such as SHAP (SHapley Additive exPlanations) \citep{lundberg2017shap} or integrated gradients could be applied to the current fully connected architecture to quantify the contribution of individual input features to each prediction.
 This would allow users to identify which aspects of the drug and protein embeddings were most influential in a given prediction, potentially revealing insights into the underlying biological mechanisms of drug-target interactions.
-For more advanced architectures incorporating convolutional or graph neural network layers, gradient-based visualisation techniques such as Grad-CAM \citep{selvaraju2020gradcam}could be used to highlight specific molecular substructures and protein regions driving the prediction.
+For more advanced architectures incorporating convolutional or graph neural network layers, gradient-based visualisation techniques such as Grad-CAM \citep{selvaraju2020gradcam} could be used to highlight specific molecular substructures and protein regions driving the prediction.

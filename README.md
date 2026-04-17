@@ -30,7 +30,7 @@ This repository accompanies the final year dissertation *Drug–Target Interacti
 ## Requirements
 
 - Python 3.10+
-- Node.js 18+ and npm
+- Node.js **16** and npm (Gatsby 3 is incompatible with Node 18+; use `nvm` if your system Node is newer)
 - ~4 GB free disk for cached ProtBERT embeddings and model checkpoints
 - macOS / Linux (tested on macOS 14, Darwin 25.3)
 
@@ -52,8 +52,10 @@ The backend loads the trained checkpoint from `Backend/app/Models/Experiments/gr
 
 ```bash
 cd Frontend
-npm install
-gatsby develop -p 8001
+nvm use 16                          # if Node 16 is not your default
+npm install --legacy-peer-deps      # bypass the React 18 / Gatsby 3 peer-dep conflict
+mkdir -p .cache public              # Gatsby 3 on newer OSes cannot create these itself
+npx gatsby develop -p 8001
 ```
 
 Open `http://localhost:8001/`. The frontend expects the backend to be running on port 8000; CORS is preconfigured for local development.

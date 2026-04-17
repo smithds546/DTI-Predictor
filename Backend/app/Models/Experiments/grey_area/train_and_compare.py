@@ -228,6 +228,7 @@ def main():
             baseline=None,
             baseline_label="Original",
             threshold_sweep=False,
+            threshold=0.3,
         )
         results["original"] = {
             "metrics":    r["test_metrics"],
@@ -263,6 +264,7 @@ def main():
             baseline=original_baseline,
             baseline_label="Original",
             threshold_sweep=False,
+            threshold=0.3,
         )
         results[v] = {
             "metrics":    r["test_metrics"],
