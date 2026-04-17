@@ -263,7 +263,7 @@ Protein embedding (example, size 1024):
 Following feature engineering, the processed data was split into 3: \textit{Training, Validation} and \textit{Testing}.
 This is an important step to prevent overfitting of the model on the dataset, keeping this randomised is key to the validity of the model.
 \subsection{Train-Validation-Test Split Methodology}
-To ensure reproducibility, the dataset was split similarly to \citep{Nunes2019, Lorenz2019}at a ratio of 65:20:15.
+To ensure reproducibility, the dataset was split similarly to~\citet{Nunes2019, Lorenz2019} at a ratio of 65:20:15.
 To make it a random sampling approach, a fixed random seed (random\_state = 42) was used to make the sampling procedure deterministic, meaning each run produces the same split.
 This is important for reliable model evaluation, comparison between experiments, and debugging.
 The splitting was split into two stages:
@@ -289,7 +289,7 @@ Testing    & 15\% & 136,297 \\
 \subsection{Justification of Split Ratios}
 While an 80:20 ratio between training and testing is common \citep{Talukder2025, Zhan2025}, A higher validation set of data at 20\% was used for more accurate estimates of model performance during training.
 This can allow for better hyperparameter tuning so the model can be tweaked to optimise performance on the unseen test data.
-This specific split has been used among other deep learning studies that require rigorous hyperparameter tuning, such as in medical image analysis \citep{Nunes2019} and environmental prediction modelling \citep{Lorenz2019}.
+This specific split has been used among other deep learning studies that require rigorous hyperparameter tuning, such as in medical image analysis~\citep{Nunes2019} and environmental prediction modelling~\citep{Lorenz2019}.
 A large allowance to the validation set reduces the risk of overfitting before the final evaluation on the unseen test data.
 
 

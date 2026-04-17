@@ -88,7 +88,7 @@ def _load_or_build() -> pd.DataFrame:
     return table
 \end{lstlisting}
 
-Protein representations are handled through a hash-indexed cache of precomputed ProtBERT embeddings~\cite{ProtBERT}.
+Protein representations are handled through a hash-indexed cache of precomputed ProtBERT embeddings \citep{ProtBERT}.
 Each protein sequence is mapped to a 1024-dimensional embedding vector stored as a NumPy \texttt{.npy} file, keyed by an MD5 hash of the sequence.
 At startup the prediction service builds a lookup table to map protein names to their amino acid sequences, reducing retrieval time of embeddings.
 
@@ -136,7 +136,7 @@ Users can apply filters on physiochemical properties such as:
 \textbf{Filter} & \textbf{Description} \\
 \hline
 Molecular Weight Range & Molecular weight in Daltons \citep{lipinski2001, veber2002}. \\
-Ring Count & Filters by the number of ring structures present in the molecule\citep{bemis1996}. \\
+Ring Count & Filters by the number of ring structures present in the molecule \citep{bemis1996}. \\
 Lipinski's Rule of Five & Enforces MW $\leq$ 500, LogP $\leq$ 5, HBA $\leq$ 10, and HBD $\leq$ 5, selecting compounds with drug-like oral bioavailability~\citep{lipinski2001}. \\
 Known Binders & Restricts the pool to compounds with a positive interaction label against a user-selected protein target in the training data. \\
 \hline
@@ -144,7 +144,7 @@ Known Binders & Restricts the pool to compounds with a positive interaction labe
 \end{table}
 These filters are applied as boolean masks over a precomputed descriptor table to narrow down large compound sets efficiently.
 \subsubsection{Limited Selection}
-When the number of compounds matching the filters exceeds the processable limit, the system employs a `MaxMin` diverse picking algorithm sing MACCS-based Tanimoto distance\citep{tanimoto}.
+When the number of compounds matching the filters exceeds the processable limit, the system applies the \textit{MaxMin} diversity-picking algorithm using MACCS-based Tanimoto distance~\citep{tanimoto}.
 Instead of using a random sample, this algorithm makes sure to select a structurally diverse subset to ensure broad coverage of drugs in the test.
 The selected drug molecules are scored against the target protein using the batch inference pipeline, ranked by binding probability, and matched to metadata such as molecular weight, LogP, and ring count before being returned to the frontend.
 
@@ -152,7 +152,7 @@ The selected drug molecules are scored against the target protein using the batc
 % Pydantic schemas, Query param constraints, HTTPException patterns
 \subsubsection{Input Validation}
 Validating the inputs is handled through two complementary mechanisms.
-At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and use automatic validation of incoming JSON requests\citep{pydantic}.
+At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and use automatic validation of incoming JSON requests~\citep{pydantic}.
 
 For query parameter endpoints, FastAPI's \texttt{Query} annotations are used to enforce value constraints directly in the function signatures.
 This is allowing us to limit the batch size to 100, capping the drug sample endpoint to 50 results, and keeping the Scalable Vector Graphics (SVG) rendering dimensions between 50 and 500 pixels.
@@ -167,7 +167,7 @@ Creating a simple and intuitive design is essential for usability, we utilised a
 \subsection{Frontend Framework}
 To develop the frontend, we have used Gatsby, a React framework that is optimal for static websites.
 It does this by pre-rendering pages into HTML, called Static Site Generation (SSG), resulting in superior performance.
-Gatsby benefits from high security with no server-side attacks as it doesn't have a server-side database or dependencies, only static files\citep{gatsby_definitive, gatsby}.
+Gatsby benefits from high security with no server-side attacks as it doesn't have a server-side database or dependencies, only static files~\citep{gatsby_definitive, gatsby}.
 
 \subsection{User Interface Design}
 To keep things simple, we only have two tabs for the user to test a single drug to a single protein target, and batch virtual screening to emulate a wet-lab experiment more closely.

@@ -29,7 +29,7 @@ Models like DeepDTA \citep{Ozturk2018} display impressive predictive performance
 
 \subsection{Graph-Based models}
 Graph Neural Networks (GNNs) take as input the structure of molecules as graphs of atoms, learning structural information which, to sequence-based models, is challenging to learn.
-\citep{Yang2024} utilised this as part of their algorithm using Message-Passing Neural Network (MPNN) to encode drug sequences as a part of a greater system.
+\citet{Yang2024} utilised this as part of their algorithm using Message-Passing Neural Network (MPNN) to encode drug sequences as a part of a greater system.
 An MPNN can extract more detailed relational features, for improved modelling of chemical structure.
 
 \subsection{Hybrid Networks} 
@@ -46,8 +46,8 @@ This has become increasingly more popular as it simplifies the learning objectiv
 \subsection{Research Papers Using Binary Classification}
 A strong model which uses this type of classification is DeepDTA \citep{Ozturk2018}, which applies a threshold to continuous affinity values (IC50 or Ki) and classifies the interactions as active or inactive.
 Although the study also explored regression, it showed that the binary classification improves model stability and reduces noise introduced by inconsistent conditions.
-Another strong case is produced in Talukder \citep{Talukder2025}, who uses explicit affinity binarization combined with MACCS fingerprints and protein sequence embeddings to train a neural network that outputs a binary interaction score.
-This is supported by Zhan \citep{Zhan2025}, who follows the same approach, emphasising the robustness in binary prediction when affinity values are inconsistent.
+Another strong case is produced in \citet{Talukder2025}, where explicit affinity binarization combined with MACCS fingerprints and protein sequence embeddings are used to train a neural network that outputs a binary interaction score.
+This is supported by \citet{Zhan2025}, who follows the same approach, emphasising the robustness in binary prediction when affinity values are inconsistent.
 
 \subsection{Affinity Thresholds}
 The affinity thresholds used are crucial because it determines the data the model ingests and what it is classified at.
@@ -82,7 +82,7 @@ However, some of these papers tried to combat this issue by taking data from two
 \section{Current products}
 
 \subsection{SwissTargetPrediction}
-\citep{STP_web} Is a website which allows the user to predict using a ligand-based approach built to combine different similarity measures, providing more accurate predictions.
+The website SwissTargetPrediction \citep{STP_web}, allows the user to predict using a ligand-based approach built to combine different similarity measures, providing more accurate predictions.
 The method, as described in the 2013 paper, was trained on a set of 224,412 molecules known to interact with 1700 human proteins from the ChEMBL database.
 
 For many bioactive molecules their primary target is unknown, and even when it is, most have more than one target (Off-targets) that are not well characterised.
@@ -103,7 +103,7 @@ Which is a creative and more advanced way to really test new drug compounds and 
 
 \subsection{DINIES}
 
-\citep{Yamanishi2014,DINIES_web} Is a web tool that predicts potential interactions based on drug data and omics-scale protein data, allowing the user to use whatever data as input as long as it's represented accordingly.
+The web tool DINIES \citep{Yamanishi2014,DINIES_web}, predicts potential interactions based on drug data and omics-scale protein data, allowing the user to use whatever data as input as long as it's represented accordingly.
 First published in 2014 it uses machine learning and predicts using the \textit{guilt-by-association} principle, similar drugs are likely to interact with similar proteins.
 
 The methodology is based on using Kernels to convert chemical structure, side effects, and Protein sequence profiles to separate matrices.
