@@ -19,6 +19,31 @@
 \usepackage[authoryear]{natbib}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc} 
 \definecolor{bg}{rgb}{0.95,0.95,0.95}
+\definecolor{codekw}{rgb}{0.0,0.44,0.13}
+\definecolor{codecomment}{rgb}{0.5,0.5,0.5}
+\definecolor{codestring}{rgb}{0.72,0.11,0.11}
+\definecolor{codeframe}{rgb}{0.75,0.75,0.75}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  backgroundcolor=\color{bg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  framesep=6pt,
+  xleftmargin=10pt,
+  xrightmargin=10pt,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numberstyle=\tiny\color{codecomment},
+  numbersep=8pt,
+  captionpos=b,
+}
 \bibliographystyle{agsm}   
 \usepackage[includeheadfoot,margin=3.5cm]{geometry}
 \usepackage{titlesec}

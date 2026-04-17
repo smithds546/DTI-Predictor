@@ -9,12 +9,12 @@ The inputs going into the model are Protein embeddings and Drug embeddings with 
 The output is either a yes or no classification determined by thresholds mentioned in Chapter~\ref{chap:data-pipeline}.
 
 \subsection{Learning Paradigm}
-The learning paradigm, how the model learns from the data, is supervised binary classification using PyTorch-based gradient optimisation using Adam\citep{kingma2015adam}.
+The learning paradigm, how the model learns from the data, is supervised binary classification using PyTorch-based gradient optimisation using Adam \citep{kingma2015adam}.
 The model learns to distinguish between binding and non-binding drug-target pairs based on labelled training data.
 
 \section{Problem Formulation}
 The prediction task is formulated as a supervised binary classification problem, where the goal is to conclude whether a given drug and protein pair produce a binding interaction.
-The data instances of drug molecules and target proteins are represented as fixed length numerical vectors which $\mathbf{d} \in \mathbb{R}^{m}$ denote the representation of a drug molecule and $\mathbf{p} \in \mathbb{R}^{n}$ denote the representation of a target protein.
+The data instances of drug molecules and target proteins are represented as fixed length numerical vectors where $\mathbf{d} \in \mathbb{R}^{m}$ denotes the representation of a drug molecule and $\mathbf{p} \in \mathbb{R}^{n}$ denotes the representation of a target protein.
 
 The goal of the model is to learn a function $f: \mathbb{R}^{m} \times \mathbb{R}^{n} \rightarrow [0,1],$ which maps a drug--protein pair $(\mathbf{d}, \mathbf{p})$ to a continuous interaction score $\hat{y}$ representing the predicted probability of binding:
 $\hat{y} = f(\mathbf{d}, \mathbf{p}).$
@@ -63,14 +63,14 @@ Learning is therefore concentrated in the prediction stage, reducing model compl
 
 This modular design enables future extensions, such as introducing trainable encoder layers or alternative fusion strategies, without requiring changes to the underlying data pipeline.
 \subsection{Drug Encoder}
-The drug encoder is responsible for transforming molecular SMILES string into a numerical representation using MACCS (Molecular ACCess System) keys\citep{durant2002reoptimization}.
+The drug encoder is responsible for transforming molecular SMILES string into a numerical representation using MACCS (Molecular ACCess System) keys \citep{durant2002reoptimization}.
 The SMILES representation is parsed into an RDKit object, where MACCS fingerprint generation is applied, producing a 167-bit binary vector.
 
 This representation captures essential structural properties of small molecules while maintaining a compact and consistent dimensionality.
 In cases where a SMILES string cannot be successfully parsed, a zero vector is returned to preserve input dimensional consistency and prevent pipeline failure.
 
 \subsection{Protein Representation}
-Protein sequences are represented using contextual embeddings derived from a pretrained ProtBERT transformer model~\citep{Elnaggar2020.07.12.199554}.
+Protein sequences are represented using contextual embeddings derived from a pretrained ProtBERT transformer model \citep{Elnaggar2020.07.12.199554}.
 Each amino acid sequence is tokenised and passed through the frozen ProtBERT model to obtain per-token hidden states.
 Mean pooling is then applied across the sequence dimension of the final hidden layer, producing a single 1024-dimensional embedding that summarises the biochemical and contextual properties of the entire sequence.
 
@@ -85,43 +85,47 @@ Unlike the frozen ProtBERT model, this encoder is trainable and participates in 
 \label{subsec:-prediction_network}
 The prediction network contains four hidden layers (256, 128, 64, 1) using ReLU activations for learning non-linear interactions between the drug and protein representations.
 The network also makes use of dropout and L2 regularisation to prevent overfitting, which is a common issue in models with limited training data and high-dimensional inputs.
-The sigmoid is applied only at inference, to map the raw logit to a probability. During training, BCEWithLogitsLoss applies sigmoid internally when computing the loss for numerical stability.
+The sigmoid is applied only at inference, to map the raw logit to a probability.
+During training, BCEWithLogitsLoss applies sigmoid internally when computing the loss for numerical stability.
 Here is a table describing the architecture of the prediction network:
-  \begin{table}[H]
-  \centering
-  \caption{Model Architecture and Training Hyperparameters}
-  \label{tab:network_structure}
-  \begin{tabular}{lc}
-  \toprule
-  \textbf{Parameter} & \textbf{Optimal Model} \\
-  \midrule
-  \textit{Architecture} \\
-  \quad Hidden size          & DrugEncoder hidden 256→128, ProteinEncoder 1024→512→256→128, Predictor 256→256→128→64→1\\
-  \quad Activation           & ReLU \\
-  \quad Batch normalisation  & Yes \\
-  \quad Dropout              & 0.4 \\
-  \midrule
-  \textit{Training} \\
-  \quad Loss function        & BCEWithLogitsLoss \\
-  \quad Optimiser            & Adam \\
-  \quad Learning rate        & $1\times10^{-3}$ \\
-  \quad Weight decay         & $1\times10^{-4}$ \\
-  \quad Batch size           & 512 \\
-  \quad Max epochs           & 100 \\
-  \midrule
-  \textit{Regularisation} \\
-  \quad Early stopping       & Yes - (Patience = 15) \\
-  \quad LR scheduler         & CosineAnnealingLR(T\_max=100, eta\_min=1e-5) \\
-  \bottomrule
-  \end{tabular}
-  \end{table}
+\begin{table}[H]
+\centering
+\caption{Model Architecture and Training Hyperparameters}
+\label{tab:network_structure}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\textit{Architecture} \\
+\quad Drug encoder         & 167$\rightarrow$256$\rightarrow$128 \\
+\quad Protein encoder      & 1024$\rightarrow$512$\rightarrow$256$\rightarrow$128 \\
+\quad Predictor            & 256$\rightarrow$256$\rightarrow$128$\rightarrow$64$\rightarrow$1 \\
+\quad Activation           & ReLU \\
+\quad Batch normalisation  & Yes \\
+\quad Dropout              & 0.4 \\
+\midrule
+\textit{Training} \\
+\quad Loss function        & BCEWithLogitsLoss \\
+\quad Optimiser            & Adam \\
+\quad Learning rate        & $1\times10^{-3}$ \\
+\quad Weight decay         & $1\times10^{-4}$ \\
+\quad Batch size           & 512 \\
+\quad Max epochs           & 100 \\
+\midrule
+\textit{Regularisation} \\
+\quad Early stopping       & Yes (patience = 15) \\
+\quad LR scheduler         & CosineAnnealingLR ($T_{\max}=100$, $\eta_{\min}=1\times10^{-5}$) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The design choices reflected here were informed through iterative experimentation, the full progression is documented in Chapter~\ref{ch:-evaluation}.
 \subsection{Fusion and Prediction Layer}
-Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model.
-The Binary MACCS fingerprint with dimensionality 167 and the ProtBERT embedding with dimensionality 1024 are individually encoded to have dimensionality of 128 before being concatenated into a single vector with dimensionality 256 representing the drug-target pair.
+The design choices reflected here were informed through iterative experimentation, the full progression is documented in Chapter~\ref{ch:-evaluation}.
 
-This combined vector is then passed through the prediction network described above and produces a binary classification based on the optimal threshold determined through experimentation.
+Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model.
+The binary MACCS fingerprint with dimensionality $167$ and the ProtBERT embedding with dimensionality $1024$ are individually encoded to have dimensionality of $128$ before being concatenated into a single vector with dimensionality $256$ representing the drug-target pair.
+
+This combined vector is then passed through the prediction network described in Table~\ref{tab:network_structure} and produces a binary classification based on the optimal threshold, $\tau = 0.3$, determined through experimentation.
 
 \section{Training Procedure}
 This section describes how the model parameters are optimised during training, a process that is important to how the model learns meaningful patterns and builds internal representations on the data it's exposed to.
@@ -131,30 +135,30 @@ The model is trained using Sigmoid + Binary Cross Entropy (BCE) loss function to
     E = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i) \right],
 \]
 Where $N$ is the number of training samples, $y_i$ is the true binary label for the $i$-th sample, and $\hat{y}_i$ is the predicted probability of the positive class (binding interaction) for the $i$-th sample.
-This loss function is more appropriate for binary classification because it penalises confident wrong predictions more heavily than MSE\citep{goodfellow2016deep}.
+This loss function is more appropriate for binary classification because it penalises confident wrong predictions more heavily than MSE \citep{goodfellow2016deep}.
 
 \subsection{Optimisation Strategy}
 \label{subsec:optimisation_strategy}
 Model parameters were initially optimised using batch gradient descent with backpropagation.
 Following iterative experimentation documented in Chapter~\ref{ch:-evaluation}, the model was reimplemented in PyTorch using the Adam optimiser with mini-batch gradient descent and He initialisation for weight initialisation.
-Adam is an adaptive learning rate optimiser that maintains per-parameter learning rates using a combination of momentum and RMSProp, which can lead to faster convergence and improved performance compared to traditional stochastic gradient descent (SGD)\citep{kingma2015adam}.
+Adam is an adaptive learning rate optimiser that maintains per-parameter learning rates using a combination of momentum and RMSProp, which can lead to faster convergence and improved performance compared to traditional stochastic gradient descent (SGD) \citep{kingma2015adam}.
 Parameters are updated via:
 \begin{equation}
     \theta_{t+1} = \theta_t - \frac{\alpha}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t
 \end{equation}
 Where $\hat{m}_t$ and $\hat{v}_t$ are bias-corrected estimates for the first and second moments of the gradients, $\alpha$ is the learning rate, and $\epsilon$ is a small constant to prevent division by zero.
-Following the default hyperparameters recommended by~\citet{kingma2015adam}, this work uses $\alpha = 0.001$, $\beta_1 = 0.9$ $\beta_2 = 0.999$ and $\epsilon = 1 \times 10^{-8}$, with an L2 regularisation penalty applied via weight decay (see Table~\ref{tab:network_structure}).
-Mini-batch gradient descent is used to balance the computational efficiency of batch gradient descent with the noise reduction benefits of stochastic gradient descent, allowing for more stable convergence and better generalisation\citep{masters2018revisiting}.
-He initialisation is used to set the initial weights of the network, which helps to mitigate issues of vanishing or exploding gradients in deep networks, particularly when using ReLU activations\citep{he2015delving}.
+Following the default hyperparameters recommended by \citep{kingma2015adam}, this work uses $\alpha = 0.001$, $\beta_1 = 0.9$ $\beta_2 = 0.999$ and $\epsilon = 1 \times 10^{-8}$, with an L2 regularisation penalty applied via weight decay (see Table~\ref{tab:network_structure}).
+Mini-batch gradient descent is used to balance the computational efficiency of batch gradient descent with the noise reduction benefits of stochastic gradient descent, allowing for more stable convergence and better generalisation \citep{masters2018revisiting}.
+He initialisation is used to set the initial weights of the network, which helps to mitigate issues of vanishing or exploding gradients in deep networks, particularly when using ReLU activations \citep{he2015delving}.
 
 \subsection{Hyperparameter Selection}
-As you can see in the table in the section~\ref{subsec:-prediction_network}, we are using mostly defaults set by Adam optimiser.
-The learning rate was set to 0.001, which is a common default for Adam and provides a good balance between convergence speed and stability.
-The weight decay parameter was set to 0.0001, which helps to prevent overfitting by adding a penalty on large weights, encouraging the model to learn simpler patterns that generalise better to unseen data.
-The batch size of 512 was chosen to provide a good balance between computational efficiency\citep{masters2018revisiting}.
+As shown in Table~\ref{tab:network_structure}, we are using mostly defaults set by Adam optimiser.
+The learning rate was set to $1\times10^{-3}$, which is a common default for Adam and provides a good balance between convergence speed and stability.
+The weight decay parameter was set to $1\times10^{-4}$, which helps to prevent overfitting by adding a penalty on large weights, encouraging the model to learn simpler patterns that generalise better to unseen data.
+The batch size of 512 was chosen to provide a good balance between computational efficiency and stable gradient estimation.
 
 \subsection{Regularisation}
-The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4, which means that during training, 40\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons\citep{srivastava2014dropout}.
+The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4, which means that during training, 40\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons \citep{srivastava2014dropout}.
 L2 regularisation is applied through the weight decay parameter in the Adam optimiser, which adds a penalty proportional to the square of the magnitude of the weights, encouraging smaller weights and thus simpler models that are less likely to overfit.
 
 \section{Model Output Interpretation}
