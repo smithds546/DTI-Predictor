@@ -121,6 +121,32 @@ Here is a table describing the architecture of the prediction network:
 \end{tabular}
 \end{table}
 
+The full dual-branch architecture is defined as three PyTorch \texttt{nn.Module} classes: \texttt{DrugEncoder}, \texttt{ProteinEncoder}, and \texttt{InteractionPredictor}, composed inside the top-level \texttt{DTI\_DNN} module.
+Rather than applying a uniform dropout rate throughout the network, a tapered schedule was used in which deeper layers receive lower dropout than earlier ones.
+The reasoning is that deeper representations are more abstract and less redundant, so aggressive dropout at that stage risks destroying genuinely useful features rather than preventing the co-adaptation that dropout is designed to address.
+A two-thirds multiplier ($\approx 0.67$) was chosen empirically: with a base rate of $0.4$, the deeper dropout layers therefore use approximately $0.27$ ($0.4 \times 0.67$).
+Stronger tapers underused the regularisation budget in deeper layers, while weaker tapers produced less stable training; the $0.67$ value retained the benefit of regularisation without visible degradation during the iterative experiments described in Chapter~\ref{ch:-evaluation}.
+The forward-pass definition of the top-level module is shown below.
+
+\begin{lstlisting}[caption={dual-branch forward pass in DTI\_DNN}]
+class DTI_DNN(nn.Module):
+    def __init__(self, drug_input_dim=167, prot_input_dim=1024,
+                 drug_hidden=256, prot_hiddens=(512, 256),
+                 encoder_out=128, predictor_drop=0.4, encoder_drop=0.4):
+        super().__init__()
+        self.drug_encoder = DrugEncoder(drug_input_dim, drug_hidden,
+                                        encoder_out, encoder_drop)
+        self.prot_encoder = ProteinEncoder(prot_input_dim, prot_hiddens,
+                                           encoder_out, encoder_drop)
+        self.predictor = InteractionPredictor(encoder_out * 2, predictor_drop)
+
+    def forward(self, x_drug, x_prot):
+        drug_repr = self.drug_encoder(x_drug)
+        prot_repr = self.prot_encoder(x_prot)
+        fused = torch.cat([drug_repr, prot_repr], dim=1)
+        return self.predictor(fused)
+\end{lstlisting}
+
 \subsection{Fusion and Prediction Layer}
 The design choices reflected here were informed through iterative experimentation, the full progression is documented in Chapter~\ref{ch:-evaluation}.
 
@@ -138,6 +164,15 @@ The model is trained using Sigmoid + Binary Cross Entropy (BCE) loss function to
 \]
 Where $N$ is the number of training samples, $y_i$ is the true binary label for the $i$-th sample, and $\hat{y}_i$ is the predicted probability of the positive class (binding interaction) for the $i$-th sample.
 This loss function is more appropriate for binary classification because it penalises confident wrong predictions more heavily than MSE \citep{goodfellow2016deep}.
+
+To address the class imbalance identified in Chapter~\ref{chap:data-pipeline} ($\sim$61\% binders, $\sim$39\% non-binders), the loss is weighted using PyTorch's \texttt{pos\_weight} argument.
+This scales the positive-class contribution to the loss by the ratio of non-binders to binders computed on the training split, effectively giving underrepresented examples proportionally more influence during gradient updates without resampling the dataset.
+\begin{lstlisting}[caption={class-imbalance weighting for BCEWithLogitsLoss}]
+n_pos = y_train.sum().item()
+n_neg = len(y_train) - n_pos
+pos_weight = torch.tensor([n_neg / n_pos], dtype=torch.float32).to(device)
+criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+\end{lstlisting}
 
 \subsection{Optimisation Strategy}
 \label{subsec:optimisation_strategy}

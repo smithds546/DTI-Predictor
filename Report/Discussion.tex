@@ -26,11 +26,11 @@ PyTorch could manage a greater sample size, so we expanded to the full Bindingdb
 \subsubsection{Summary of Iterative Gains}
 The most important takeaway from the iterative improvements is that changing the framework to PyTorch with Adam had the most effective improvement.
 However, it doesn't take away from the small improvement made prior to those changes.
-The Numpy iterations collectively improved F1 score by ~0.04, whereas the Pytorch migration with a single optimiser contributed ~0.03 on top of that.
+The Numpy iterations collectively improved F1 score by 0.04, whereas the Pytorch migration with a single optimiser contributed 0.03 on top of that.
 While the framework change made the most effective improvement, it was the foundational improvements to the training procedure that accounted for the majority of the overall performance improvement.
 This highlights that proper training practices and activation function choices can matter as much as, if not more than, the choice of deep learning framework.
 \subsubsection{Final Model Performance}
-Our final model achieved an AUC-ROC of ~0.97; which is competitive with recent work such as MINDG \citep{Yang2024}.
+Our final model achieved an AUC-ROC of 0.97; which is competitive with recent work such as MINDG \citep{Yang2024}.
 This is impressive considering the architectural differences between the two models: MINDG uses a more complex architecture blending GNNs and CNNs to learn both structural and fingerprint representations, whereas our model relies on a fully connected DNN operating on concatenated ProtBERT and MACCS features.
 Despite this more complex architecture, MINDG was evaluated on a substantially smaller dataset of approximately 77,000 interactions compared to our 908,643, making direct comparison difficult.
 It is plausible that our larger training set compensates for the simpler feature representation, narrowing a gap that the literature suggests should be wider \citep{Vefghi2025}: structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.

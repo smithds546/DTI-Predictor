@@ -1,0 +1,17 @@
+\section*{Abstract}
+Drug discovery is a prolonged and expensive process, with the identification of viable drug-target interactions (DTIs) being one of the most resource-intensive stages of the process.
+Computational screening offers a scalable alternative to first-stage wet lab screening.
+Recent advances in deep learning have helped improve the accuracy DTI models can perform at from structural and sequence-based data.
+Many existing models use complex architectures that limit reproducibility and interpretability for users.
+
+This work presents the full pipeline of DTI prediction designed around accessibility and competitive performance.
+Drug molecules are encoded as MACCS fingerprints and target proteins as ProtBERT embeddings, with interactions and raw data extracted from the BindingDB dataset.
+A subset of interactions that classify as weak binders/non-binders $5.3 \geq pAffinity \leq 7$, defined as the \textit{Grey Area}, is removed from the dataset to reduce noise.
+A fully connected deep neural network is trained in PyTorch using the Adam optimiser and a weighted binary cross-entropy loss to address class imbalance, with a 65:20:15 train/validation/test split.
+
+The model achieves an AUC-ROC of approximately 0.97, exceeding the scores reported by MINDG (0.95) and DeepCDA (0.89) on comparable tasks.
+This comparison is made under a fixed split rather than a k-fold cross-validation approach used in those benchmarks.
+This model is accessible through a FastAPI backend and a React frontend as a virtual screening tool, allowing users to query drug molecules against selected protein targets.
+The work demonstrates that a well tuned fully connected architecture, paired with established molecular and protein encoders, can achieve competitive performance without the overhead of more elaborate graph-based or attention-based designs, while also highlighting the methodological considerations required when comparing results across evaluation protocols.
+\section*{Acknowledgemnts}
+I'd like to thank my supervisor for supporting me throughout the year.

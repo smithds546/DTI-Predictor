@@ -59,6 +59,7 @@ We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTo
 We cap the NumPy to 1000 epochs to allow for sufficient convergence under full-batch gradient descent; the PyTorch model was restricted to a tenth of that because of the mini-batch gradient descent and to reduce the chance of overfitting.
 This provided the PyTorch model with more gradient updates per epoch, so equivalent optimisation progress is made in far fewer epochs.
 To keep consistency throughout, each iteration will be evaluated on the same subset of the BindingDB dataset, the class distribution of which is shown in Table~\ref{tab:class-distribution}.
+This 18,520-row subset has already had the grey area ($5.3 \leq$ \textit{pAffinity} $\leq 7.0$) removed during the preprocessing stage described in Chapter~\ref{chap:data-pipeline}, so the iterative experiments are trained and evaluated only on high-confidence binders and non-binders.
 \begin{table}[H]
 \centering
 \caption{Class distribution across train, validation, and test splits.}
