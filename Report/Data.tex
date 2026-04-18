@@ -8,7 +8,7 @@ This chapter provides a detailed overview of how the data was sourced, processed
 Data is an extremely important part of this project, and it's important to gather a sufficient amount of scientifically accurate data so the model can be the most accurate as possible.
 This section will define how the data was sourced and manipulated to reach its final representation.
 \subsection{Primary Data Source}
-I extracted the initial bulk of my data from BindingDB \citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins.
+I extracted the initial bulk of my data from BindingDB~\citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins~\citep{Liu2025}.
 BindingDB serves as a critical resource to a diverse range of applications, including development of artificial intelligence models.
 The database has grown significantly, holding information on 2.9 million binding measurements for 1.3 million compounds.
 Data can be extracted through its web-services or downloaded directly.
@@ -133,7 +133,7 @@ In contrast, IC50 and EC50 are functional assays whose values depend on experime
 For a machine learning model intended to learn binding relationships, using equilibrium constants provides a more robust and interpretable basis (Figure~\ref{fig:ki_justification}A).
 \textbf{Data Quality:} After reviewing the graphs generated from the raw bindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 and Kd. Higher consistency is better for training the model as it's reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
 \textbf{Data Availability:} While IC50 measurements are more abundant in BindingDB (47,043 entries), Ki still provides 16,796 high-quality measurements.
-This is plenty to develop and train machine learning models as modern deep learning models have shown it's more valuable to have high-quality data than a higher quantity \citep{data_quality_ml}.
+This is plenty to develop and train machine learning models as modern deep learning models have shown it's more valuable to have high-quality data than a higher quantity \citep{Northcutt2021}.
 \textbf{Cross-Validation with Correlation Analysis:} To confirm the relationships between affinity types, a correlation heatmap was generated across all measurements in the raw BindingDB dataset (Figure~\ref{fig:corr_heatmap}). The high correlation between Ki and Kd (r = 0.94) confirms their mechanistic similarity as equilibrium constants.
 The moderate correlation between Ki and IC50 (r = 0.81) reflects IC50's dependence on experimental conditions, while the weaker correlation with EC50 (r = 0.55) highlights its distinct mechanistic basis as a measure of functional activity rather than binding affinity.
 \begin{figure}[H]
@@ -254,7 +254,7 @@ To normalise the sequences, so they're suitable for the neural network, the vari
 \subsection{ProtBERT}
 To ensure the embeddings were as accurate as possible, ProtBERT was used as it's a pretrained transformer model based off of the BERT architecture \citep{devlin2019bertpretrainingdeepbidirectional}.
 ProtBERT understands the contextual and biophysical properties of the amino-acid sequences as it has been trained on a huge database of protein sequences UniRef100 \citep{UniProt2025} containing 217 million sequences \citep{Elnaggar2020.07.12.199554}.
-By extracting the hidden states from the model through mean pooling, each protein sequence is condensed into a semantic vector embedding that fits the fixed-size, \textit{1024 floating-point values}, input and preserves the biological context, such as 3D structure or chemical polarity \citep{ProtBERT}.
+By extracting the hidden states from the model through mean pooling, each protein sequence is condensed into a semantic vector embedding that fits the fixed-size, \textit{1024 floating-point values}, input and preserves the biological context, such as 3D structure or chemical polarity~\citep{Elnaggar2020.07.12.199554}.
 
 Protein embedding (example, size 1024):
 \[

@@ -89,7 +89,7 @@ def _load_or_build() -> pd.DataFrame:
     return table
 \end{lstlisting}
 
-Protein representations are handled through a hash-indexed cache of precomputed ProtBERT embeddings \citep{ProtBERT}.
+Protein representations are handled through a hash-indexed cache of precomputed ProtBERT embeddings \citep{Elnaggar2020.07.12.199554}.
 Each protein sequence is mapped to a 1024-dimensional embedding vector stored as a NumPy \texttt{.npy} file, keyed by an MD5 hash of the sequence.
 At startup the prediction service builds a lookup table to map protein names to their amino acid sequences, reducing retrieval time of embeddings.
 
