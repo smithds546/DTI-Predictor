@@ -71,6 +71,7 @@ From this, the autocomplete endpoint creates drug and target lists.
 
 Molecular descriptors for all unique compounds are computed using RDKit \citep{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
 A staleness check compares the cached descriptor count against the number of unique SMILES in the current dataset, triggering a rebuild if they diverge by more than five per cent.
+This was chosen to tolerate small dataset changes to ensure cached data is consistent with the actual dataset.
 This is shown in the following code snippet:
 
 \begin{lstlisting}[caption={Descriptor cache loading with staleness check.}, label={lst:cache_load}]
@@ -108,7 +109,7 @@ This means the model class must be available in code at load time so that PyTorc
 When the FastAPI backend starts, the prediction service loads the \texttt{.pt} file once and retains the model in memory for the lifetime of the process.
 The loading procedure is as follows:
 \begin{enumerate}
-    \item An empty \texttt{DTI\_DNN} instance is created with the same architecture hyperparameters used during training (167-dimensional drug input, 1024-dimensional protein input, encoder widths of 256/512/256, and a dropout rate of 0.4).
+    \item An empty \texttt{DTI\_DNN} instance is created with the same architecture hyperparameters used during training: a 167-dimensional drug input passed through a drug encoder (167$\rightarrow$256$\rightarrow$128), a 1024-dimensional protein input passed through a protein encoder (1024$\rightarrow$512$\rightarrow$256$\rightarrow$128), and the resulting 256-dimensional representation passed through the interaction predictor (256$\rightarrow$256$\rightarrow$128$\rightarrow$64$\rightarrow$1), all with a dropout rate of 0.4.
     \item \texttt{torch.load} deserialises the \texttt{.pt} file into a state dictionary, mapping it to the best available hardware accelerator (Apple MPS, CUDA, or CPU).
     \item \texttt{load\_state\_dict} populates the empty model with the saved weights.
     \item The model is set to evaluation mode via \texttt{model.eval()}, which disables dropout and batch normalisation updates so that inference results are deterministic.

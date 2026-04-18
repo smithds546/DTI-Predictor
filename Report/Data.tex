@@ -32,7 +32,9 @@ Mixing heterogeneous affinity types like this is a known limitation of this appr
 But it is partially mitigated with a grey-area buffer used during binarisation, to only allow confidently strong binders and clear non-binders to receive labels.
 
 During the merge, the data was also cleaned to remove duplicate interactions, any rows with NULL values, and where affinity $\leq$ 0.
-After filtering for Homo sapiens targets only, the result was a completely unified table containing the necessary information to continue with feature engineering.
+The interactions were filtered to only include \textit{Homo sapiens} targets, because the goal is to produce therapeutic drugs for humans and cross-species affinity is not transferable.
+This keeps the distribution of pAffinity values more homogeneous and allows comparability with published benchmarks~\citep{Ozturk2018, Yang2024}.
+The result was a unified table containing the necessary information to continue with feature engineering.
 
 
 A snippet of the raw \texttt{.tsv} file is shown in Table~\ref{tab:raw_csv}.
@@ -89,9 +91,9 @@ After merging, cleaning, and binarization, the final unified dataset was created
 % ------------------------------------------
 
 \subsection{Drug Identifier Normalization}
-Drug identifiers provided by BindingDB corresponded to experimental compounds instead of approved and recognised drug names.
-This made it difficult to use the front end as the identifiers were very lengthy and chemically descriptive.
-To address this, the identifiers were normalised to be in simpler forms while being retained to ensure traceability back to the original BindingDB database.
+Drug identifiers provided by BindingDB corresponded to experimental compounds, usually lists of numbers that are lengthy and opaque to non-specialist users, instead of approved and recognised drug names.
+To improve the usability if the virtual screening interface and enable cross-referencing against external drug databases, the identifiers were normalised to be in simpler forms.
+The original identifier was retained to ensure traceability back to the BindingDB database.
 \begin{lstlisting}[caption={drug name normalisation from BindingDB identifiers}]
 def normalize_drug_name(self, name: str):
     if name is None or pd.isna(name):
@@ -230,7 +232,8 @@ After removing the 507,382 pairs falling within the grey area, the remaining int
 \bottomrule
 \end{tabular}
 \end{table}
-A subsampled copy with 18.5k interactions was used for the iterative experiments to be compatible with NumPy backpropogation.
+A subsampled copy with 18,520 interactions was used for the iterative experiments.
+This allowed for more appropriate training times with NumPy backpropogation.
 This was split train/val/text as 12,038/3,704/2,778, and the distribution was mentioned in Table~\ref{tab:class-distribution} in the evaluation section.
 
 \section{Feature Engineering}
@@ -265,6 +268,7 @@ This is an important step to prevent overfitting of the model on the dataset, ke
 \subsection{Train-Validation-Test Split Methodology}
 To ensure reproducibility, the dataset was split similarly to~\citet{Nunes2019, Lorenz2019} at a ratio of 65:20:15.
 To make it a random sampling approach, a fixed random seed (random\_state = 42) was used to make the sampling procedure deterministic, meaning each run produces the same split.
+The specific value 42 is an arbitrary choice and has no effect on results beyond determinism.
 This is important for reliable model evaluation, comparison between experiments, and debugging.
 The splitting was split into two stages:
 \begin{itemize}

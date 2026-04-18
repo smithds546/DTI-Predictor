@@ -56,6 +56,8 @@ Here we will begin the evaluation of our models, opening with a basic NumPy impl
     \label{sec: eval_setup}
 Before we venture further, it's good to determine our setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
 We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model uses 100, both will introduce and implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
+We cap the NumPy to 1000 epochs to allow for sufficient convergence under full-batch gradient descent; the PyTorch model was restricted to a tenth of that because of the mini-batch gradient descent and to reduce the chance of overfitting.
+This provided the PyTorch model with more gradient updates per epoch, so equivalent optimisation progress is made in far fewer epochs.
 To keep consistency throughout, each iteration will be evaluated on the same subset of the BindingDB dataset, the class distribution of which is shown in Table~\ref{tab:class-distribution}.
 \begin{table}[H]
 \centering
@@ -73,15 +75,13 @@ Total      & 11,188 & 7,332 & 18,520 \\
 \bottomrule
 \end{tabular}
 \end{table}
-    % Briefly describe training procedure
-    % (e.g. number of epochs, early stopping criteria, hardware used)
-
 
     \subsection{Baseline: Basic NumPy Model}
     \label{sec: eval_basic}
     % (~200 words + figures)
-    To establish a baseline for our DTI prediction task, we implemented a simple feedforward neural network using only NumPy.
+    To establish a baseline for our DTI prediction task, we implemented a simple feedforward neural network using only NumPy and a deliberately minimal baseline with a low complexity.
     This model consists of a single hidden layer with sigmoid activations, which is also present on the output layer, and it is trained using Binary Cross-Entropy (BCE) loss.
+    The absence of many components intentionally allows for incremental improvement, and any improvement in performance can be attributed to a specific change and not a combination of them.
     We trained the model with these settings:
   \begin{table}[H]
   \centering
@@ -293,7 +293,8 @@ Regularisation techniques such as dropout and batch normalisation will be explor
 
 \subsubsection{Dropout Added}
 To combat the overfitting created by a second hidden layer, we will add dropout regularisation, which randomly zeroes out a fraction of the activations during training to prevent co-adaptation of neurons and encourage the model to learn more robust features \citep{srivastava2014dropout}.
-After adding a dropout of 0.2, we observed the following changes in performance:
+We chose a low dropout rate of 0.2 compared with~\citet{srivastava2014dropout}, who recommend a dropout of 0.5 in large networks, to reflect the smaller scale of this model and the presence of other regularisation techniques.
+After adding the dropout, we observed the following changes in performance:
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -451,7 +452,7 @@ Reported DeepCDA metrics are taken from \citet{Yang2024}.
 \midrule
 DeepCDA \citep{Abbasi2020}    & 0.894 & 0.901 & 0.811 & 0.760 & 0.831 \\
 \midrule
-This work (Torch DNN, 18k subset)         & 0.8670 & 0.8935 & 0.8302 & 0.8322 & 0.7963 \\
+This work (Torch DNN, reduced dataset)         & 0.8670 & 0.8935 & 0.8302 & 0.8322 & 0.7963 \\
 \bottomrule
 \end{tabular}
 }%

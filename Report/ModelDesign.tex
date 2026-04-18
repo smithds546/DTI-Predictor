@@ -47,10 +47,10 @@ Drug molecules are represented using MACCS fingerprints, which encode the presen
 The fixed dimensionality makes it well suited for neural networks as it allows the model to learn patterns between specific substructures and binding behaviour.
 This also makes it computationally efficient and reproducible across multiple experiments.
 \subsection{Protein Representation}
-Target proteins are represented using contextual embeddings created by the pretrained ProtBERT transformer model.
-Unlike traditional sequence-based embeddings, transformer-based embeddings capture bidirectional and context-dependent semantic meanings within amino acid sequences, reflecting underlying biochemical and structural properties.
+Target proteins are represented using contextual embeddings created by the pretrained ProtBERT transformer model~\citep{Elnaggar2020.07.12.199554}.
+Unlike fixed sequence-based embeddings, transformer-based embeddings capture bidirectional and context-dependent semantic meanings within amino acid sequences, capturing biochemical properties and structural information.
 
-Each protein sequence is mapped to a fixed-length vector through mean pooling to produce a representation suitable for neural network processing.
+Each protein sequence is mapped to a fixed-length vector through mean pooling to produce a representation suitable for neural network processing; this is the aggregation strategy used in the original ProTrans work~\citep{Elnaggar2020.07.12.199554}.
 Mean pooling provides a simple method for aggregating variable-length protein sequences while preserving global contextual information learned by the transformer.
 This approach enables the model to leverage rich semantic information learned from large protein databases, improving generalisation to unseen targets.
 
@@ -58,10 +58,10 @@ This approach enables the model to leverage rich semantic information learned fr
 Due to the heterogeneous nature of Dual Inputs, the architecture is slightly modified from traditional neural networks.
 Separate encoding pathways are used to process each input to a usable, unified representation for interaction prediction.
 
-Both encoders operate as trainable feature extractors and can be updated during model training.
-Learning is therefore concentrated in the prediction stage, reducing model complexity and improving training stability.
+The \texttt{DrugEncoder} and \texttt{ProteinEncoder} are trainable multilayer perceptrons that project the precomputed MACCS and ProtBERT features into a shared 128-dimensional latent space.
+Their parameters are updated jointly with the \texttt{InteractionPredictor} during training.
+This two-stage design separates fixed, domain-informed feature extraction from learned task-specific adaptation: the representations contribute chemical and biological data, while the encoders learn to emphasise the most informative components of those representations for binding prediction.
 
-This modular design enables future extensions, such as introducing trainable encoder layers or alternative fusion strategies, without requiring changes to the underlying data pipeline.
 \subsection{Drug Encoder}
 The drug encoder is responsible for transforming molecular SMILES string into a numerical representation using MACCS (Molecular ACCess System) keys \citep{durant2002reoptimization}.
 The SMILES representation is parsed into an RDKit object, where MACCS fingerprint generation is applied, producing a 167-bit binary vector.
@@ -79,6 +79,8 @@ This is particularly effective during dataset re-processing, as previously compu
 
 \subsection{Protein Encoder}
 The protein encoder is a four-layer MLP (1024$\rightarrow$512$\rightarrow$256$\rightarrow$128) that compresses the precomputed ProtBERT embedding into a 128-dimensional latent representation.
+This follows the design pattern used by~\citet{Singh2023}, where frozen pretrained protein language model embeddings are transformed into a lower-dimensional shared latent space by a learned nonlinear projection.
+The layer widths being halved at each step, acts as a soft information bottleneck that encourages the encoder to only keep components of the ProtBERT embedding that are most informative for interaction prediction.
 Unlike the frozen ProtBERT model, this encoder is trainable and participates in gradient-based optimisation during model training.
 
 \subsection{Prediction Network}
@@ -154,8 +156,11 @@ He initialisation is used to set the initial weights of the network, which helps
 \subsection{Hyperparameter Selection}
 As shown in Table~\ref{tab:network_structure}, we are using mostly defaults set by Adam optimiser.
 The learning rate was set to $1\times10^{-3}$, which is a common default for Adam and provides a good balance between convergence speed and stability.
-The weight decay parameter was set to $1\times10^{-4}$, which helps to prevent overfitting by adding a penalty on large weights, encouraging the model to learn simpler patterns that generalise better to unseen data.
+Weight decay adds a penalty proportional to the squared magnitude of the weights to the loss function, which helps to prevent overfitting by adding a penalty on large weights.
+This encourages the model to learn simpler patterns that generalise better to unseen data~\citep{Krogh1992}.
+A value of $1\times10^{-4}$ was chosen through tuning, and it is consistent as a default value commonly used in PyTorch training pipelines.
 The batch size of 512 was chosen to provide a good balance between computational efficiency and stable gradient estimation.
+This sits at the upper boundary of the small-batch regime identified by \citet{Keskar2017}, which is typically 32--512 and generalises better than larger batches.
 
 \subsection{Regularisation}
 The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4, which means that during training, 40\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons \citep{srivastava2014dropout}.
