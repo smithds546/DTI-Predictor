@@ -5,7 +5,8 @@
 Each iteration of the model produced measurable gains in performance, let us break it down into what makes the most difference when it comes to model performance.
 \subsubsection{Training}
 During the iterative improvement to training, the largest improvement came with ReLU activations, suggesting the model was suffering from vanishing gradients in its hidden layers.
-Sigmoid activations squash their output to the range (0, 1), and their gradient peaks at just 0.25, meaning that in a multi-layer network the gradients diminish exponentially as they propagate backward through each layer.
+Sigmoid activations squash their output to the range (0, 1).
+Their derivative $\sigma'(x) = \sigma(x)(1 - \sigma(x))$ reaches a maximum of $0.25$ at, $x = 0$ so in a multi-layer network, the gradients diminish exponentially as they propagate backward through each layer.
 This causes the earlier layers to learn very slowly, effectively limiting the network's capacity to extract meaningful patterns from the input features.
 ReLU avoids this by passing a constant gradient of 1 for all positive inputs, allowing the network to train its deeper layers effectively and make better use of the available model capacity.
 Early Stopping had the only reduction in performance.
