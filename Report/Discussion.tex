@@ -36,21 +36,28 @@ Despite this more complex architecture, MINDG was evaluated on a substantially s
 It is plausible that our larger training set compensates for the simpler feature representation, narrowing a gap that the literature suggests should be wider \citep{Vefghi2025}: structure-based and hybrid methods consistently outperform sequence-only approaches because they capture topological information that fingerprints discard.
 However, a controlled ablation would be needed to determine whether dataset scale or feature richness is the greater contributing factor.
 \subsubsection{Threshold Sweep}
-The threshold sweep revealed the optimal decision boundary for classifying drug-target pairs as interacting to be 0.3, getting the highest f1 score of all threshold levels.
-This visualises the effect concerning the class imbalance of the dataset; the score of 0.3 suggests the models' raw probability outputs are miscalibrated.
-This is common when training data has an unequal ratio of positive and negative.
+The threshold sweep revealed the optimal decision boundary for classifying drug-target pairs as interacting to be 0.3, getting the highest F1 score of all threshold levels.
+This visualises the effect concerning the class imbalance of the dataset; the score of 0.3 suggests the model's raw probability outputs are miscalibrated, which is common when training data has an unequal ratio of positive and negative samples.
+Beyond the raw F1 optimisation, selecting a lower threshold is also appropriate for drug discovery.
+The asymmetric cost structure of the task favours recall over precision: a false negative represents a potential therapeutic that will never be experimentally tested, while a false positive adds validation costs.
+Dropping the threshold from the default 0.5 to 0.3 raises recall from 0.83 to 0.93 at the cost of a small precision drop, which is the correct trade-off for an early-stage screening tool intended to flag candidates for early on rather than making definitive binding decisions.
 
 \section{Impact of Design Choices}
 \subsection{Data Preprocessing}
 \subsubsection{Binarisation}
-The binarisation threshold was chosen to create a clear distinction between binders and non-binders, with the grey area defining an area of uncertainty where interactions that fall within are unaccounted for.
-The grey area was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (507,382 pairs).
+The binarisation thresholds were chosen to create a clear distinction between binders and non-binders.
+This grey area captures interactions whose affinity is too ambiguous to label confidently and was defined as (5.3 $\leq$ pAffinity $\leq$ 7.0), to remove genuinely ambiguous interactions (507,382 pairs).
 Values above 7.0 are considered as good binders, consistent with DTI literature \citep{huang2021moltrans}.
 The lower bound of 5.3 is a stricter non-binder threshold compared to what is used in MolTrans, reducing the risk of weak binders being mislabelled as non-binders.
-As seen in the Chapter~\ref{chap:data-pipeline}, this leaves us with an unbalanced dataset of ~61\% being binders.
+As seen in the Chapter~\ref{chap:data-pipeline}, this leaves us with an imbalanced dataset of roughly 61\% being binders.
 This gave the model stronger reasoning signals to learn from, with the tradeoff of having fewer interactions to train the model from.
+
+This choice is validated empirically by the grey-area analysis in Section~\ref{subsec:grey-area-analysis}, where alternative thresholds were tested ($\mu \pm 0.25\sigma$, $\mu \pm 0.5\sigma$, and no grey area at all).
+These alternatives produced a more balanced class distribution, including a near-perfect 50/50 split when the grey area was removed entirely, yet all of them underperformed the original 5.3/7.0 thresholds across every metric.
+This is a counterintuitive but informative result: label quality dominates class balance for this task.
+Allowing ambiguously labelled interactions into the training set introduces noise that outweighs the statistical benefit of a more balanced class distribution, justifying the stricter literature-aligned thresholds despite the resulting 61/39 imbalance.
 \subsubsection{Class Imbalance}
-To handle our class imbalance, a weighted loss function was utilised during model training.
+To handle our class imbalance, the loss was weighted during model training.
 Specifically, we calculated a \textit{pos\_weight} as the ratio of non-binders to binders and passed it to the \textit{BCEWithLogitsLoss} function in PyTorch.
 This ensured that the model did not become biased towards the more frequent class and could effectively learn to identify both binders and non-binders.
 
@@ -71,15 +78,15 @@ ProtBERT embeddings were cached as \textbf{NumPy} files instead of being compute
 However, if the ProtBERT embedding isn't pre-cached, the request will fail and not compute at all.
 This is the case because embeddings are pre-computed and cached upon before the web server starts the autocomplete function can only suggest targets from the training set.
 \subsubsection{Batch Screening}
-The Virtual Screening functionality used MaxMin diversity picking because it provides a better coverage of the chemical space with lots of different compounds.
+The Virtual Screening functionality used MaxMin diversity picking because it provides better coverage of the chemical space with lots of different compounds.
 This is more useful for users who want to quickly screen a large number of compounds and get a diverse set of predictions.
 However, this may obviously miss out some key binders that are similar to each other but are still important to test.
 
 \section{Limitations}
 \subsection{Dataset}
-The NumPy model was trained on roughly 2\% of the BindingDB dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
-This was due to computational constraints when using NumPy-based backpropogation, tests couldn't be completed in an appropriate time-frame.
-Using a Single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
+The NumPy model was trained on 18,520 pairs (approximately 2\%) of the BindingDB dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
+This was due to computational constraints when using NumPy-based backpropagation, tests couldn't be completed in an appropriate time-frame.
+Using a single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
 The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
 \subsection{Model}
 Fixed fingerprint representation limits what the model can learn.
@@ -87,6 +94,7 @@ Without structural information, the model is restricted to only learning from th
 Also, approaching the task as binary classification loses granularity in the data, as the model is only learning to predict whether an interaction is likely or not, rather than the strength of the interaction.
 A practical consequence of this is observable through the virtual screening interface: when filtering for compounds that are known binders to a given protein in the training data and then screening those same compounds against the same protein, the model predicts fewer than half as binders.
 This is not a bug but a natural outcome of how the model generalises.
+
 The known-binder labels come directly from BindingDB, but the model's predictions are based on learned patterns from compressed feature representations (167-bit MACCS fingerprints and 1024-dimensional ProtBERT embeddings).
 Regularisation techniques such as dropout and weight decay actively prevent the model from memorising the training set, meaning it will not perfectly reproduce the training labels.
 Some true binders may have fingerprint representations that sit close to the decision boundary and fall on the wrong side, particularly when their binding is driven by structural features that MACCS fingerprints do not capture.

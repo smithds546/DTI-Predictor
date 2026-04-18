@@ -22,6 +22,7 @@ Within this section, we will outline the components of our evaluation methodolog
         \item Recall (Sensitivity)
         \item Accuracy
         \item Confusion Matrix
+        \item Specificity
     \end{itemize}
 
 Accuracy is a fundamental metric that measures the performance by finding out the ratio between correct predictions and all predictions.
@@ -288,7 +289,7 @@ After adding a second hidden layer, we observed the following changes in perform
     \caption{Improvements from adding a second hidden layer.}
     \label{fig:arch1_improvements}
 \end{figure}
-The addition of a second hidden layer strangely led to a drop in performance across all metrics, which suggests that the model may be overfitting to the training data or that the additional layer is not being effectively trained with the current settings.
+The addition of a second hidden layer unexpectedly led to a drop in performance across all metrics, which suggests that the model may be overfitting to the training data or that the additional layer is not being effectively trained with the current settings.
 This highlights the importance of careful architectural design and the need for regularisation techniques to prevent overfitting when increasing model complexity.
 Regularisation techniques such as dropout and batch normalisation will be explored in the next iteration to address these issues.
 
@@ -368,10 +369,10 @@ This highlights the delicate balance between precision and recall when tuning re
     \subsection{New framework}
     \label{sec: eval_iter3}
 The architectural changes to the model have slightly improved performance but still haven't fully addressed the overfitting issue, so we will make more significant changes to the training procedure and architecture in this iteration to further improve performance.
-\subsubsection{Pytorch Implementation}
-We implement the model in pytorch with the same architecture and training procedure used in architectural iteration 4.
+\subsubsection{PyTorch Implementation}
+We implement the model in PyTorch with the same architecture and training procedure used in architectural iteration 4.
 This is to maintain comparability whilst also leveraging the benefits of modern deep learning frameworks such as automatic differentiation, efficient GPU computation, and built-in regularisation techniques \citep{paszke2019pytorch}.
-The initial implementation builds upon architectural iteration 4 (reference back to Figure arch4~\ref{fig:arch4_improvements}) whilst also utilising a dual-branch PyTorch encoder to process drug and target features separately before concatenating them for the final prediction.
+The initial implementation builds upon architectural iteration 4~\ref{fig:arch4_improvements} whilst also utilising a dual-branch PyTorch encoder to process drug and target features separately before concatenating them for the final prediction.
 This had significant improvements, as seen in the following metrics table and AUC-ROC curve:
 \begin{figure}[H]
     \centering
@@ -428,7 +429,7 @@ This makes for a fair comparison with our model because both are binary classifi
 Neither model is a direct implementation of the other, but they share enough similarities in their overall approach and training data to allow for a meaningful comparison of their performance metrics.
 
 \subsection{Performance Comparison}
-Here we will compare the performance of our current model against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
+To establish a reference point before scaling up the data, we will compare the performance of our current model against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
 
 \subsubsection{Methodological Differences}
 Before comparing our model's performance against DeepCDA, it's important to acknowledge the methodological differences between the two evaluations.
@@ -477,7 +478,7 @@ PyTorch can handle the load better than a NumPy approach for the following reaso
     \item \textbf{GPU acceleration:} PyTorch offloads matrix multiplications to the GPU, NumPy runs everything on a single CPU.
     \item \textbf{Automatic batched computation:} PyTorch's DataLoader streams mini-batches to the GPU without loading the full dataset into working memory at once.
     The NumPy scripts manually slice arrays and do full matrix operations on CPU RAM.
-    \item \textbf{Optimised autograd:} As mentioned earlier, autograd performs the backpropogation on a compiled C++ computation graph, when NumPy computes gradients with python loops.
+    \item \textbf{Optimised autograd:} As mentioned earlier, autograd performs the backpropagation on a compiled C++ computation graph when NumPy computes gradients with python loops.
 \end{itemize}
 
 \begin{figure}[H]
@@ -498,7 +499,7 @@ PyTorch can handle the load better than a NumPy approach for the following reaso
 \end{figure}
 
 The increased sample size has dramatically improved the performance of the model, being much more consistent over validation and test datasets.
-The models were exactly the same, yet the change in data from ~18k to ~900k has reduced overfitting without redistributing the class balance, which we get onto in the following subsections.
+The models were exactly the same, yet the change in data from ~18k to ~900k has reduced overfitting without redistributing the class balance, which we unravel in the following subsections.
 
 
     \subsection{Effect of Decision Threshold}
@@ -650,7 +651,7 @@ This work uses a fixed train/validation/test split.}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccc}
 \toprule
-\textbf{Method} & \textbf{PR-AUC} & \textbf{AUC-ROC} & \textbf{F1-score} & \textbf{Sen.} & \textbf{Spec.} & \textbf{Precision} & \textbf{Accuracy} \\
+\textbf{Method} & \textbf{PR-AUC} & \textbf{AUC-ROC} & \textbf{F1-score} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Precision} & \textbf{Accuracy} \\
 \midrule
 DeepCDA          & $0.901 \pm 0.012$ & $0.894 \pm 0.003$ & $0.811 \pm 0.005$ & $0.872 \pm 0.013$ & $0.840 \pm 0.004$ & $0.760 \pm 0.016$ & $0.831 \pm 0.011$ \\
 TripletMulti-DTI & $0.940 \pm 0.003$ & $0.931 \pm 0.001$ & $0.840 \pm 0.002$ & $0.917 \pm 0.022$ & $\mathbf{0.863 \pm 0.001}$ & $0.792 \pm 0.008$ & $0.865 \pm 0.005$ \\
