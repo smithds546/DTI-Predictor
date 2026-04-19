@@ -1,7 +1,7 @@
 \chapter{Evaluation}
 \label{ch:-evaluation}
 
-Here we will evaluate the performance of our drug-target interaction (DTI) prediction model across multiple iterations of development.
+This chapter evaluates the performance of the drug-target interaction (DTI) prediction model across multiple iterations of development.
 The evaluation will be structured around three key areas: \textbf{1}: model progression through iterative improvements (training, architecture, framework); \textbf{2}: sensitivity to data and decision thresholds; and \textbf{3}: comparison of the final model against established state-of-the-art DTI methods on BindingDB.
 Through this comprehensive evaluation, we aim to demonstrate the effectiveness of our modelling choices and identify areas for future improvement.
 
@@ -10,10 +10,10 @@ Through this comprehensive evaluation, we aim to demonstrate the effectiveness o
 \label{sec: eval_methodology}
 % (~200 words)
 % Justify your choices BEFORE presenting results.
-Within this section, we will outline the components of our evaluation methodology, including the metrics we will use to assess model performance, the data splits for training and testing, and the rationale behind our choice of a decision threshold for classification.
+This section will outline the components of our evaluation methodology, including the metrics we will use to assess model performance, the data splits for training and testing, and the rationale behind our choice of a decision threshold for classification.
     \subsection{Metrics}
     \label{sec: eval_metrics}
-    To evaluate our models, we will find out the following metrics from the training, validation, and test set predictions:
+    To evaluate the models, we will find out the following metrics from the training, validation, and test set predictions:
     \begin{itemize}
         \item Area Under the Receiver Operating Characteristic Curve (AUC-ROC)
         \item Area Under the Precision-Recall Curve (PR-AUC)
@@ -36,26 +36,26 @@ Finally, the confusion matrix provides a detailed breakdown of true positives, f
 
     \subsection{Data Splits and Reproducibility}
     \label{sec: eval_splits}
-This work uses a fixed 65/20/15 split of the bindingDB data for our training, validation, and test sets.
-However, this is contrasting a 10-fold cross-validation approach used by DeepCDA and MINDG, which means that the reported metrics from those papers are not directly comparable to our results, but rather serve as approximate reference points.
+This work uses a fixed 65/20/15 split of the BindingDB data for the training, validation, and test sets.
+However, this is contrasting a 10-fold cross-validation approach used by DeepCDA and MINDG, which means that the reported metrics from those papers are not directly comparable to the results, but rather serve as approximate reference points.
 To address all possible corridors of evaluation, we will also adjust the data splits to assess any changes in performance.
 
     \subsection{Decision Threshold}
     \label{sec: eval_threshold}
-Another important aspect of our evaluation is the choice of the decision threshold for classifying predictions as positive or negative interactions.
+Another important aspect of the evaluation is the choice of the decision threshold for classifying predictions as positive or negative interactions.
 We have opted for pAffinity value $> 7.0$ determining binder and pAffinity value $< 5.3$ determining non-binder with a grey area of 1.70 pAffinity units as mentioned in~\ref{sec: data_threshold}.
-However, to improve the robustness of our model, we will experiment with these figures to fully evaluate the model.
+However, to improve the robustness of the model, we will experiment with these figures to fully evaluate the model.
 
 % ============================================================
 \section{Model Evaluation}
 \label{sec:model_eval}
-Here we will begin the evaluation of our models, opening with a basic NumPy implementation and iteratively improving it through changes to the loss function, architecture, and training procedure.
+Evaluation of the model opens with a basic NumPy implementation and iteratively improving it through changes to the loss function, architecture, and training procedure.
 
     % --------------------------------------------------------
 
     \subsection{Experimental Setup}
     \label{sec: eval_setup}
-Before we venture further, it's good to determine our setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
+Before we venture further, it's good to determine the setup; we will run each model on the same hardware (Macbook Air M3, 16GB RAM) to ensure a fair comparison of training times and computational efficiency.
 We will train the NumPy iteration models with a maximum of 1000 epochs; the PyTorch model uses 100, both will introduce and implement early stopping based on validation loss to prevent overfitting and reduce unnecessary computation.
 We cap the NumPy to 1000 epochs to allow for sufficient convergence under full-batch gradient descent; the PyTorch model was restricted to a tenth of that because of the mini-batch gradient descent and to reduce the chance of overfitting.
 This provided the PyTorch model with more gradient updates per epoch, so equivalent optimisation progress is made in far fewer epochs.
@@ -81,10 +81,10 @@ Total      & 11,188 & 7,332 & 18,520 \\
     \subsection{Baseline: Basic NumPy Model}
     \label{sec: eval_basic}
     % (~200 words + figures)
-    To establish a baseline for our DTI prediction task, we implemented a simple feedforward neural network using only NumPy and a deliberately minimal baseline with a low complexity.
+    To establish a baseline for the DTI prediction task, we implemented a simple feedforward neural network using only NumPy and a deliberately minimal baseline with a low complexity.
     This model consists of a single hidden layer with sigmoid activations, which is also present on the output layer, and it is trained using Binary Cross-Entropy (BCE) loss.
     The absence of many components intentionally allows for incremental improvement, and any improvement in performance can be attributed to a specific change and not a combination of them.
-    We trained the model with these settings:
+    Table~\ref{tab:hyperparams} showcases the setup for the initial model.
   \begin{table}[H]
   \centering
   \caption{Hyperparameter selection in the NumPy baseline.
@@ -130,8 +130,8 @@ The AUC-ROC of $\sim$0.75 suggests that the model has a reasonable ability to di
 The Precision score of $\sim$0.75 indicates that when the model predicts a positive interaction, it is correct ~75\% of the time, which is decent but could lead to some false positives that would require experimental validation.
 
     \subsubsection{Hyperparameter tuning}
-To further evaluate the baseline model, we conducted a hyperparameter tuning experiment by varying the learning rate and hidden layer size.
-After doing a sweep of learning rate and hidden size comparing these values together, we retrieved these graphs comparing the difference in each parameter:
+To further evaluate the baseline model, a hyperparameter sweep was conducted by varying the learning rate and hidden layer size.
+The Figure~\ref{fig:hyperparam_sweep} visualises the sweep of learning rate and hidden size visualising the difference in each parameter:
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -154,10 +154,10 @@ This suggests the basic model has reached a boundary in performance imposed by i
 
     \subsection{Training Procedure advancements}
     \label{sec: eval_iter1}
-After seeing how our very basic model performed, we have decided to make progressive changes to the training procedure to improve performance.
+After seeing how the very basic model performed, progressive changes to the training procedure will be tested to improve performance.
         \subsubsection{Minibatch Gradient Descent}
-To start with, we will add minibatch gradient descent because it can provide more stable and efficient updates compared to full batch training, especially on larger datasets.
-After making the change, we saw a change to the metrics shown below:
+Minibatch gradient descent provides more stable and efficient updates compared to full batch training, especially on larger datasets.
+The results of which are seen in Figure~\ref{fig:iter1_metrics_table}.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{/Users/drs/Projects/DTI/Backend/app/Models/Training/figures/iter1_metrics_table.png}
@@ -182,7 +182,7 @@ And a different loss curve compared to the baseline, this change is because the 
     \caption{Training loss curves comparing the baseline to Iteration 1.}
     \label{fig:loss_curve_comparison}
 \end{figure}
-During the training of the baseline model, we can observe a significant instability spike.
+The training of the baseline model, produced a significant instability spike.
 This is a characteristic of full-batch gradient descent with an aggressive learning rate.
 Mini-batch gradient descent eliminates this instability by providing more frequent updates, which allows the model to adjust its weights more smoothly and avoid large jumps in the loss landscape.
 This results in a more stable training process, as evidenced by the smoother loss curve in Iteration 1 compared to the baseline.
@@ -197,7 +197,7 @@ where $n_{\text{in}}$ is the number of input units in the layer.
 This method is particularly effective for layers with ReLU activations, as it helps maintain the variance of the activations throughout the network, which can lead to faster convergence and improved performance.
 He initialisation was designed for ReLU activations specifically; applying it alongside sigmoid hidden units is a deliberate intermediate step, as ReLU hidden activations are introduced in the following iteration.
 Nonetheless, the variance-preserving property of He initialisation still offers an improvement over naive small weight initialisation ($\times 0.01$) regardless of activation function.
-These small improvements can be seen within these metrics and comparison of loss curves:
+These small improvements can be seen within Figure~\ref{fig:iter2_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -217,13 +217,13 @@ These small improvements can be seen within these metrics and comparison of loss
 The improvements from Iteration 1 to Iteration 2 are modest but consistent across all metrics.
 
     \subsubsection{ReLU activations}
-To further improve the training stability and representational capacity of our model, we will replace the sigmoid activations in the hidden layer with ReLU (Rectified Linear Unit) activations.
+To further improve the training stability and representational capacity of the model, we will replace the sigmoid activations in the hidden layer with ReLU (Rectified Linear Unit) activations.
 ReLU is defined as:
 \begin{equation}
     \text{ReLU}(x) = \max(0, x)
 \end{equation}
 ReLU addresses the vanishing gradient problem associated with sigmoid activations, as it allows for a constant gradient for positive inputs, which helps maintain the flow of gradients during backpropagation, especially in deeper networks \citep{nair2010rectified}.
-This change was impactful and can be seen in the metrics and loss curves:
+This change was impactful and can be seen in the Figure~\ref{fig:iter3_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -243,8 +243,8 @@ This change was impactful and can be seen in the metrics and loss curves:
 The switch to ReLU activations in Iteration 3 led to a noticeable improvement in all performance metrics, particularly in AUC-ROC and F1 score, which suggests that the model is now better able to capture complex patterns in the data and distinguish between binders and non-binders more effectively.
 
 \subsubsection{Early Stopping}
-Our final iteration to the training procedure is to add early stopping based on validation loss, which can help prevent overfitting and reduce training time by halting training once the model's performance on the validation set starts to degrade.
-After adding early stopping, we observed the following changes in performance:
+The final iteration to the training procedure is to add early stopping based on validation loss, which can help prevent overfitting and reduce training time by halting training once the model's performance on the validation set starts to degrade.
+After adding early stopping, the performance changes can be seen in Figure~\ref{fig:iter4_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -263,16 +263,16 @@ After adding early stopping, we observed the following changes in performance:
 \end{figure}
 As seen in Figure~\ref{fig:iter4_improvements}, early stopping led to premature halting of training, missing out on some of the later epochs where the model could have achieved better performance.
 This is a common issue with early stopping, as it relies on the validation loss to determine when to stop training, and if the validation loss is noisy or has a local minimum, it can cause the training to stop too early before the model has fully converged.
-For these reasons we will not be using early stopping in our final model for validation loss but only for validation AUC.
+For these reasons we will not be using early stopping in the final model for validation loss but only for validation AUC.
 However, for the rest of the iterative improvements we will be using iteration 3 as the basis for future advancements to architecture.
 
     \subsection{Architecture Advancements}
     \label{sec: eval_iter2}
-Next, we will make some architectural changes to our model to further improve its performance.
+Next, architectural changes to the model occur to further improve its performance.
 \subsubsection{More Layers}
-To increase the representational capacity of our model, we will add an additional hidden layer to deepen the network.
+To increase the representational capacity of the model, we will add another hidden layer to deepen the network.
 This allows the model to learn more complex patterns in the data, which should lead to improved performance.
-After adding a second hidden layer, we observed the following changes in performance:
+The effect of a second hidden layer can be seen in Figure~\ref{fig:arch1_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -296,7 +296,7 @@ Regularisation techniques such as dropout and batch normalisation will be explor
 \subsubsection{Dropout Added}
 To combat the overfitting created by a second hidden layer, we will add dropout regularisation, which randomly zeroes out a fraction of the activations during training to prevent co-adaptation of neurons and encourage the model to learn more robust features \citep{srivastava2014dropout}.
 We chose a low dropout rate of 0.2 compared with~\citet{srivastava2014dropout}, who recommend a dropout of 0.5 in large networks, to reflect the smaller scale of this model and the presence of other regularisation techniques.
-After adding the dropout, we observed the following changes in performance:
+After adding the dropout, we observed the following changes in Figure~\ref{fig:arch2_improvements.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -313,7 +313,7 @@ After adding the dropout, we observed the following changes in performance:
     \caption{Improvements from adding dropout regularisation.}
     \label{fig:arch2_improvements}
 \end{figure}
-As you can see above, the addition of dropout led to a small improvement in precision while sacrificing some recall, which is a common trade-off when adding regularisation.
+The addition of dropout led to a small improvement in precision while sacrificing some recall, which is a common trade-off when adding regularisation.
 This suggests that dropout is helping to reduce overfitting by encouraging the model to learn more general features, but it may also be causing the model to miss some true positive interactions, which is reflected in the drop in recall.
 
 \subsubsection{L2 Regularisation}
@@ -323,7 +323,7 @@ Because dropout alone hasn't fully addressed the overfitting issue, we will also
     \frac{\lambda}{2} \sum_{w} w^2
 \end{equation}
 Where $\lambda$ is the regularisation strength and $w$ are the model weights.
-After adding L2 regularisation of 0.01 alongside a dropout of 0.2, we observed the following changes in performance:
+After adding L2 regularisation of 0.01 alongside a dropout of 0.2, the change performance is shown in Figure~\ref{fig:arch3_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -343,8 +343,8 @@ After adding L2 regularisation of 0.01 alongside a dropout of 0.2, we observed t
 From Figure~\ref{fig:arch3_improvements}, we can see that the addition of L2 regularisation led to a further improvement in precision, while recall dropped significantly.
 This is visualised in the loss curve where the training loss is higher but the learning is more stable, which is a sign that the model is now learning more general features and is less likely to overfit to the training data.
 
-To improve this model further, we increased the dropout to 0.4 because the recall is very low, and we want to make sure we are catching as many true positives as possible.
-We recorded this:
+To improve this model further, dropout is increased to 0.4 to counter the low recall and we want to make sure we are catching as many true positives as possible.
+The result can be observed in Figure~\ref{fig:arch4_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -370,10 +370,10 @@ This highlights the delicate balance between precision and recall when tuning re
     \label{sec: eval_iter3}
 The architectural changes to the model have slightly improved performance but still haven't fully addressed the overfitting issue, so we will make more significant changes to the training procedure and architecture in this iteration to further improve performance.
 \subsubsection{PyTorch Implementation}
-We implement the model in PyTorch with the same architecture and training procedure used in architectural iteration 4.
+The model in PyTorch is implemented with the same architecture and training procedure used in architectural iteration 4.
 This is to maintain comparability whilst also leveraging the benefits of modern deep learning frameworks such as automatic differentiation, efficient GPU computation, and built-in regularisation techniques \citep{paszke2019pytorch}.
 The initial implementation builds upon architectural iteration 4~\ref{fig:arch4_improvements} whilst also utilising a dual-branch PyTorch encoder to process drug and target features separately before concatenating them for the final prediction.
-This had significant improvements, as seen in the following metrics table and AUC-ROC curve:
+This had significant improvements shown in Figure~\ref{fig:pytorch_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -397,7 +397,7 @@ We will address this issue within the next iteration by including the Adam optim
 
     \subsubsection{Adam Optimiser}
 The Adam optimiser was adopted as the final optimisation strategy.
-The improvements from using Adam can be seen in the following metrics table and loss curve:
+The improvements from using Adam can be seen in the following Figure~\ref{fig:adam_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -418,30 +418,28 @@ The use of the Adam optimiser led to a significant improvement in recall without
 
 \section{Comparison Against Literature Baseline (DeepCDA)}
 \label{sec: eval_deepcda}
-To give our current results context and demonstrate the effectiveness of our modelling choices, we will be comparing it to the DeepCDA model \citep{Abbasi2020}, which is an established deep learning DTI prediction model that was evaluated on the BindingDB dataset.
-Reported metrics are drawn from the comparative study of \citep{Yang2024}.
+To give the current results context and demonstrate the effectiveness of our modelling choices, we will be comparing it to the DeepCDA model \citep{Abbasi2020}, which is an established deep learning DTI prediction model that was evaluated on the BindingDB dataset.
+Reported metrics are drawn from the comparative study of~\citep{Yang2024}.
 \subsection{DeepCDA Architecture}
 DeepCDA uses a dual-branch architecture where one branch processes protein sequences using an LSTM (Long Short-Term Memory) network, while the other branch processes drug SMILES strings using a CNN (Convolutional Neural Network).
 The outputs of these two branches are then concatenated and passed through a fully connected (FC) classification layer to predict the binding interaction \citep{Abbasi2020}.
 This architecture allows DeepCDA to capture both sequential dependencies in protein sequences and local patterns in drug SMILES, which are important for accurately predicting drug-target interactions.
 
-This makes for a fair comparison with our model because both are binary classification models trained on BindingDB data, and both use deep learning architectures to process drug and target features separately before combining them for the final prediction.
+This makes for a fair comparison with the model because both are binary classification models trained on BindingDB data, and both use deep learning architectures to process drug and target features separately before combining them for the final prediction.
 Neither model is a direct implementation of the other, but they share enough similarities in their overall approach and training data to allow for a meaningful comparison of their performance metrics.
 
 \subsection{Performance Comparison}
-To establish a reference point before scaling up the data, we will compare the performance of our current model against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
+To establish a reference point before scaling up the data, the performance of the current model is evaluated against the reported metrics from DeepCDA, focusing on key metrics such as AUC-ROC, PR-AUC, precision, recall, and F1 score.
 
 \subsubsection{Methodological Differences}
-Before comparing our model's performance against DeepCDA, it's important to acknowledge the methodological differences between the two evaluations.
+Before comparing the model's performance against DeepCDA, it's important to acknowledge the methodological differences between the two evaluations.
 DeepCDA was evaluated using a 10-fold cross-validation approach, which involves partitioning the dataset into 10 subsets, training the model on 9 subsets and testing on the remaining subset, and repeating this process 10 times to obtain an average performance metric.
-However, our model was evaluated using a fixed train/validation/test split, which means that the performance metrics we report are based on a single partitioning of the data.
-This difference in evaluation methodology means that the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data, while our metrics are based on a single run and may be more sensitive to the specific train/test split used.
+However, the model was evaluated using a fixed train/validation/test split, which means that the performance metrics we report are based on a single partitioning of the data.
+This difference in evaluation methodology means that the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data, while these metrics are based on a single run and may be more sensitive to the specific train/test split used.
 Therefore, while we can compare the reported metrics, we should do so with caution and acknowledge that the differences in evaluation methodology may impact the comparability of the results.
 
 \subsubsection{Result}
 Table~\ref{tab:deepcda_comparison} presents a comparison of this work against DeepCDA \citep{Abbasi2020}.
-Reported DeepCDA metrics are taken from \citet{Yang2024}.
-
 \begin{table}[h]
 \centering
 \caption{Performance comparison against literature baseline on BindingDB. DeepCDA results are reported from \citet{Yang2024}, evaluated using 10-fold cross-validation. This work uses a fixed train/validation/test split, so comparison is indicative rather than definitive.}
@@ -461,9 +459,9 @@ This work (Torch DNN, reduced dataset)         & 0.8670 & 0.8935 & 0.8302 & 0.83
 \end{table}
 
 The differences seen in the table above could be put towards the difference in data representations; we use industry standard ProtBERT and MACCS fingerprints, whereas DeepCDA uses a custom encoding of the sequences and SMILES.
-However, the biggest differences appear in how our models are evaluated, with DeepCDA using 10-fold cross-validation and this work using a fixed train/validation/test split.
+However, the biggest differences appear in how the models are evaluated, with DeepCDA using 10-fold cross-validation and this work using a fixed train/validation/test split.
 
-It is worth noting that these results reflect an early checkpoint in our model development; subsequent sections detail further improvements through data.
+It is worth noting that these results reflect an early checkpoint in the model development; subsequent sections detail further improvements through data.
 A broader comparison against multiple literature baselines, including the improved final model, is presented in Section~\ref{sec:lit_comparison}.
 
 
@@ -471,7 +469,7 @@ A broader comparison against multiple literature baselines, including the improv
 \label{sec: eval_data}
 To get the best understanding of the models' performance, we will conduct a data sensitivity analysis to evaluate how changes in the training data size and decision threshold affect the model's performance.
     \subsection{Increased Sample Size}
-After the move to the PyTorch framework, we have unlocked the ability to scale up our dataset to train the model on 50x more data.
+After the move to the PyTorch framework, we have unlocked the ability to scale up the dataset to train the model on 50x more data.
 PyTorch can handle the load better than a NumPy approach for the following reasons.
 
 \begin{itemize}
@@ -544,7 +542,7 @@ The original thresholds of 5.30 and 7.00 were chosen to create a clear separatio
 
 \subsubsection{New Thresholds}
 The original thresholds (5.30–7.00) were asymmetric with the upper bound being only 0.31 std above the mean, but the lower bound is 0.81 std below the mean.
-Hence, the 61/39 imbalance within our original split dataset and the new approach of using more symmetric thresholds to give more naturally balanced classes with the following formula:
+Hence, the 61/39 imbalance within the original split dataset and the new approach of using more symmetric thresholds to give more naturally balanced classes with the following formula:
 $\mu \pm k \cdot \sigma$
 Where k is the number of standard deviations from the mean ($\mu$) ($\mu$ = 6.53, $\sigma$ = 1.52) and $\sigma$ is the standard deviation of the pAffinity distribution.
 This ensures equal margins on both sides and produces the following new \textbf{grey area thresholds}:
@@ -577,7 +575,7 @@ All the new grey area variations have much more even split between binders and n
 Figure~\ref{fig:new_thresholds_distribution} shows the new thresholds over the pAffinity distribution, with the original thresholds being more extreme and excluding a larger portion of the data as grey area, while the new thresholds are more central and include more data in the training set.
 
 \subsubsection{Model Performance Analysis}
-We ran our best model with each new threshold dataset to compare the performance of the model, here is what we discovered:
+We ran the best model with each new threshold dataset to compare the performance of the model, here is what we discovered:
 
 \begin{figure}[H]
     \centering
@@ -599,7 +597,7 @@ Outperforming the other grey area thresholds across all metrics proves its valid
 
 \section{Literature Comparison}
 \label{sec:lit_comparison}
-Having completed all iterations of model development, we now compare our final model against a broader set of deep learning DTI prediction methods evaluated on the BindingDB dataset.
+Having completed all iterations of model development, we now compare the final model against a broader set of deep learning DTI prediction methods evaluated on the BindingDB dataset.
 Section~\ref{sec: eval_deepcda} presented a preliminary comparison against DeepCDA at an early stage of development; here we extend that comparison to include TripletMulti-DTI, GAT, and MINDG, all reported in the comparative study of\citet{Yang2024}.
 
 \subsection{Compared Architectures}
@@ -622,19 +620,19 @@ Graph-based methods have the advantage of directly encoding molecular topology, 
 \subsubsection{MINDG}
 MINDG is the strongest baseline in the comparison, combining graph neural networks with multiscale interaction modelling \citep{Yang2024}.
 It captures both local substructure patterns and global molecular properties and uses a dual-graph architecture to model drug and target features at multiple resolutions.
-MINDG achieved the highest reported performance among the baselines across most metrics, making it the most challenging benchmark for our model.
+MINDG achieved the highest reported performance among the baselines across most metrics, making it the most challenging benchmark for this model.
 
 \subsubsection{This Work}
-Our model uses a dual-branch fully connected DNN that processes pre-computed ProtBERT embeddings for protein targets and MACCS fingerprints for drug molecules.
-Unlike the other methods, which learn feature representations end-to-end from raw sequences or molecular graphs, our approach relies on established, domain-specific featurisation pipelines.
+This model uses a dual-branch fully connected DNN that processes pre-computed ProtBERT embeddings for protein targets and MACCS fingerprints for drug molecules.
+Unlike the other methods, which learn feature representations end-to-end from raw sequences or molecular graphs, this approach relies on established, domain-specific featurisation pipelines.
 The model was trained with a PyTorch model using the Adam optimiser with cosine annealing learning rate decay on the Ki/Kd subset of the full BindingDB dataset, as detailed in the preceding sections.
 
 \subsection{Methodological Differences}
 \label{subsec:methodological-differences}
 As noted in Section~\ref{sec: eval_deepcda}, all four baseline methods were evaluated using 10-fold cross-validation, where the dataset is partitioned into 10 subsets and performance is averaged across 10 training runs.
-Our model was evaluated using a fixed train/validation/test split, meaning our reported metrics are based on a single partitioning of the data rather than an average over multiple.
+The model was evaluated using a fixed train/validation/test split, meaning the reported metrics are based on a single partitioning of the data rather than an average over multiple.
 Cross-validation generally produces more stable estimates with lower variance, and the reported standard deviations for the baselines confirm this.
-Our single-split evaluation may therefore be more sensitive to the specific data partition, and the absence of confidence intervals should be kept in mind when interpreting the results.
+The single-split evaluation may therefore be more sensitive to the specific data partition, and the absence of confidence intervals should be kept in mind when interpreting the results.
 Despite this methodological difference, the comparison remains informative as all approaches are tested to unseen data drawn from the same source.
 
 \subsection{Result}
@@ -666,8 +664,8 @@ Ours             & $\mathbf{0.9789}$ & $\mathbf{0.9703}$ & $\mathbf{0.9309}$ & $
 
 \subsection{Discussion}
 Our model achieves the highest scores across six of the seven reported metrics, outperforming all four baselines in PR-AUC, AUC-ROC, F1-score, sensitivity, precision, and accuracy.
-The margin of improvement over MINDG, the strongest baseline, is notable: our AUC-ROC of 0.9703 exceeds MINDG's 0.951, and our F1-score of 0.9309 represents a substantial improvement over MINDG's 0.857.
-Precision sees the largest relative gain, with our model achieving 0.9335 compared to MINDG's 0.800, indicating that our model produces significantly fewer false positive predictions.
+The margin of improvement over MINDG, the strongest baseline, is notable: the AUC-ROC of 0.9703 exceeds MINDG's 0.951, and the F1-score of 0.9309 represents a substantial improvement over MINDG's 0.857.
+Precision sees the largest relative gain, with our model achieving 0.9335 compared to MINDG's 0.800, indicating that the model produces significantly fewer false positive predictions.
 
 These results are particularly encouraging given the relative simplicity of our architecture.
 While the baselines employ graph neural networks, attention mechanisms, contrastive learning, and multiscale interaction modelling, our model uses a straightforward fully connected DNN operating on pre-computed ProtBERT and MACCS features.
@@ -675,13 +673,13 @@ This suggests that the quality of input featurisation, specifically the use of P
 
 However, the comparison should be interpreted with appropriate caution.
 The use of a fixed split versus the baselines' 10-fold cross-validation means our reported metrics lack the variance estimates that would strengthen claims of statistical significance.
-Not ignoring the caveats, the consistently strong performance across multiple metrics provides evidence that our approach is competitive with, and potentially exceeds, the current state of the art for DTI prediction on BindingDB, as reported in a 2024 study \citep{Yang2024}.
+Not ignoring the caveats, the consistently strong performance across multiple metrics provides evidence that this approach is competitive with, and potentially exceeds, the current state of the art for DTI prediction on BindingDB, as reported in a 2024 study \citep{Yang2024}.
 % ============================================================
 \section{Evaluation Summary}
 \label{sec: eval_summary}
-After our full evaluation, we have determined the optimal model to be the Pytorch implementation with Adam optimiser on the full dataset, using a threshold of 0.3 for classification.
+After the full evaluation, we have determined the optimal model to be the Pytorch implementation with Adam optimiser on the full dataset, using a threshold of 0.3 for classification.
 This model gave us the best overall performance with an F1 score of 0.9309 and an AUC-ROC of 0.9703, which is a significant improvement over the baseline model and is competitive with the literature baseline of DeepCDA and MINDG.
 The most impactful improvement across iterations was the switch to the PyTorch framework, which provided a significant boost in performance because it unlocked the ability to use the full dataset instead of a subset.
-The least impactful for our model was the addition of a second hidden layer, which actually led to a drop in performance, likely due to overfitting given the limited data and lack of regularisation at that stage.
-The main limitation with our evaluation is the differing methodologies used to evaluate our model and the literature baseline, with DeepCDA using 10-fold cross-validation and our model using a fixed train/validation/test split.
-This means that the metrics we report for our model are based on a single run and may be more sensitive to the specific train/test split used, while the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data.
+The least impactful change for the model was the addition of a second hidden layer, which actually led to a drop in performance, likely due to overfitting given the limited data and lack of regularisation at that stage.
+The main limitation with the evaluation is the differing methodologies used to evaluate our model and the literature baseline, with DeepCDA using 10-fold cross-validation and our model using a fixed train/validation/test split.
+This means that the metrics we report for the model are based on a single run and may be more sensitive to the specific train/test split used, while the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data.
