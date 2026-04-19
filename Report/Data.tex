@@ -5,7 +5,7 @@
 This chapter provides a detailed overview of how the data was sourced, processed, and prepared for two model inputs, proteins and drugs, turning them from raw data to computationally readable for the model.
 
 \section{Data Collection and Curation}
-Data is an important part of this project, and it's important to gather a sufficient quantity of scientifically accurate data so the model can be the most accurate as possible.
+Gathering a sufficient quantity of scientifically accurate data is important for model accuracy and performance.
 This section will define how the data was sourced and manipulated to reach its final representation.
 \subsection{Primary Data Source}
 The initial bulk of my data was extracted from BindingDB~\citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins~\citep{Liu2025}.
@@ -18,7 +18,7 @@ Due to the nature of the project, the initial phase begins with a local download
     \item \texttt{Sequences.fasta} file containing the amino acid sequences for all protein targets in the database.
 \end{itemize} 
 \subsection{Data Merging and Cleaning}
-The raw data from BindingDB didn't contain protein sequences, making it unsuitable for feature engineering, so the first step after downloading all raw data was to unify the interaction and protein sequence data.
+The raw data from BindingDB did not contain protein sequences, making it unsuitable for feature engineering, so the first step after downloading all raw data was to unify the interaction and protein sequence data.
 Using the protein name as a common key, the \texttt{.tsv} and \texttt{.fasta} file were merged, creating a unified dataset where each row contained \textbf{Drug SMILES}, \textbf{Target Sequence}, \textbf{Binding Affinity Value}, and the \textbf{Interaction classification}.
 
 BindingDB reports binding affinity across several measurements: Ki, Kd, IC50, and EC50.
@@ -121,9 +121,9 @@ Although these quantities are related, they do not supply us with meaning and ar
 \textbf{Kd} (dissociation) also measures the binding equilibrium between a drug and protein but in a more general, all-encompassing term to include all the dissociated components.
 Both Ki and Kd are equilibrium constants governed by the same thermodynamic principles \citep{sciencesnail_ki_kd}.
 \textbf{IC50} is short for inhibitory concentration 50\%, meaning the concentration of inhibitor required to reduce the biological activity of interest to half of the uninhibited value.
-The simplicity and lack of assumptions required to generate these data make them useful, but as it doesn't directly measure the binding equilibrium, it is a less accurate measurement than Ki or Kd. The relationship between IC50 and Ki is described by the Cheng-Prusoff equation, which shows that IC50 varies with substrate concentration even when Ki remains constant \citep{cheng_prusoff}.
+The simplicity and lack of assumptions required to generate these data make them useful, but as it does not directly measure the binding equilibrium, it is a less accurate measurement than Ki or Kd. The relationship between IC50 and Ki is described by the Cheng-Prusoff equation, which shows that IC50 varies with substrate concentration even when Ki remains constant~\citep{cheng_prusoff}.
 \textbf{EC50} stands for effective concentration 50\%, which refers to the concentration of drug at which 50\% of its maximum effect is achieved.
-Making it more effective for experiments wanting the dosage to be quantified even when the enzyme activity doesn't reach the 50\% threshold causing IC50 to be undefined.
+Making it more effective for experiments wanting the dosage to be quantified even when the enzyme activity does not reach the 50\% threshold causing IC50 to be undefined.
 It reflects functional activity rather than direct binding affinity.
 EC50 measurements incorporate complex factors including receptor reserve, signal transduction efficiency, and cellular response mechanisms \citep{sciencesnail_ki_kd}.
 \subsubsection{Justification for Ki Selection}
@@ -131,9 +131,9 @@ To evaluate which affinity type is most appropriate for the model, the BindingDB
 \textbf{Mechanistic Validity:} Ki and Kd represent true equilibrium binding constants that are substrate-independent and thermodynamically well-defined.
 In contrast, IC50 and EC50 are functional assays whose values depend on experimental conditions and do not directly measure binding affinity.
 For a machine learning model intended to learn binding relationships, using equilibrium constants provides a more robust and interpretable basis (Figure~\ref{fig:ki_justification}A).
-\textbf{Data Quality:} After reviewing the graphs generated from the raw BindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 and Kd. Higher consistency is better for training the model as it's reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
+\textbf{Data Quality:} After reviewing the graphs generated from the raw BindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 and Kd. Higher consistency is better for training the model because it is reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
 \textbf{Data Availability:} While IC50 measurements are more abundant in BindingDB (47,043 entries), Ki still provides 16,796 high-quality measurements.
-This is plenty to develop and train machine learning models as modern deep learning models have shown it's more valuable to have high-quality data than a higher quantity \citep{Northcutt2021}.
+This volume is sufficient for training modern deep learning models, where it is more valuable to have high-quality data than a higher quantity~\citep{Northcutt2021}, though sufficient sample size remains important -- a tension explored in Section~\ref{sec: eval_data}.
 \textbf{Cross-Validation with Correlation Analysis:} To confirm the relationships between affinity types, a correlation heatmap was generated across all measurements in the raw BindingDB dataset (Figure~\ref{fig:corr_heatmap}). The high correlation between Ki and Kd (r = 0.94) confirms their mechanistic similarity as equilibrium constants.
 The moderate correlation between Ki and IC50 (r = 0.81) reflects IC50's dependence on experimental conditions, while the weaker correlation with EC50 (r = 0.55) highlights its distinct mechanistic basis as a measure of functional activity rather than binding affinity.
 \begin{figure}[H]
@@ -153,7 +153,7 @@ Ki provides the perfect balance of mechanistic validity (true equilibrium consta
 
 \subsection{Data Binarization \& Negative Sampling}
 \label{subsec:data-binarization-&-negative-sampling}
-It's crucial to classify the data accurately with meaningful representations and thresholds.
+It is crucial to classify the data accurately with meaningful representations and thresholds.
 From the BindingDB dataset we used the columns \textbf{Ki} \& \textbf{Kd} and set thresholds on this value to determine the score binder or non-binder.
 Instead of using raw nanomolar (nm) values, the binding affinities were transformed into their log-scaled form using equation~\ref{eq:paffinity}:
 \begin{equation}
@@ -252,8 +252,8 @@ As a vector notation:
 The Proteins are represented as amino acid sequences of varying lengths, often exceeding thousands of characters.
 To normalise the sequences, so they're suitable for the neural network, the variable-length sequences were converted into fixed-size continuous embeddings.
 \subsection{ProtBERT}
-To ensure the embeddings were as accurate as possible, ProtBERT was used as it's a pretrained transformer model based off of the BERT architecture \citep{devlin2019bertpretrainingdeepbidirectional}.
-ProtBERT understands the contextual and biophysical properties of the amino-acid sequences as it has been trained on a huge database of protein sequences UniRef100 \citep{UniProt2025} containing 217 million sequences \citep{Elnaggar2020.07.12.199554}.
+To ensure the embeddings were as accurate as possible, ProtBERT was used because it is a pretrained transformer model based on the BERT architecture~\citep{devlin2019bertpretrainingdeepbidirectional}.
+ProtBERT understands the contextual and biophysical properties of the amino-acid sequences as it has been trained on UniRef100~\citep{UniProt2025}, a large database of protein sequences containing 217 million sequences~\citep{Elnaggar2020.07.12.199554}.
 By extracting the hidden states from the model through mean pooling, each protein sequence is condensed into a semantic vector embedding that fits the fixed-size, \textit{1024 floating-point values}, input and preserves the biological context, such as 3D structure or chemical polarity~\citep{Elnaggar2020.07.12.199554}.
 
 Protein embedding (example, size 1024):

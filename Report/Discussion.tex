@@ -7,7 +7,7 @@ Each iteration of the model produced measurable gains in performance, let us bre
 During the iterative improvement to training, the largest improvement came with ReLU activations, suggesting the model was suffering from vanishing gradients in its hidden layers.
 Sigmoid activations squash their output to the range (0, 1).
 Their derivative $\sigma'(x) = \sigma(x)(1 - \sigma(x))$ reaches a maximum of $0.25$ at, $x = 0$ so in a multi-layer network, the gradients diminish exponentially as they propagate backward through each layer.
-This causes the earlier layers to learn very slowly, effectively limiting the network's capacity to extract meaningful patterns from the input features.
+This causes the earlier layers to learn slowly, effectively limiting the network's capacity to extract meaningful patterns from the input features.
 ReLU avoids this by passing a constant gradient of 1 for all positive inputs, allowing the network to train its deeper layers effectively and make better use of the available model capacity.
 Early Stopping had the only reduction in performance.
 While its purpose is to prevent overfitting by halting training when validation metrics plateau, here the model may have been stopped before it had sufficient training iterations to learn the underlying patterns in the data.
@@ -25,7 +25,7 @@ The Adam optimiser was introduced after the PyTorch migration and recovered the 
 PyTorch could manage a greater sample size, so we expanded to the full Bindingdb dataset achieving superior performance, but it was important to accurately assess each iteration on the same dataset to show accurate differences.
 \subsubsection{Summary of Iterative Gains}
 The most important takeaway from the iterative improvements is that changing the framework to PyTorch with Adam had the most effective improvement.
-However, it doesn't take away from the small improvement made prior to those changes.
+However, it does not diminish the incremental improvements made prior to those changes.
 The Numpy iterations collectively improved F1 score by 0.04, whereas the Pytorch migration with a single optimiser contributed 0.03 on top of that.
 While the framework change made the most effective improvement, it was the foundational improvements to the training procedure that accounted for the majority of the overall performance improvement.
 This highlights that proper training practices and activation function choices can matter as much as, if not more than, the choice of deep learning framework.
@@ -75,22 +75,23 @@ The frontend and backend were built as separate components and connected via a r
 This separation also allows for the frontend to be developed independently of the backend, which is useful for testing and iterating on the user interface without needing to retrain the model or change the backend code.
 \subsubsection{Caching Embeddings}
 ProtBERT embeddings were cached as \textbf{NumPy} files instead of being computed at inference time because computing the embeddings is computationally expensive and would lead to long inference times, which would negatively impact the user experience.
-However, if the ProtBERT embedding isn't pre-cached, the request will fail and not compute at all.
+If the ProtBERT embedding is not pre-cached, the request will fail and no prediction is computed.
 This is the case because embeddings are pre-computed and cached upon before the web server starts the autocomplete function can only suggest targets from the training set.
 \subsubsection{Batch Screening}
 The Virtual Screening functionality used MaxMin diversity picking because it provides better coverage of the chemical space with lots of different compounds.
 This is more useful for users who want to quickly screen a large number of compounds and get a diverse set of predictions.
-However, this may obviously miss out some key binders that are similar to each other but are still important to test.
+However, this may overlook key binders that are structurally similar but still important to test.
 
 \section{Limitations}
 \subsection{Dataset}
-The NumPy model was trained on 18,520 pairs (approximately 2\%) of the BindingDB dataset for the iterative improvements, which is a significant limitation as the model could have learned from a larger sample size, and we didn't see the full potential if exposed to the same dataset as our final model.
+The NumPy model was trained on 18,520 pairs (approximately 2\%) of the BindingDB dataset for the iterative improvements, which is a significant limitation.
+Never seeing the model's full potential if exposed to the same dataset as our final model.
 This was due to computational constraints when using NumPy-based backpropagation, tests couldn't be completed in an appropriate time-frame.
 Using a single dataset for training and evaluation without validation from external datasets limits the generalisability of the model, as it may not perform well on unseen data or in real-world scenarios.
 The dataset split may cause data leakage with the same drug or protein appearing in both train and test sets, inflating metrics.
 \subsection{Model}
 Fixed fingerprint representation limits what the model can learn.
-Without structural information, the model is restricted to only learning from the presence or absence of substructures and can't learn from the spatial arrangement of atoms, which is valuable for understanding molecular interactions.
+Without structural information, the model is restricted to only learning from the presence or absence of substructures and cannot capture the spatial arrangement of atoms, which is valuable for understanding molecular interactions.
 Also, approaching the task as binary classification loses granularity in the data, as the model is only learning to predict whether an interaction is likely or not, rather than the strength of the interaction.
 A practical consequence of this is observable through the virtual screening interface: when filtering for compounds that are known binders to a given protein in the training data and then screening those same compounds against the same protein, the model predicts fewer than half as binders.
 This is not a bug but a natural outcome of how the model generalises.
@@ -101,16 +102,16 @@ Some true binders may have fingerprint representations that sit close to the dec
 While this gap between ground-truth labels and model predictions may appear concerning, a model that perfectly reproduced all training labels would be a stronger indication of overfitting rather than genuine predictive ability.
 Finally, having no interpretability mechanism means the user has no insight into why the model is making certain predictions, which can reduce trust and make it harder to identify potential issues with the model's reasoning.
 \subsection{API}
-We capped the batch screening functionality at 100 compounds to keep inference time reasonable, but it's shadowed by real virtual screening campaigns that can do millions of compounds.
-For example, an ultra large docking study by \citet{lyu2019ultra}, where they docked 170 million compounds against a target, which is orders of magnitude more than our system can handle.
+Batch screening is capped at 100 compounds to keep inference time reasonable, but it's shadowed by real virtual screening campaigns that can do millions of compounds.
+For example, an ultra large docking study by~\citet{lyu2019ultra}, where they docked 170 million compounds against a target, which is orders of magnitude more than our system can handle.
 No rate limiting was implemented so the system can withstand multiple large requests, however, this can have its consequences and be vulnerable to DDOS attacks.
 If an account system was implemented, rate limiting would be required to prevent a single user from consuming all resources.
 Also, the number of compounds and targets to select is limited to only what's present in a small percentage of the dataset the model trained on.
 Only those targets have their ProtBERT embeddings pre-computed and cached.
-Therefore, it can't be used for truly novel drug discovery, where the target of interest is not present in the training dataset, which is a significant limitation for real-world applications.
+Therefore, it cannot be used for truly novel drug discovery, where the target of interest is not present in the training dataset, which is a significant limitation for real-world applications.
 \subsection{Frontend}
 The scale of our operation is limited by the resources available, only having the ability to test compounds already in the training dataset as the autocomplete functions use the loaded dataset for suggestions.
-Therefore, it's challenging to make predictions that are novel without extending the pipeline to include a more comprehensive dataset or by using an external API to fetch the data for the autocomplete.
+Making novel predictions are therefore challenging without extending the pipeline to include a more comprehensive dataset or by using an external API to fetch the data for the autocomplete.
 
 
 \section{Further Improvements}
@@ -120,7 +121,7 @@ Therefore, it's challenging to make predictions that are novel without extending
 \label{subsec:alternative-encoders}
 Models such as MINDG~\citep{Yang2024} use graphical encoders as well as fingerprints to produce a more reliable prediction because they learn structural features.
 Applying such techniques would replace MACCS with a molecular graph encoder such as GCN, GAT, or GIN.
-For the target, using ESM-2 instead of ProtBERT because it's a more capable protein language model.
+For the target, using ESM-2 instead of ProtBERT because it is a more capable protein language model.
 \citet{Vefghi2025} explores these options extensively.
 \subsection{Regression Model}
 Reframing the task as a regression problem instead of classification could provide greater insights into the strength of the interaction between the drug and target, rather than just a binary prediction.

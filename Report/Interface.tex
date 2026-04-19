@@ -170,7 +170,7 @@ Therefor we utilised a React framework to ensure speed and optimisations for wha
 \subsection{Frontend Framework}
 To develop the frontend, we have used Gatsby, a static-site React framework.
 It does this by pre-rendering pages into HTML, called Static Site Generation (SSG), resulting in superior performance.
-Gatsby benefits from high security with no server-side attacks as it doesn't have a server-side database or dependencies, only static files~\citep{gatsby_definitive, gatsby}.
+Gatsby benefits from high security with no server-side attacks as it has no server-side database or dependencies, only static files~\citep{gatsby_definitive, gatsby}.
 
 \subsection{User Interface Design}
 We designed two workflows so the user can test a single drug to a single protein target, and batch virtual screening to emulate a wet-lab experiment more closely.
@@ -363,7 +363,7 @@ The frontend is a static web page that is independent of the backend, so no serv
 The backend validates all incoming data through Pydantic schemas and FastAPI query parameter constraints, rejecting improper requests before they reach the service layer.
 This provides a degree of protection against injection attacks, as inputs are type-checked and bound-checked before being passed to RDKit or the model.
 
-At the moment there isn't any user authentication or account system or sensitive data, heavily reducing the attack surface area.
+There is currently no user authentication or account system or sensitive data, heavily reducing the attack surface area.
 Therefore, upon deployment the prediction history will be shared among all users.
 If the system were to be deployed in a multi-user clinical setting, user isolation through accounts and authentication will need to be added.
 \section{Limitations}
