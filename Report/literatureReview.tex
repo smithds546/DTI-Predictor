@@ -2,7 +2,7 @@
 \sloppy
 This chapter reviews the current state of research and available tools in the field of drug-target interaction prediction.
 The review is divided into \textbf{(i)} foundational concepts, \textbf{(ii)} current machine-learning approaches, \textbf{(iii)} existing prediction tools, and a \textbf{(iv)} gap analysis highlighting the need for the proposed project.
-\section{Initial concept}
+\section{Initial Concept}
 Drug discovery is the process through which potential new therapeutic entities are identified, using a combination of computational, experimental, translational, and clinical models \citep{Zhou2017}.
 Drug-Target Interaction (DTI) prediction is a critical aspect of drug discovery, as it helps in identifying potential drug candidates that can interact with target proteins to exert their desired therapeutic effects \citep{Yang2024}.
 A drug is a chemical compound which causes physiological changes in the body when consumed, injected, or absorbed.
@@ -18,29 +18,30 @@ This is where drugs with similar structure are assumed to interact with similar 
 Feature-based machine-learning models are much more refined and rely on more scientific knowledge compared to just their structure, such as fingerprints or protein sequence features.
 These come in two different ways, \textbf{Regression}: where the model predicts continuous binding affinity and \textbf{Binary classification}: where affinity values are put into thresholds, active or inactive.
 
-\section{Deep learning models in DTI}
+\section{Deep Learning Models in DTI}
 Deep Learning models have become a strong way to determine interactions, due to its ability to learn high-dimensional representations from raw data.
-There are many approaches for deep learning architectures, for example, the use of fully connected neural networks (FCNN), \citep{Talukder2025,Zhan2025} which is a layered network that connects every neuron in one layer to every neuron in the next layer and evaluated using Accuracy, Precision, Recall, AUC-ROC, and AUC-PR.
+There are many approaches for deep learning architectures, for example, the use of fully connected neural networks (FCNN), \citep{Talukder2025,Zhan2025} which is a layered network that connects every neuron in one layer to every neuron in the next layer.
+It can be evaluated using Accuracy, Precision, Recall, AUC-ROC, and AUC-PR.
 
 \subsection{Sequence-Based Models}
 A Sequence-based model encodes raw data, Drug SMILES, and Protein amino acid sequences, directly.
 Recurrent Neural Networks (RNN) and Convolutional Neural Network (CNN) are used to learn patterns in local chemical environments or amino-acid motifs.
 Models like DeepDTA \citep{Ozturk2018} display impressive predictive performance using sequence-only architectures.
 
-\subsection{Graph-Based models}
+\subsection{Graph-Based Models}
 Graph Neural Networks (GNNs) take as input the structure of molecules as graphs of atoms, learning structural information which, to sequence-based models, is challenging to learn.
 \citet{Yang2024} utilised this as part of their algorithm using Message-Passing Neural Network (MPNN) to encode drug sequences as a part of a greater system.
 An MPNN can extract more detailed relational features, for improved modelling of chemical structure.
 
 \subsection{Hybrid Networks} 
-A Hybrid network is the combination of multiple neural network architectures to capture complimentary information to improve the learning rate of the model.
+A Hybrid network is the combination of multiple neural network architectures to capture complementary information to improve the learning rate of the model.
 The hybrid model in \citep{Yang2024} uses an MPNN to encode drug sequences and a Convolutional Neural Network (CNN) to encode protein sequences.
 To generate the other prediction, it uses a High Order Graph attention Convolutional Network (HOAGCN), which makes the prediction based on the structure of the drug molecule and target protein.
 All these combined make for a much more meaningful prediction producing accurate results.
 
 
 \section{Binary Classification in DTI}
-There's lots of research and studies that have been done using binary classification for the interaction task, this is where the model outputs whether it will (1) or it won't (0).
+There's extensive research and studies that have been done using binary classification for the interaction task, this is where the model outputs whether it will (1) or it won't (0).
 This has become increasingly more popular as it simplifies the learning objective, allowing the model to spend more computational power on classification metrics.
 
 \subsection{Research Papers Using Binary Classification}
@@ -59,26 +60,36 @@ Some of the recent work that uses binary classification also highlight the impor
 Since many DTI datasets tend to be weighted towards positive pairs, the data becomes skewed.
 Several recent models, including DeepPurpose \citep{DeepLearning} and other BindingDB approaches, address skewed data using negative sampling to generate synthetic pairs to avoid having an unbalanced training dataset.
 
-\subsection{Evaluation metrics}
-Commonly seen among these studies in binary classification,\citep{DeepLearning, Talukder2025, Ozturk2018} is the reliance on \textbf{(i)} Accuracy, how many observations were correctly classified \textbf{(ii)} Precision, How many positive predictions were actually positive \textbf{(iii)} Recall, how many positive cases did the model correctly predict \textbf{(iv)} AUC for either \textbf{(i)} PR, A chart that visualises the Precision and Recall in a single graph or \textbf{(ii)} ROC, is a chart that visualises the trade-off between the true positive rate (TPR) and the false positive rate (FPR).
+\subsection{Evaluation Metrics}
+Binary classification studies in DTI \citep{DeepLearning, Talukder2025, Ozturk2018} commonly rely on the following evaluation metrics:
+\begin{itemize}
+    \item \textbf{Accuracy}: the proportion of observations that were correctly classified.
+    \item \textbf{Precision}: the proportion of positive predictions that were actually positive.
+    \item \textbf{Recall}: the proportion of positive cases that the model correctly identified.
+    \item \textbf{AUC}: reported against one of two curves:
+    \begin{itemize}
+        \item \textbf{PR}, which visualises precision against recall in a single graph.
+        \item \textbf{ROC}, which visualises the trade-off between the true positive rate (TPR) and the false positive rate (FPR).
+    \end{itemize}
+\end{itemize}
 
 \subsection{Binary Classification Summary}
 Binary classification has become the basic method for contemporary DTI research because it can complete the tasks at machine-learning benchmarks but in a more simple way.
-This is why I have decided to pursue a model that works with binary classification and use classification-based evaluation metrics.
+This is why this project uses a model that works with binary classification and use classification-based evaluation metrics.
 
 \section{Dataset \& Feature Engineering}
 Recent research papers consistently take as input drug SMILES and proteins as Amino Acid Sequences from BindingDB's dataset \citep{Vefghi2025}, reinforcing the fact that this is the most appropriate source of data in DTI.
 A few studies differ mainly in how they encode these inputs.
-For example, the paper by Talukder \citep{Talukder2025} represented the drugs as MACCS fingerprints generated by RDKit, these are fast, interpretable and straightforward but are not very expressive~\citep{Xie2020}, making them easy to compute which can benefit me with limited computational power.
+For example, the paper by Talukder \citep{Talukder2025} represented the drugs as MACCS fingerprints generated by RDKit, these are fast, interpretable and straightforward but are not very expressive~\citep{Xie2020}, making them easy to compute which can benefit a project with limited computational power.
 Protein features are similarly derived from amino acid sequences through embedding frameworks such as ProtBERT.
 
 BindingDB was selected over alternatives such as ChEMBL due to its scale, heterogeneity of affinity measurements, and frequent use in recent DTI literature~\citep{Talukder2025, Yang2024}.
 ChEMBL offers comparable scale but is oriented more toward general bioactivity rather than binding affinity.
-\section{Common limitations}
+\section{Common Limitations}
 What seemed to be a common limitation was the lack of data on successful binds creating an imbalanced dataset.
 However, some of these papers tried to combat this issue by taking data from two datasets \citep{Yang2024} or manipulating the data through affinity harmonization \& binarization \citep{Talukder2025} and a Polyloss framework \citep{Leng2022_proceedings}, which is an addition to standard loss functions that allows us to precisely tune how the model handles our severe class imbalance.
 
-\section{Current products}
+\section{Current Products}
 
 \subsection{SwissTargetPrediction}
 The website SwissTargetPrediction \citep{STP_web}, allows the user to predict using a ligand-based approach built to combine different similarity measures, providing more accurate predictions.
@@ -88,7 +99,7 @@ For many bioactive molecules their primary target is unknown, and even when it i
 Making predictions for these off-targets is important for understanding side effects and drug repositioning – finding new uses for old drugs.
 
 The method's main strength is its hybrid approach to similarity, combining multiple variables to discover unknown targets of similar structure.
-It uses and combines \textbf{i} 2D Chemical Similarity: This uses FP2 chemical fingerprints to find structurally similar molecules, which is effective for identifying analogues (structurally similar molecules) within the same chemical series.
+It uses and combines \textbf{(i)} 2D Chemical Similarity: This uses FP2 chemical fingerprints to find structurally similar molecules, which is effective for identifying analogues (structurally similar molecules) within the same chemical series.
 \textbf{(ii)} 3D Shape Similarity: This uses Electroshape, which is a 3D method that compares molecules based on their shape, atomic partial charges, and lipophilicity.
 This is powerful for finding active molecules with different chemical structures.
 
@@ -96,7 +107,7 @@ These two scores are weighted and combined using a multiple logistic regression 
 The authors demonstrated that while 2D fingerprints alone perform well on biased datasets, the combined 2D/3D approach is significantly more accurate in the more realistic scenario of predicting targets for novel molecules that do not belong to a known chemical series.
 
 The interface is plain and a bit scattered, but it's easy to use; you select a species (Homo sapiens, Mus musculus, Rattus norvegicus), and then choose a drug molecule through a given example, SMILES representation, or drawing the molecule.
-Which is a creative and more advanced way to really test new drug compounds and structures.
+This is a creative and more advanced way to really test new drug compounds and structures.
 
 
 
@@ -112,7 +123,7 @@ However, this foundational machine learning method has become very limited compa
 Furthermore, the UI is not designed for simple queries as it requires the user to format and upload their own data matrices, creating a high barrier to entry for most researchers.
 
 
-\section{Gap analysis}
+\section{Gap Analysis}
 After a detailed review of Drug-Target interaction products and papers, from foundational similarity-based methods to modern deep learning models, three gaps in the current landscape have appeared: (i) \textbf{SOTA vs Usability Gap}, gap between modern, cutting-edge research models and tools accessible to the public (ii) \textbf{Novelty problem}, similarity-based models will struggle when given novel drugs or targets which have no known analogues (iii) \textbf{The Data Imbalance gap}, older datasets were imbalanced and some using conventional loss functions to counteract, but they can turn out biased, resulting in poor performance.
 
 My proposed predictive ML pipeline will be designed to directly address these three gaps, \textbf{(i)} It will deliver SOTA accuracy by using modern neural network architectures to learn representations reducing the novelty issue \textbf{(ii)} using weighted loss functions to force the model to focus on hard-to-find positive interactions to address the data imbalance challenge \textbf{(iii)} diminishing the usability gap by connecting powerful backend to a simple UI, displaying results and information in an accessible way, a feature missing from most complex models.
