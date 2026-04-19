@@ -4,9 +4,9 @@
 The objective of this work is to address the DTI prediction problem as a binary classification task.
 
 \subsection{Model Inputs and Outputs}
-The inputs and outputs were explained in detail in my data chapter~\ref{chap:data-pipeline}, but I will briefly go over the inputs and outputs.
+The inputs and outputs were explained in detail in Chapter~\ref{chap:data-pipeline}, this section briefly goes over the inputs and outputs.
 The inputs going into the model are Protein embeddings and Drug embeddings with strong semantic meaning.
-The output is either a yes or no classification determined by thresholds mentioned in Chapter~\ref{chap:data-pipeline}.
+The output is either a binder/non-binder classification determined by thresholds mentioned in Chapter~\ref{chap:data-pipeline}.
 
 \subsection{Learning Paradigm}
 The learning paradigm, how the model learns from the data, is supervised binary classification using PyTorch-based gradient optimisation using Adam \citep{kingma2015adam}.
@@ -36,11 +36,11 @@ This formulation aligns with the intended application of the system, where the p
 The learning objective is, therefore, to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset, allowing the model to generalise to the unseen drug-target pairs.
 
 \section{Integration of Input Representations}
-Drug to Target interaction predictions requires the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences.
+Drug to Target interaction predictions require the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences.
 These representations differ in scale, semantic meaning, and dimensionality, making direct integration inappropriate.
 
-To address this, the model uses a dual-input design, where drugs and proteins are processed independently through dedicated encoding pathways before being combined at a later stage once they become compatible.
-Allowing independent processing preserved the features and semantic meaning for each drug and protein, and joint learning is enabled once combined.
+To address this, the model uses a dual-input design, where drugs and proteins are processed independently through dedicated encoding pathways before being combined in a 128-dimensional space and fused for joint prediction.
+Independent processing preserves the features and semantic meaning for each drug and protein, and joint learning is enabled once combined.
 \subsection{Drug Representation}
 Drug molecules are represented using MACCS fingerprints, which encode the presence or absence of predefined chemical substructures as a fixed length binary vector of 167 dimensions.
 
@@ -55,7 +55,7 @@ Mean pooling provides a simple method for aggregating variable-length protein se
 This approach enables the model to leverage rich semantic information learned from large protein databases, improving generalisation to unseen targets.
 
 \section{Model Architecture}
-Due to the heterogeneous nature of Dual Inputs, the architecture is slightly modified from traditional neural networks.
+Due to the heterogeneous nature of dual inputs, the architecture is slightly modified from traditional neural networks.
 Separate encoding pathways are used to process each input to a usable, unified representation for interaction prediction.
 
 The \texttt{DrugEncoder} and \texttt{ProteinEncoder} are trainable multilayer perceptrons that project the precomputed MACCS and ProtBERT features into a shared 128-dimensional latent space.
@@ -63,7 +63,7 @@ Their parameters are updated jointly with the \texttt{InteractionPredictor} duri
 This two-stage design separates fixed, domain-informed feature extraction from learned task-specific adaptation: the representations contribute chemical and biological data, while the encoders learn to emphasise the most informative components of those representations for binding prediction.
 
 \subsection{Drug Encoder}
-The drug encoder is responsible for transforming molecular SMILES string into a numerical representation using MACCS (Molecular ACCess System) keys \citep{durant2002reoptimization}.
+The drug encoder is responsible for transforming molecular SMILES strings into a numerical representation using MACCS (Molecular ACCess System) keys \citep{durant2002reoptimization}.
 The SMILES representation is parsed into an RDKit object, where MACCS fingerprint generation is applied, producing a 167-bit binary vector.
 
 This representation captures essential structural properties of small molecules while maintaining a compact and consistent dimensionality.
@@ -85,11 +85,11 @@ Unlike the frozen ProtBERT model, this encoder is trainable and participates in 
 
 \subsection{Prediction Network}
 \label{subsec:-prediction_network}
-The prediction network contains four hidden layers (256, 128, 64, 1) using ReLU activations for learning non-linear interactions between the drug and protein representations.
+The prediction network contains three hidden layers (256, 128, 64) using ReLU activations for learning non-linear interactions between the drug and protein representations.
 The network also makes use of dropout and L2 regularisation to prevent overfitting, which is a common issue in models with limited training data and high-dimensional inputs.
 The sigmoid is applied only at inference, to map the raw logit to a probability.
 During training, BCEWithLogitsLoss applies sigmoid internally when computing the loss for numerical stability.
-Here is a table describing the architecture of the prediction network:
+The overall architecture is summarised in Table~\ref{tab:network_structure}.
 \begin{table}[H]
 \centering
 \caption{Model Architecture and Training Hyperparameters}
@@ -148,7 +148,7 @@ class DTI_DNN(nn.Module):
 \end{lstlisting}
 
 \subsection{Fusion and Prediction Layer}
-The design choices reflected here were informed through iterative experimentation, the full progression is documented in Chapter~\ref{ch:-evaluation}.
+The design choices reflected here were informed through iterative experimentation; the full progression is documented in Chapter~\ref{ch:-evaluation}.
 
 Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model.
 The binary MACCS fingerprint with dimensionality $167$ and the ProtBERT embedding with dimensionality $1024$ are individually encoded to have dimensionality of $128$ before being concatenated into a single vector with dimensionality $256$ representing the drug-target pair.
@@ -156,9 +156,10 @@ The binary MACCS fingerprint with dimensionality $167$ and the ProtBERT embeddin
 This combined vector is then passed through the prediction network described in Table~\ref{tab:network_structure} and produces a binary classification based on the optimal threshold, $\tau = 0.3$, determined through experimentation.
 
 \section{Training Procedure}
-This section describes how the model parameters are optimised during training, a process that is important to how the model learns meaningful patterns and builds internal representations on the data it's exposed to.
+This section describes how the model parameters are optimised during training, an important process to how the model learns meaningful patterns from the training data.
 \subsection{Loss Function}
-The model is trained using Sigmoid + Binary Cross Entropy (BCE) loss function to have BCEWithLogitsLoss, defined as:
+The model is trained using Sigmoid + Binary Cross Entropy (BCE) loss, implemented via PyTorch's \texttt{BCEWithLogitsLoss}.
+It is defined as:
 \[
     E = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i) \right],
 \]
@@ -189,16 +190,17 @@ Mini-batch gradient descent is used to balance the computational efficiency of b
 He initialisation is used to set the initial weights of the network, which helps to mitigate issues of vanishing or exploding gradients in deep networks, particularly when using ReLU activations \citep{he2015delving}.
 
 \subsection{Hyperparameter Selection}
-As shown in Table~\ref{tab:network_structure}, we are using mostly defaults set by Adam optimiser.
+As shown in Table~\ref{tab:network_structure}, the configuration largely follows defaults set by Adam optimiser.
 The learning rate was set to $1\times10^{-3}$, which is a common default for Adam and provides a good balance between convergence speed and stability.
 Weight decay adds a penalty proportional to the squared magnitude of the weights to the loss function, which helps to prevent overfitting by adding a penalty on large weights.
 This encourages the model to learn simpler patterns that generalise better to unseen data~\citep{Krogh1992}.
 A value of $1\times10^{-4}$ was chosen through tuning, and it is consistent as a default value commonly used in PyTorch training pipelines.
 The batch size of 512 was chosen to provide a good balance between computational efficiency and stable gradient estimation.
-This sits at the upper boundary of the small-batch regime identified by \citet{Keskar2017}, which is typically 32--512 and generalises better than larger batches.
+This sits at the upper boundary of the small-batch regime identified by~\citet{Keskar2017}, which is typically 32--512 and generalises better than larger batches.
 
 \subsection{Regularisation}
-The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4, which means that during training, 40\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons \citep{srivastava2014dropout}.
+The Dropout rate was determined through experimentation as seen in Chapter~\ref{ch:-evaluation}, and was set to 0.4.
+This means that during training, 40\% of the neurons in the hidden layers are randomly deactivated in each iteration, helping to prevent overfitting by encouraging the model to learn more robust features that are not reliant on specific neurons~\citep{srivastava2014dropout}.
 L2 regularisation is applied through the weight decay parameter in the Adam optimiser, which adds a penalty proportional to the square of the magnitude of the weights, encouraging smaller weights and thus simpler models that are less likely to overfit.
 
 \section{Model Output Interpretation}
@@ -206,7 +208,7 @@ The model produces a single raw logit for each drug-target pair.
 During training, \texttt{BCEWithLogitsLoss} applies the sigmoid function internally when computing the loss, avoiding numerical instability associated with a separate sigmoid layer.
 At inference time, the sigmoid function is applied explicitly in the prediction service to map the logit to a probability $\hat{y} \in (0,1)$, representing the likelihood of binding (1) or non-binding (0).
 
-To get a discrete prediction from the continuous output score, the score is compared against some predefined thresholds to optimise the performance of the model.
+To get a discrete prediction from the continuous output score at inference, the score is compared against a predefined threshold to optimise the performance of the model.
 We settled on a threshold of 0.3 after experimentation as it produced the highest F1 score on the test set, which means it is the optimal balance between precision and recall.
 
 The final prediction should be interpreted as a probability instead of a definitive prediction.
@@ -216,7 +218,7 @@ Therefore, this model is intended for the early-stage screening of drug-target p
 The model was originally implemented in Python using NumPy for the numerical computations.
 All the forward and backward propagation steps were implemented manually for full transparency over the learning process and better insight into how changes affect the model's performance.
 However, after conducting experiments and evaluating each improvement, the optimal implementation utilised PyTorch's framework.
-The dual-branch encoder design was a PyTorch-specific implementation because of the ease of use and flexibility it provides for building complex architectures and handling heterogeneous data.
+The dual-branch design was a PyTorch-specific implementation using the \texttt{nn.Module}.
 
 
 
