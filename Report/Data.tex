@@ -2,13 +2,13 @@
 \label{chap:data-pipeline}
 \sloppy
 \section{Introduction}
-This chapter provides a detailed overview of how the data was sourced, processed, and prepped for two inputs, proteins and drugs, turning them from raw data to computationally readable for the model.
+This chapter provides a detailed overview of how the data was sourced, processed, and prepared for two model inputs, proteins and drugs, turning them from raw data to computationally readable for the model.
 
 \section{Data Collection and Curation}
-Data is an extremely important part of this project, and it's important to gather a sufficient amount of scientifically accurate data so the model can be the most accurate as possible.
+Data is an important part of this project, and it's important to gather a sufficient quantity of scientifically accurate data so the model can be the most accurate as possible.
 This section will define how the data was sourced and manipulated to reach its final representation.
 \subsection{Primary Data Source}
-I extracted the initial bulk of my data from BindingDB~\citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins~\citep{Liu2025}.
+The initial bulk of my data was extracted from BindingDB~\citep{bindingdb_web}, which is a public database holding experimentally measured binding affinities between small molecules and proteins~\citep{Liu2025}.
 BindingDB serves as a critical resource to a diverse range of applications, including development of artificial intelligence models.
 The database has grown significantly, holding information on 2.9 million binding measurements for 1.3 million compounds.
 Data can be extracted through its web-services or downloaded directly.
@@ -92,7 +92,7 @@ After merging, cleaning, and binarization, the final unified dataset was created
 
 \subsection{Drug Identifier Normalization}
 Drug identifiers provided by BindingDB corresponded to experimental compounds, usually lists of numbers that are lengthy and opaque to non-specialist users, instead of approved and recognised drug names.
-To improve the usability if the virtual screening interface and enable cross-referencing against external drug databases, the identifiers were normalised to be in simpler forms.
+To improve the usability of the virtual screening interface and enable cross-referencing against external drug databases, the identifiers were normalised to be in simpler forms.
 The original identifier was retained to ensure traceability back to the BindingDB database.
 \begin{lstlisting}[caption={drug name normalisation from BindingDB identifiers}]
 def normalize_drug_name(self, name: str):
@@ -127,11 +127,11 @@ Making it more effective for experiments wanting the dosage to be quantified eve
 It reflects functional activity rather than direct binding affinity.
 EC50 measurements incorporate complex factors including receptor reserve, signal transduction efficiency, and cellular response mechanisms \citep{sciencesnail_ki_kd}.
 \subsubsection{Justification for Ki Selection}
-To evaluate which affinity type is most appropriate for my model, we analysed the BindingDB dataset across four key criteria: mechanistic validity, data quality, measurement reliability, and data availability.
+To evaluate which affinity type is most appropriate for the model, the BindingDB dataset was analysed across four key criteria: mechanistic validity, data quality, measurement reliability, and data availability.
 \textbf{Mechanistic Validity:} Ki and Kd represent true equilibrium binding constants that are substrate-independent and thermodynamically well-defined.
 In contrast, IC50 and EC50 are functional assays whose values depend on experimental conditions and do not directly measure binding affinity.
 For a machine learning model intended to learn binding relationships, using equilibrium constants provides a more robust and interpretable basis (Figure~\ref{fig:ki_justification}A).
-\textbf{Data Quality:} After reviewing the graphs generated from the raw bindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 and Kd. Higher consistency is better for training the model as it's reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
+\textbf{Data Quality:} After reviewing the graphs generated from the raw BindingDB file, Ki has the lowest outlier rate, which indicates more consistent experimental measurements compared to IC50 and Kd. Higher consistency is better for training the model as it's reducing noisy and inconsistent labels from the dataset (Figure~\ref{fig:ki_justification}B).
 \textbf{Data Availability:} While IC50 measurements are more abundant in BindingDB (47,043 entries), Ki still provides 16,796 high-quality measurements.
 This is plenty to develop and train machine learning models as modern deep learning models have shown it's more valuable to have high-quality data than a higher quantity \citep{Northcutt2021}.
 \textbf{Cross-Validation with Correlation Analysis:} To confirm the relationships between affinity types, a correlation heatmap was generated across all measurements in the raw BindingDB dataset (Figure~\ref{fig:corr_heatmap}). The high correlation between Ki and Kd (r = 0.94) confirms their mechanistic similarity as equilibrium constants.
@@ -154,7 +154,7 @@ Ki provides the perfect balance of mechanistic validity (true equilibrium consta
 \subsection{Data Binarization \& Negative Sampling}
 \label{subsec:data-binarization-&-negative-sampling}
 It's crucial to classify the data accurately with meaningful representations and thresholds.
-From the BindingDB dataset we used the columns \textbf{Ki} \& \textit{Kd} and set thresholds on this value to determine the score binder or non-binder.
+From the BindingDB dataset we used the columns \textbf{Ki} \& \textbf{Kd} and set thresholds on this value to determine the score binder or non-binder.
 Instead of using raw nanomolar (nm) values, the binding affinities were transformed into their log-scaled form using equation~\ref{eq:paffinity}:
 \begin{equation}
 \mathrm{pAffinity} = -\log_{10}\left( \mathrm{Affinity\,(M)} \right)
@@ -190,7 +190,7 @@ Therefore, we classify pairs with pAffinity value $>$ 7 as a binding interaction
     df_chunk = df_chunk[df_chunk['interaction'].isin([0, 1])]
 \end{lstlisting}
 
-This approach generates an area between the thresholds, which represents an ambiguous \textit{grey area}, a zone where the interactions are too week to be a binder but too strong to be a clear non-binder.
+This approach generates an area between the thresholds, which represents an ambiguous \textit{grey area}, a zone where the interactions are too weak to be a binder but too strong to be a clear non-binder.
 To increase the performance of the model, we only want to train it on the clearest signals, so all pairs inside the \textit{grey area} are removed from the loaded dataset shown in Table~\ref{tab:dataset-before-threshold}, and a distribution graph visualising the grey area is shown below in Figure~\ref{fig:affinity_dist}.
 
 \begin{figure}[H]
@@ -233,8 +233,8 @@ After removing the 507,382 pairs falling within the grey area, the remaining int
 \end{tabular}
 \end{table}
 A subsampled copy with 18,520 interactions was used for the iterative experiments.
-This allowed for more appropriate training times with NumPy backpropogation.
-This was split train/val/text as 12,038/3,704/2,778, and the distribution was mentioned in Table~\ref{tab:class-distribution} in the evaluation section.
+This allowed for more appropriate training times with NumPy backpropagation.
+This was split train/val/test as 12,038/3,704/2,778, and the distribution was mentioned in Table~\ref{tab:class-distribution} in the evaluation section.
 
 \section{Feature Engineering}
 This section outlines the Feature engineering process to turn raw chemical and biological data into machine-readable formats.
@@ -291,7 +291,7 @@ Testing    & 15\% & 136,297 \\
 \end{tabular}
 \end{table}
 \subsection{Justification of Split Ratios}
-While an 80:20 ratio between training and testing is common \citep{Talukder2025, Zhan2025}, A higher validation set of data at 20\% was used for more accurate estimates of model performance during training.
+While an 80:20 ratio between training and testing is common \citep{Talukder2025, Zhan2025}, a higher validation set of data at 20\% was used for more accurate estimates of model performance during training.
 This can allow for better hyperparameter tuning so the model can be tweaked to optimise performance on the unseen test data.
 This specific split has been used among other deep learning studies that require rigorous hyperparameter tuning, such as in medical image analysis~\citep{Nunes2019} and environmental prediction modelling~\citep{Lorenz2019}.
 A large allowance to the validation set reduces the risk of overfitting before the final evaluation on the unseen test data.
