@@ -4,29 +4,30 @@
 The pharmaceutical industry faces high costs and long development cycles in drug discovery, partly due to the challenge of identifying whether a novel compound can bind to a specific protein target.
 Machine learning (ML) provides a promising pathway for automating and accelerating this process by learning patterns from large bioactivity datasets.
 \subsection{Objective}
-The aim is to develop a predictive machine learning system that will determine the likelihood of binding between a new drug-like molecule and a protein target in the early stages of the process.
-Hopefully, reducing the long development cycles the pharmaceutical industry faces in drug discovery by reducing the sample size early on.
+The aim of this project is to develop a predictive machine learning system that estimates the likelihood of binding between a drug-like molecule and a protein target during the early stages of discovery.
+By flagging promising candidates up front, the system is intended to reduce the sample size taken forward to wet-lab validation and, in turn, shorten the development cycles the pharmaceutical industry faces.
 \subsection{Terminology}
 Throughout this report the terms \textit{drug}, \textit{compound}, and \textit{small molecule} are used interchangeably to refer to a ligand being evaluated against a protein target.
 A \textit{drug} is a compound with clinical approval, but in the virtual-screening context every candidate is treated uniformly by the model and no distinction is required.
 Similarly, \textit{protein}, \textit{target}, and \textit{protein target} refer to the same biological entity against which binding is predicted; \textit{target} emphasises the therapeutic intent, while \textit{protein} is the structural description, and the two are used interchangeably.
 \subsection{Computational Approaches in DTI}
-Drug-Target-Interaction was primarily tested during wet lab experiments, but the first \textit{in silico}, computational approach, took place in 1982 with molecular docking of 3D structures \citep{Ru2025InSilicoDTI}.
-A later advancement to this was the breakthrough of using machine learning models, which have become increasingly more popular since the early 2000's, being able to autonomously recognise patterns and relationships from data.
-Ever since its introduction, there have been many attempts to use machine learning, but real progress was made in 2018 \citep{Ozturk2018} when advanced deep learning models were created and tested, able to effectively learn representations from drug and protein sequence data.
+Drug-target interaction was investigated primarily through wet-lab experiments until the first \textit{in silico} approach, molecular docking against 3D structures, was introduced in 1982 \citep{Ru2025InSilicoDTI}.
+A later breakthrough came with the adoption of machine learning models from the early 2000s onwards, which can autonomously recognise patterns and relationships in bioactivity data without requiring explicit physical modelling.
+A significant step forward followed in 2018 \citep{Ozturk2018}, when deep learning architectures were shown to learn effective representations directly from drug and protein sequence data.
 \subsection{Process}
 \subsubsection{Data Acquisition}
-To extract and process relevant bioactivity data from BindingDB, a public database containing thousands of chemical compounds and protein target binding data.
+Relevant bioactivity data was extracted and processed from BindingDB, a public database containing hundreds of thousands of drug-target binding measurements~\citep{Liu2025}.
 \subsubsection{Feature Engineering}
-Converting Chemical Compounds to molecular footprints using RDKit and encoding protein targets to numerical vectors using ProtBERT. These processes differ because the biological information is encoded in completely different forms, thus requiring domain-specific feature engineering methods.
+Compounds were converted to molecular fingerprints using RDKit, and protein targets were encoded as numerical vectors using ProtBERT.
+These pipelines differ because the two modalities encode biological information in fundamentally different forms, requiring domain-specific feature engineering.
 \subsubsection{Model Development, Training \& Evaluation}
-The Neural Network will be developed and trained on the dataset to learn the underlying relationships that cause binders and non-binders.
-The model will be evaluated on validation metrics like AUC-ROC, PR-AUC, F1, Precision, Recall, and Accuracy.
-Based on these techniques, the Neural Network will be iteratively refined to reduce the error rate and improve accuracy.
+A neural network was developed and trained on the processed dataset to learn the underlying relationships that distinguish binders from non-binders.
+The model was evaluated using AUC-ROC, PR-AUC, F1, precision, recall, and accuracy.
+Based on these metrics, the network was iteratively refined to reduce error and improve discriminative performance.
 \subsubsection{Develop User Interface}
-The website for this project will be developed using the React framework due to its modular architecture, which provides a rapid development process and quick modifications with live rendering~\citep{aggarwal2018react}.
-The user interface will be designed to be straightforward, easy to navigate, and only contain necessary information relevant to the workflow.
-I want to display the result once it is defined, history of previous comparisons made, and their results, and to allow the user to compare multiple chemical compounds against one protein to mimic wet lab work.
+The website was developed using the React framework, chosen for its modular architecture, rapid development workflow, and live rendering~\citep{aggarwal2018react}.
+The interface was designed to be straightforward, easy to navigate, and to present only the information relevant to the workflow.
+It displays each prediction result, a history of previous comparisons, and an option to compare multiple compounds against a single protein to mimic wet-lab virtual screening.
 \subsubsection{Tech Stack}
 \begin{table}[H]
     \centering
@@ -70,55 +71,55 @@ I want to display the result once it is defined, history of previous comparisons
 \end{table}
 
 \section{Feature List}
-This is where I will show you all the features I wish to include within my project and what part they play in the project.
+This section discusses the features planned for the project and summarises the role of each within the overall workflow.
 
 \subsection{Required}
 \subsubsection{Compare a single drug molecule to a single protein target}
-This will be the first and most basic functionality of the product as it will allow the user to search the ChEMBL database for a single drug molecule to test against a single protein target. 
+The most basic functionality of the system: the user searches the database for a single compound and tests it against a single protein target.
 \subsubsection{Compare multiple drug molecules to a single protein target}
-I will achieve this by allowing the user to multi-select drug molecules or selecting a drug based on its standard type and relation to filter it into groups.
-This will give the user a closer feel for what wet-lab work could achieve.
+The user can multi-select compounds, or filter them by physicochemical properties and known activity, and screen the resulting set against a chosen target.
+This mirrors the triage process in wet-lab virtual screening.
 \subsubsection{Displaying previous tests}
-Having a section which displays what the user had previously tested is important as it would reserve computational resources for new combinations to compare, preventing the user from re-using the neural network to repeat a binding.
+A prediction history reduces redundant computation by allowing the user to revisit earlier results rather than re-running the network for the same drug--target pair.
 \subsection{Nice-to-Have}
 \subsubsection{Produce indirect links into how they bind}
-Once the neural network has run and the result has been displayed to the user, I would try and also include a brief explanation into why the network predicted what it predicted.
+Once a prediction has been returned, a brief explanation of the features driving the outcome would help users reason about why the network produced that score.
 \subsubsection{Displaying molecule and Protein information}
-Retrieving this relevant information from the BindingDB database so the user can see more information about the compound-protein pair they have selected.
+Retrieving contextual metadata from BindingDB allows the user to inspect additional properties of the selected drug-protein pair alongside the prediction.
 
 \section{Scope \& Limitations}
 \subsection{Project Scope}
-To ensure a complete project and to counter issues that may spring up, each milestone reached will provide a submittable piece of work that can be a good base to work off for the next stage:
+The project was broken into milestones so that each reached state represented a self-contained, submittable piece of work forming the foundation for the next:
 \subsubsection{Predicting drug-target interactions}
-Developing a NumPy model capable of making predictions of drug-target interactions by classifying them into binding/non-binding.
+A NumPy-based model capable of classifying drug-target pairs as binding or non-binding.
 \subsubsection{Using neural networks for prediction}
-Implementing a training a neural network architecture to learn relationships between molecule and protein features, producing consistent and reliable predictions.
+A neural network architecture trained to learn the relationships between molecule and protein features and produce consistent predictions.
 \subsubsection{Including both chemical compound and protein sequence features}
-Extracting and integrating molecular descriptors or fingerprints for chemical compounds and sequence-based or embedding-based features for protein targets.
+Molecular descriptors or fingerprints for compounds, combined with sequence-based or embedding-based features for protein targets.
 \subsubsection{Implementing a web-based UI for result visualization and comparison}
-Creating a simple, React-based web application to visualize prediction results, allow compound-target comparisons, and provide basic interpretability.
+A React-based web application that visualises prediction results, supports drug-target comparisons, and provides basic interpretability.
 
 \subsection{Project Limitations}
-Here is what is retracting from the project and preventing it from being as good as it could possibly be.
+The following factors constrain the scope of the project and the conclusions that can be drawn from it.
 \subsubsection{Data limitations}
-Due to the nature of the project, I am restricted to only using publicly available datasets (e.g.\ BindingDB, ChEMBL) that may have missing or biased data from their producers.
-Also, the data set might not be complete, missing vital information which could improve the models' success rate.
+The project is restricted to publicly available datasets (e.g.\ BindingDB, ChEMBL), which may contain missing or biased entries introduced during curation.
+The dataset may also be incomplete, omitting information that could otherwise improve the model's predictive performance.
 \subsubsection{Model limitations}
-Neural networks might not capture rare interactions or out-of-distribution compounds, and they don't take the structure of each molecule into account.
-A Graph neural network (GNN) could be used, but that gives me greater limitations computationally and data wise.
-\subsubsection{Computational constraints} 
-I am only limited to what I have exposure to, and the model will be trained on my personal laptop, so my computational resources may not be representational of what big pharma companies have access to, producing a considerable gap into what the industry could be exposed to.
-\subsubsection{UI limitations} 
-This is only a simple prototype, so I'm not optimising it for a production scale but will make it suitable for a small team to use.
+Fully connected neural networks may struggle with rare interactions or out-of-distribution compounds, and they do not encode the 3D structure of each molecule.
+A graph neural network (GNN) could be used instead, but that would introduce additional computational and data requirements beyond the resources available for this project.
+\subsubsection{Computational constraints}
+The model was trained on a personal laptop, so the available compute budget is not representative of what industrial pharmaceutical research groups can deploy, widening the gap between this prototype and industry-scale systems.
+\subsubsection{UI limitations}
+The interface is a prototype intended for small-team use rather than production deployment.
 \subsection{Assumptions}
-For this project I am assuming the only people using it will have sufficient prior knowledge within chemistry to use this product.
-I am assuming the data within BindingDB is accurate and up to date.
+The project assumes that users possess sufficient prior chemistry knowledge to interpret the input fields and results.
+It also assumes that the data within BindingDB is accurate and up to date.
 
 \section{Workflow}
-In this section i would like to display a visual representation on how I will take this project from start to finish.
+This section presents a visual representation of the project workflow from data acquisition through to a deployed user interface.
 \subsection{System Overview}
-The system predicts potential interactions between chemical compounds and protein targets using a trained neural network.
-It processes input data, extracts numerical features, performs predictions, and displays the results through a web interface for comparison and interpretation
+The system predicts potential interactions between compounds and protein targets using a trained neural network.
+It processes input data, extracts numerical features, performs inference, and displays the results through a web interface for comparison and interpretation.
 \begin{table}[h!]
     \centering
     \begin{tabular}{@{}lp{10cm}@{}}
@@ -131,10 +132,10 @@ It processes input data, extracts numerical features, performs predictions, and 
     Feature Engineering & Converting molecular structures and protein sequences into numerical feature representations such as fingerprints \& embeddings \\
     \addlinespace
     \midrule
-    Model training and Evaluation & Training a neural network on the processed dataset to pickup on relationships and evaluating the performance with metrics such as AUC-ROC and F1 score. \\
+    Model Training and Evaluation & Training a neural network on the processed dataset to pick up on relationships and evaluating its performance using metrics such as AUC-ROC and F1 score. \\
     \addlinespace
     \midrule
-    User interface & Displays the result, history and allows the user to customize their comparisons. Built with react for responsiveness and ease of use. \\
+    User Interface & Displays results and prediction history, and allows the user to customise comparisons. Built with React for responsiveness and ease of use. \\
     \bottomrule
     \end{tabular}
     \caption{System components and their descriptions.}
@@ -203,7 +204,7 @@ It processes input data, extracts numerical features, performs predictions, and 
 \end{figure}
 
 \subsection{Project Timeline}
-Use of a Gantt chart to keep on top of things.
+A Gantt chart was used to determine major milestones and track progress across the development cycle.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth, trim = 1cm 1cm 483.75cm 1cm, clip]{IC-12-Month-Project-Gantt-Chart.pdf}
