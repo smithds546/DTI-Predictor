@@ -13,12 +13,12 @@ The learning paradigm, how the model learns from the data, is supervised binary 
 The model learns to distinguish between binding and non-binding drug-target pairs based on labelled training data.
 
 \section{Problem Formulation}
-The prediction task is formulated as a supervised binary classification problem, where the goal is to conclude whether a given drug and protein pair produce a binding interaction.
+The prediction task is formulated as a supervised binary classification problem, where the goal is to predict a given drug and protein pairs binding interaction.
 The data instances of drug molecules and target proteins are represented as fixed length numerical vectors where $\mathbf{d} \in \mathbb{R}^{m}$ denotes the representation of a drug molecule and $\mathbf{p} \in \mathbb{R}^{n}$ denotes the representation of a target protein.
 
 The goal of the model is to learn a function $f: \mathbb{R}^{m} \times \mathbb{R}^{n} \rightarrow [0,1],$ which maps a drug--protein pair $(\mathbf{d}, \mathbf{p})$ to a continuous interaction score $\hat{y}$ representing the predicted probability of binding:
 $\hat{y} = f(\mathbf{d}, \mathbf{p}).$
-To obtain a binary interaction label, the predicted score $\hat{y}$ is compared to the predefined decision threshold $\tau$, which is a tunable parameter; the value of $\tau$ = 0.3 is justified through data sensitivity analysis in Chapter~\ref{ch:-evaluation}:
+To obtain a binary interaction label, the predicted score $\hat{y}$ is compared to the decision threshold $\tau$ = 0.3, which is justified through data sensitivity analysis in Chapter~\ref{ch:-evaluation}:
 \[
 \hat{y}_{\text{class}} =
 \begin{cases}
@@ -29,30 +29,30 @@ To obtain a binary interaction label, the predicted score $\hat{y}$ is compared 
 The ground-truth labels $y \in \{0,1\}$ are derived from experimentally measured binding affinity values and binarised using affinity thresholds described in Chapter~\ref{chap:data-pipeline}.
 Pairs exceeding the binding threshold are labelled as interacting, while pairs below the non-binding threshold are labelled as non-interacting.
 
-
 Classification was selected over regression to improve robustness against experimental noise and to focus learning on more definitive binding interactions.
 This formulation aligns with the intended application of the system, where the primary objective is to determine whether a candidate drug is likely to bind a given target rather than to predict an exact affinity value.
 
-The learning objective is, therefore, to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset, allowing the model to generalise to the unseen drug-target pairs.
+The learning objective is to minimise the discrepancy between the predicted interaction labels $\hat{y}$ and the true labels $y$ in the training dataset.
 
 \section{Integration of Input Representations}
-Drug to Target interaction predictions require the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences.
+Drug to Target interaction prediction requires the combination of two different data styles, drugs being small chemical structures and proteins being amino acid sequences.
 These representations differ in scale, semantic meaning, and dimensionality, making direct integration inappropriate.
 
 To address this, the model uses a dual-input design, where drugs and proteins are processed independently through dedicated encoding pathways before being combined in a 128-dimensional space and fused for joint prediction.
 Independent processing preserves the features and semantic meaning for each drug and protein, and joint learning is enabled once combined.
 \subsection{Drug Representation}
-Drug molecules are represented using MACCS fingerprints, which encode the presence or absence of predefined chemical substructures as a fixed length binary vector of 167 dimensions.
-
+Drug molecules are represented using MACCS keys~\citep{durant2002reoptimization}, which encode the presence or absence of predefined chemical substructures as a fixed length binary vector of 167 dimensions.
+Each SMILES string is parsed into an RDKit object, from which the MACCS fingerprint is generated.
+Where a SMILES string cannot be successfully parsed, a zero vector is returned to preserve input dimensional consistency and prevent pipeline failure.
 The fixed dimensionality makes it well suited for neural networks as it allows the model to learn patterns between specific substructures and binding behaviour.
 This also makes it computationally efficient and reproducible across multiple experiments.
 \subsection{Protein Representation}
 Target proteins are represented using contextual embeddings created by the pretrained ProtBERT transformer model~\citep{Elnaggar2020.07.12.199554}.
 Unlike fixed sequence-based embeddings, transformer-based embeddings capture bidirectional and context-dependent semantic meanings within amino acid sequences, capturing biochemical properties and structural information.
-
-Each protein sequence is mapped to a fixed-length vector through mean pooling to produce a representation suitable for neural network processing; this is the aggregation strategy used in the original ProTrans work~\citep{Elnaggar2020.07.12.199554}.
-Mean pooling provides a simple method for aggregating variable-length protein sequences while preserving global contextual information learned by the transformer.
-This approach enables the model to leverage rich semantic information learned from large protein databases, improving generalisation to unseen targets.
+Each protein sequence is tokenised and passed through the frozen ProtBERT model to get per-token hidden states.
+Mean pooling is then applied across the sequence dimension of the final hidden layer, aggregating variable-length protein sequences while preserving global contextual information learned by the transformer.
+This produces a single 1024-dimensional embedding that summarises the entire sequence; this is the aggregation strategy used in the original ProTrans work~\citep{Elnaggar2020.07.12.199554}.
+Because this process is computationally expensive, each embedding is cached locally using hash-based lookup, significantly reducing overhead during dataset re-processing when previously computed embeddings can be loaded directly from disk.
 
 \section{Model Architecture}
 Due to the heterogeneous nature of dual inputs, the architecture is slightly modified from traditional neural networks.
@@ -63,20 +63,7 @@ Their parameters are updated jointly with the \texttt{InteractionPredictor} duri
 This two-stage design separates fixed, domain-informed feature extraction from learned task-specific adaptation: the representations contribute chemical and biological data, while the encoders learn to emphasise the most informative components of those representations for binding prediction.
 
 \subsection{Drug Encoder}
-The drug encoder is responsible for transforming molecular SMILES strings into a numerical representation using MACCS (Molecular ACCess System) keys \citep{durant2002reoptimization}.
-The SMILES representation is parsed into an RDKit object, where MACCS fingerprint generation is applied, producing a 167-bit binary vector.
-
-This representation captures essential structural properties of small molecules while maintaining a compact and consistent dimensionality.
-In cases where a SMILES string cannot be successfully parsed, a zero vector is returned to preserve input dimensional consistency and prevent pipeline failure.
-
-\subsection{Protein Representation}
-Protein sequences are represented using contextual embeddings derived from a pretrained ProtBERT transformer model \citep{Elnaggar2020.07.12.199554}.
-Each amino acid sequence is tokenised and passed through the frozen ProtBERT model to obtain per-token hidden states.
-Mean pooling is then applied across the sequence dimension of the final hidden layer, producing a single 1024-dimensional embedding that summarises the biochemical and contextual properties of the entire sequence.
-
-This process is computationally expensive, so each embedding is cached locally using hash-based lookup, reducing overhead when a sequence has already been computed.
-This is particularly effective during dataset re-processing, as previously computed embeddings are loaded directly from the disk.
-
+The drug encoder is a three-layer MLP (167$\rightarrow$256$\rightarrow$128) that projects the 167-bit MACCS fingerprint into the shared 128-dimensional latent space, allowing the model to learn which substructural features are most relevant for interaction prediction.
 \subsection{Protein Encoder}
 The protein encoder is a four-layer MLP (1024$\rightarrow$512$\rightarrow$256$\rightarrow$128) that compresses the precomputed ProtBERT embedding into a 128-dimensional latent representation.
 This follows the design pattern used by~\citet{Singh2023}, where frozen pretrained protein language model embeddings are transformed into a lower-dimensional shared latent space by a learned nonlinear projection.
@@ -121,11 +108,12 @@ The overall architecture is summarised in Table~\ref{tab:network_structure}.
 \end{tabular}
 \end{table}
 
-The full dual-branch architecture is defined as three PyTorch \texttt{nn.Module} classes: \texttt{DrugEncoder}, \texttt{ProteinEncoder}, and \texttt{InteractionPredictor}, composed inside the top-level \texttt{DTI\_DNN} module.
+The full dual-branch architecture is defined as three PyTorch \texttt{nn.Module} classes: \texttt{DrugEncoder}, \texttt{ProteinEncoder}, and \texttt{InteractionPredictor}, inside the top-level \texttt{DTI\_DNN} module.
 Rather than applying a uniform dropout rate throughout the network, a tapered schedule was used in which deeper layers receive lower dropout than earlier ones.
 The reasoning is that deeper representations are more abstract and less redundant, so aggressive dropout at that stage risks destroying genuinely useful features rather than preventing the co-adaptation that dropout is designed to address.
 A two-thirds multiplier ($\approx 0.67$) was chosen empirically: with a base rate of $0.4$, the deeper dropout layers therefore use approximately $0.27$ ($0.4 \times 0.67$).
-Stronger tapers underused the regularisation budget in deeper layers, while weaker tapers produced less stable training; the $0.67$ value retained the benefit of regularisation without visible degradation during the iterative experiments described in Chapter~\ref{ch:-evaluation}.
+Stronger tapers underuse the regularisation budget in deeper layers, while weaker tapers produced less stable training.
+The $0.67$ value kept regularisation without visible degradation during the iterative experiments described in Chapter~\ref{ch:-evaluation}.
 The forward-pass definition of the top-level module is shown below.
 
 \begin{lstlisting}[caption={dual-branch forward pass in DTI\_DNN}]
@@ -150,8 +138,7 @@ class DTI_DNN(nn.Module):
 \subsection{Fusion and Prediction Layer}
 The design choices reflected here were informed through iterative experimentation; the full progression is documented in Chapter~\ref{ch:-evaluation}.
 
-Once both inputs have been encoded, both representations are combined to form a joint input for the prediction model.
-The binary MACCS fingerprint with dimensionality $167$ and the ProtBERT embedding with dimensionality $1024$ are individually encoded to have dimensionality of $128$ before being concatenated into a single vector with dimensionality $256$ representing the drug-target pair.
+Once both inputs have been individually encoded to have dimensionality of $128$ and shared to the latent space, they are concatenated into a single vector with dimensionality $256$ representing the drug-target pair.
 
 This combined vector is then passed through the prediction network described in Table~\ref{tab:network_structure} and produces a binary classification based on the optimal threshold, $\tau = 0.3$, determined through experimentation.
 

@@ -5,13 +5,13 @@ The pharmaceutical industry faces high costs and long development cycles in drug
 Machine learning (ML) provides a promising pathway for automating and accelerating this process by learning patterns from large bioactivity datasets.
 \subsection{Objective}
 The aim of this project is to develop a predictive machine learning system that estimates the likelihood of binding between a drug-like molecule and a protein target during the early stages of discovery.
-By flagging promising candidates up front, the system is intended to reduce the sample size taken forward to wet-lab validation and, in turn, shorten the development cycles the pharmaceutical industry faces.
+This system is intended to reduce the sample size taken forward to wet-lab validation to hopefully shorten the development cycles the pharmaceutical industry faces, by removing confident non-binders.
 \subsection{Terminology}
 Throughout this report the terms \textit{drug}, \textit{compound}, and \textit{small molecule} are used interchangeably to refer to a ligand being evaluated against a protein target.
 A \textit{drug} is a compound with clinical approval, but in the virtual-screening context every candidate is treated uniformly by the model and no distinction is required.
 Similarly, \textit{protein}, \textit{target}, and \textit{protein target} refer to the same biological entity against which binding is predicted; \textit{target} emphasises the therapeutic intent, while \textit{protein} is the structural description, and the two are used interchangeably.
 \subsection{Computational Approaches in DTI}
-Drug-target interaction was investigated primarily through wet-lab experiments until the first \textit{in silico} approach, molecular docking against 3D structures, was introduced in 1982 \citep{Ru2025InSilicoDTI}.
+Drug-target interaction was investigated and tested through wet-lab experiments until the first \textit{in silico} approach, molecular docking against 3D structures, was introduced in 1982~\citep{Ru2025InSilicoDTI}.
 A later breakthrough came with the adoption of machine learning models from the early 2000s onwards, which can autonomously recognise patterns and relationships in bioactivity data without requiring explicit physical modelling.
 A significant step forward followed in 2018 \citep{Ozturk2018}, when deep learning architectures were shown to learn effective representations directly from drug and protein sequence data.
 \subsection{Process}
@@ -25,8 +25,8 @@ A neural network was developed and trained on the processed dataset to learn the
 The model was evaluated using AUC-ROC, PR-AUC, F1, precision, recall, and accuracy.
 Based on these metrics, the network was iteratively refined to reduce error and improve discriminative performance.
 \subsubsection{Develop User Interface}
-The website was developed using the React framework, chosen for its modular architecture, rapid development workflow, and live rendering~\citep{aggarwal2018react}.
-The interface was designed to be straightforward, easy to navigate, and to present only the information relevant to the workflow.
+The website was developed using the React framework for its modular architecture, rapid development workflow, and live rendering~\citep{aggarwal2018react}.
+The interface was designed to be easy to navigate and to present only the information relevant to the workflow.
 It displays each prediction result, a history of previous comparisons, and an option to compare multiple compounds against a single protein to mimic wet-lab virtual screening.
 \subsubsection{Tech Stack}
 \begin{table}[H]
@@ -41,7 +41,7 @@ It displays each prediction result, a history of previous comparisons, and an op
     Programming Language & Python, JavaScript\\
     \addlinespace
     \midrule
-    Data Processing & pandas, NumPy, scikit-learn \\
+    Data Processing & Pandas, NumPy, Scikit-Learn \\
     \addlinespace
     \midrule
     Drug Molecule Feature Engineering & RDKit (molecular fingerprints, SMILES parsing, descriptor extraction) \\
@@ -102,17 +102,17 @@ A React-based web application that visualises prediction results, supports drug-
 \subsection{Project Limitations}
 The following factors constrain the scope of the project and the conclusions that can be drawn from it.
 \subsubsection{Data limitations}
-The project is restricted to publicly available datasets (e.g.\ BindingDB, ChEMBL), which may contain missing or biased entries introduced during curation.
-The dataset may also be incomplete, omitting information that could otherwise improve the model's predictive performance.
+The project is restricted to only using publicly available datasets (e.g.\ BindingDB, ChEMBL), which may contain missing or biased entries introduced during curation.
+This can affect the model's predictive performance if the dataset isn't complete.
 \subsubsection{Model limitations}
 Fully connected neural networks may struggle with rare interactions or out-of-distribution compounds, and they do not encode the 3D structure of each molecule.
 A graph neural network (GNN) could be used instead, but that would introduce additional computational and data requirements beyond the resources available for this project.
 \subsubsection{Computational constraints}
-The model was trained on a personal laptop, so the available compute budget is not representative of what industrial pharmaceutical research groups can deploy, widening the gap between this prototype and industry-scale systems.
+The model was trained on a personal laptop, so the computational limits are not representative of what industrial pharmaceutical research groups have, widening the gap between this system and industrial systems.
 \subsubsection{UI limitations}
 The interface is a prototype intended for small-team use rather than production deployment.
 \subsection{Assumptions}
-The project assumes that users possess sufficient prior chemistry knowledge to interpret the input fields and results.
+The project assumes that users has sufficient chemistry knowledge to interpret the input fields and results.
 It also assumes that the data within BindingDB is accurate and up to date.
 
 \section{Workflow}
