@@ -294,7 +294,7 @@ Regularisation techniques such as dropout and batch normalisation will be explor
 \subsubsection{Dropout Added}
 To combat the overfitting created by a second hidden layer, dropout regularisation is added, which randomly zeroes out a fraction of the activations during training to prevent co-adaptation of neurons and encourage the model to learn more robust features \citep{srivastava2014dropout}.
 We chose a low dropout rate of 0.2 compared with~\citet{srivastava2014dropout}, who recommend a dropout of 0.5 in large networks, to reflect the smaller scale of this model and the presence of other regularisation techniques.
-The effect of dropout is shown in Figure~\ref{fig:arch2_improvements.
+The effect of dropout is shown in Figure~\ref{fig:arch2_improvements}.
 \begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
@@ -432,13 +432,13 @@ To establish a reference point before scaling up the data, the performance of th
 \subsubsection{Methodological Differences}
 Before comparing the model's performance against DeepCDA, it's important to acknowledge the methodological differences between the two evaluations.
 DeepCDA was evaluated using a 10-fold cross-validation approach, which involves partitioning the dataset into 10 subsets, training the model on 9 subsets and testing on the remaining subset, and repeating this process 10 times to obtain an average performance metric.
-However, the model was evaluated using a fixed train/validation/test split, which means that the performance metrics we report are based on a single partitioning of the data.
+However, this model was evaluated using a fixed train/validation/test split, which means that the performance metrics we report are based on a single partitioning of the data.
 This difference in evaluation methodology means that the metrics reported for DeepCDA are averaged across multiple runs and may be more robust to variations in the data, while these metrics are based on a single run and may be more sensitive to the specific train/test split used.
 Therefore, while we can compare the reported metrics, we should do so with caution and acknowledge that the differences in evaluation methodology may impact the comparability of the results.
 
 \subsubsection{Result}
 Table~\ref{tab:deepcda_comparison} presents a comparison of this work against DeepCDA \citep{Abbasi2020}.
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Performance comparison against literature baseline on BindingDB. DeepCDA results are reported from \citet{Yang2024}, evaluated using 10-fold cross-validation. This work uses a fixed train/validation/test split, so comparison is indicative rather than definitive.}
 \label{tab:deepcda_comparison}
@@ -457,7 +457,6 @@ This work (Torch DNN, reduced dataset)         & 0.8670 & 0.8935 & 0.8302 & 0.83
 \end{table}
 
 The differences seen in the table above could be put towards the difference in data representations; we use industry standard ProtBERT and MACCS fingerprints, whereas DeepCDA uses a custom encoding of the sequences and SMILES.
-However, the biggest differences appear in how the models are evaluated, with DeepCDA using 10-fold cross-validation and this work using a fixed train/validation/test split.
 
 It is worth noting that these results reflect an early checkpoint in the model development; subsequent sections detail further improvements through data.
 A broader comparison against multiple literature baselines, including the improved final model, is presented in Section~\ref{sec:lit_comparison}.
@@ -495,7 +494,7 @@ PyTorch can handle the load better than a NumPy approach for the following reaso
 \end{figure}
 
 The increased sample size has dramatically improved the performance of the model, being much more consistent over validation and test datasets.
-The models were exactly the same, yet the change in data from ~18k to ~900k has reduced overfitting without redistributing the class balance, which we unravel in the following subsections.
+The models were exactly the same, yet the change in data from roughly 18k to 900k has reduced overfitting without redistributing the class balance, which we unravel in the following subsections.
 
 
     \subsection{Effect of Decision Threshold}
@@ -589,7 +588,7 @@ We ran the best model with each new threshold dataset to compare the performance
     \label{fig:comparison_metrics}
 \end{figure}
 
-Figures~\ref{fig:comparison_loss} and~\ref{fig:comparison_metrics} tell an interesting story, because despite the dataset being distributed more evenly with new grey area thresholds, the original threshold (5.3 < pAffinity < 7.0) with a ~60/40 split has performed the best.
+Figures~\ref{fig:comparison_loss} and~\ref{fig:comparison_metrics} tell an interesting story, because despite the dataset being distributed more evenly with new grey area thresholds, the original threshold (5.3 $\leq$ pAffinity $\leq$ 7.0) with a 60/40 split has performed the best.
 Outperforming the other grey area thresholds across all metrics proves its validity and provides supporting evidence for removing the grey area as all the thresholds performed better than no threshold.
 
 
@@ -623,7 +622,7 @@ MINDG achieved the highest reported performance among the baselines across most 
 \subsubsection{This Work}
 This model uses a dual-branch fully connected DNN that processes pre-computed ProtBERT embeddings for protein targets and MACCS fingerprints for drug molecules.
 Unlike the other methods, which learn feature representations end-to-end from raw sequences or molecular graphs, this approach relies on established, domain-specific featurisation pipelines.
-The model was trained with a PyTorch model using the Adam optimiser with cosine annealing learning rate decay on the Ki/Kd subset of the full BindingDB dataset, as detailed in the preceding sections.
+The model was trained with a PyTorch model using the Adam optimiser with cosine annealing learning rate decay on a subset of the full BindingDB dataset, as detailed in the preceding sections.
 
 \subsection{Methodological Differences}
 \label{subsec:methodological-differences}
@@ -650,18 +649,18 @@ This work uses a fixed train/validation/test split.}
 \textbf{Method} & \textbf{PR-AUC} & \textbf{AUC-ROC} & \textbf{F1-score} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Precision} & \textbf{Accuracy} \\
 \midrule
 DeepCDA          & $0.901 \pm 0.012$ & $0.894 \pm 0.003$ & $0.811 \pm 0.005$ & $0.872 \pm 0.013$ & $0.840 \pm 0.004$ & $0.760 \pm 0.016$ & $0.831 \pm 0.011$ \\
-TripletMulti-DTI & $0.940 \pm 0.003$ & $0.931 \pm 0.001$ & $0.840 \pm 0.002$ & $0.917 \pm 0.022$ & $\mathbf{0.863 \pm 0.001}$ & $0.792 \pm 0.008$ & $0.865 \pm 0.005$ \\
+TripletMulti-DTI & $0.940 \pm 0.003$ & $0.931 \pm 0.001$ & $0.840 \pm 0.002$ & $0.917 \pm 0.022$ & $0.863 \pm 0.001$ & $0.792 \pm 0.008$ & $0.865 \pm 0.005$ \\
 GAT              & $0.923 \pm 0.002$ & $0.913 \pm 0.001$ & $0.755 \pm 0.021$ & $0.887 \pm 0.001$ & $0.851 \pm 0.001$ & $0.701 \pm 0.013$ & $0.775 \pm 0.012$ \\
 MINDG            & $0.971 \pm 0.008$ & $0.951 \pm 0.004$ & $0.857 \pm 0.013$ & $0.923 \pm 0.006$ & $0.842 \pm 0.015$ & $0.800 \pm 0.013$ & $0.875 \pm 0.007$ \\
 \midrule
-Ours             & $\mathbf{0.9789}$ & $\mathbf{0.9703}$ & $\mathbf{0.9309}$ & $\mathbf{0.9283}$ & $0.9283$ & $\mathbf{0.9335}$ & $\mathbf{0.9162}$ \\
+Ours             & $\mathbf{0.9789}$ & $\mathbf{0.9703}$ & $\mathbf{0.9309}$ & $\mathbf{0.9283}$ & \mathbf{$0.9283$} & $\mathbf{0.9335}$ & $\mathbf{0.9162}$ \\
 \bottomrule
 \end{tabular}
 }%
 \end{table}
 
 \subsection{Discussion}
-Our model achieves the highest scores across six of the seven reported metrics, outperforming all four baselines in PR-AUC, AUC-ROC, F1-score, sensitivity, precision, and accuracy.
+This model achieves the highest scores across all reported metrics, outperforming all four baselines in PR-AUC, AUC-ROC, F1-score, sensitivity, precision, recall and accuracy.
 The margin of improvement over MINDG, the strongest baseline, is notable: the AUC-ROC of 0.9703 exceeds MINDG's 0.951, and the F1-score of 0.9309 represents a substantial improvement over MINDG's 0.857.
 Precision sees the largest relative gain, with our model achieving 0.9335 compared to MINDG's 0.800, indicating that the model produces significantly fewer false positive predictions.
 

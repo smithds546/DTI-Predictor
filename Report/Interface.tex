@@ -1,5 +1,5 @@
 \chapter{System Interface and API}
-This chapter describes the design and implementation of the system interface and API for the Drug-Target interactive Predictor.
+This chapter describes the design and implementation of the system interface and API for the Drug-Target interaction Predictor.
 It covers the architecture of the system, the design of the backend API, the frontend design, and the integration between the frontend and backend components.
 Additionally, it discusses performance considerations, security measures, limitations, and provides a summary of the interface design.
 \section{System Architecture}
@@ -25,7 +25,7 @@ This modular design allows for better organisation of code and easier maintenanc
 % Group endpoints by domain: prediction, screening, autocomplete, structure, history
 The API exposes twelve endpoints, grouped by domain in Table~\ref{tab:endpoints}.
 The Prediction and screening endpoints handle model inference, and the autocomplete and filtering endpoints support the search and drug selection workflows.
-The history endpoints allow the user review and clear previous predictions.
+The history endpoints allow the user to review and clear previous predictions.
 The structure endpoint provides on-demand molecular visualisations provided by RDKit.
 \begin{table}[H]
 \centering
@@ -66,7 +66,7 @@ GET & \texttt{/health} & Returns the health status of the API. \\
 % binder index construction — all the startup-time work
 At startup time, the backend performs several data loading and preprocessing steps to ensure that the system is ready for user interactions.
 
-The full BindingDB CSV containing drug SMILES strings, protein target names, amino acid sequences, and binary interaction labels, is loaded into a pandas DataFrame at module import time by the training data service.
+The BindingDB database containing drug SMILES strings, protein target names, amino acid sequences, and binary interaction labels, is loaded into a pandas DataFrame at module import time by the training data service.
 From this, the autocomplete endpoint creates drug and target lists.
 
 Molecular descriptors for all unique compounds are computed using RDKit \citep{rdkit_doc}, and these are persisted to a pickle file so that subsequent startups can load them directly rather than recomputing them.
@@ -112,9 +112,9 @@ The loading procedure is as follows:
     \item An empty \texttt{DTI\_DNN} instance is created with the same architecture hyperparameters used during training: a 167-dimensional drug input passed through a drug encoder (167$\rightarrow$256$\rightarrow$128), a 1024-dimensional protein input passed through a protein encoder (1024$\rightarrow$512$\rightarrow$256$\rightarrow$128), and the resulting 256-dimensional representation passed through the interaction predictor (256$\rightarrow$256$\rightarrow$128$\rightarrow$64$\rightarrow$1), all with a dropout rate of 0.4.
     \item \texttt{torch.load} deserialises the \texttt{.pt} file into a state dictionary, mapping it to the best available hardware accelerator (Apple MPS, CUDA, or CPU).
     \item \texttt{load\_state\_dict} populates the empty model with the saved weights.
-    \item The model is set to evaluation mode via \texttt{model.eval()}, which disables dropout and batch normalisation updates so that inference results are deterministic.
+    \item \texttt{model.eval()} sets the model to evaluation mode, disabling dropout and batch normalisation updates so that inference results are deterministic.
 \end{enumerate}
-Because the model is loaded once at startup rather than on each request, inference latency is kept low and repeated file I/O is avoided.
+Inference latency is kept low and repeated file I/O is avoided because the model is loaded once at startup rather than on each request.
 This is reported in Section~\ref{tab:endpoint_latency} as it measures a single pair prediction at 5ms.
 
 \subsubsection{Feature Extraction and Forward Pass}
@@ -147,14 +147,14 @@ These filters are applied as boolean masks over a precomputed descriptor table t
 \subsubsection{Limited Selection}
 When the number of compounds matching the filters exceeds the processable limit, the system applies the \textit{MaxMin} diversity-picking algorithm using MACCS-based Tanimoto distance~\citep{tanimoto}.
 Instead of using a random sample, this algorithm makes sure to select a structurally diverse subset to ensure broad coverage of drugs in the test.
-If $>100$ compounds pass the filters, MaxMin selects 100 structurally diverse ones as only $\leq 100$ compounds are scored.
+If $>100$ compounds pass the filters, MaxMin selects 100 structurally diverse ones as only $\leq 100$ compounds are scored in each test.
 The selected drug molecules are scored against the target protein using the batch inference pipeline, ranked by binding probability, and matched to metadata such as molecular weight, LogP, and ring count before being returned to the frontend.
 
 \subsection{Input Validation and Error Handling}
 % Pydantic schemas, Query param constraints, HTTPException patterns
 \subsubsection{Input Validation}
-Validating the inputs is handled through two complementary mechanisms.
-At the schema level, all requests and responses are defined as Pydantic models, which enforce type constraints and use automatic validation of incoming JSON requests~\citep{pydantic}.
+Input Validation is handled through two complementary mechanisms.
+All requests and responses are defined as Pydantic models, at the schema level, which enforce type constraints and use automatic validation of incoming JSON requests~\citep{pydantic}.
 
 For query parameter endpoints, FastAPI's \texttt{Query} annotations are used to enforce value constraints directly in the function signatures.
 This allows us to limit the batch size to 100, capping the drug sample endpoint to 50 results, and keeping the Scalable Vector Graphics (SVG) rendering dimensions between 50 and 500 pixels.
@@ -300,10 +300,10 @@ All the data transmissions use JSON, where the frontend sends user inputs and re
 \end{figure}
 
 
-For the autocomplete, endpoints are called on each keystroke with a debounced delay to return up to 10 matches to populate dropdown suggestions.
-When predicting a single pair, the frontend issues a POST request to \texttt{/predict} and displays the returned score and binding classification.
+The autocomplete endpoints are called on each keystroke with a debounced delay to return up to 10 matches to populate dropdown suggestions.
+For single pair prediction, the frontend issues a POST request to \texttt{/predict} and displays the returned score and binding classification.
 For full virtual screening, the frontend initially retrieves the filtered molecules set from \texttt{/drug-filter} endpoint, then submits the selected drugs to \texttt{/screen} for batch scoring.
-Molecular structure diagrams are rendered by requesting Scalable Vector Graphics (SVGs) from the \texttt{/structure/svg} endpoint and embedding them directly in the interface as a widget.
+Molecular structure diagrams are rendered through Scalable Vector Graphics (SVGs) requested from the \texttt{/structure/svg} endpoint and embedding them directly in the interface as a widget.
 
 Prediction history is fetched from \texttt{/history} on page load and refreshes after each new prediction.
 
