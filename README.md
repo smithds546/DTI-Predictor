@@ -5,7 +5,14 @@
 **Supervisor:** Mohamad Saada
 **Institution:** Loughborough University, Department of Computer Science
 
-This repository accompanies the final year dissertation *Drug–Target Interaction Prediction Using Deep Neural Networks*. It contains the full training pipeline, the trained PyTorch model, a FastAPI backend that serves predictions, and a Gatsby/React frontend for single-pair prediction and batch virtual screening. The compiled dissertation is submitted separately via Learn.
+This repository accompanies the final year dissertation *Drug–Target Interaction Prediction Using Deep Neural Networks*. It contains the full training pipeline, the trained PyTorch model, a FastAPI backend that serves predictions, and a Gatsby/React frontend for single-pair prediction and batch virtual screening.
+
+## Overview
+This project addresses the problem of drug–target interaction (DTI) prediction: given a small molecule **drug** and a protein **target**, predicting whether a meaningful **binding interaction** will occur. Identifying active drug–target pairs is a critical bottleneck in **early-stage drug discovery**, and traditional experimental screening is expensive and slow. This system offers a **deep learning** alternative.
+
+The pipeline encodes protein sequences using **ProtBERT** (a BERT-based transformer pretrained on UniRef100) and represents drug compounds as **MACCS** structural fingerprints. These representations are **concatenated** and passed through a **deep neural network** trained on interaction data from **BindingDB**. The final model achieves an **AUC-RO**C of **0.970** and an **F1 score** of **0.931** on the held-out test set.
+
+The system is deployed as a **FastAPI backend** with a **Gatsby/React frontend**, supporting both single drug–target pair prediction and **batch virtual screening** of up to 100 compounds against a chosen target.
 
 ## Contents
 
